@@ -1,0 +1,41 @@
+name:                y
+version:             0.1.0.0
+-- synopsis:
+-- description:
+--homepage:            https://github.com/githubuser/loopo#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2019 Author name here
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+executable y
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  other-modules:       Util
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5,
+                       base16-bytestring,
+                       bytestring,
+                       containers,
+                       cryptohash-md5,
+                       directory,
+                       hsndfile >= 0.8.0,
+                       hsndfile-storablevector >= 0.5.2,
+                       --portaudio >= 0.2.4,
+                       pretty-simple,
+                       process,
+                       storablevector,
+                       text,
+                       vector
+                       --vector,
+                       --hsndfile,
+                       --c2hs >= 0.16.3
+                       --array,
+                       --explicit-exception,
+                       --jack,
+                       --transformers
