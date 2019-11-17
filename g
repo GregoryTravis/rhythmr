@@ -1,4 +1,4 @@
 #rm -f out?.wav
 #python audiolabs-erlangen.py
-rm loop?.wav
+rm song.wav loop?.wav
 (stack build autobeat && stack exec autobeat) 2>&1 | tee out
