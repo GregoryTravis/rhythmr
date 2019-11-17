@@ -43,7 +43,7 @@ main = do
   msp $ take 10 track'
   --msp $ map (uncurry (flip (-))) $ zip track (tail track)
   msp info
-  let track = dropWhile (< 40.0) track'
+  let track = dropWhile (< 41.0) track'
   msp $ take 10 track
 
   let clopt = clop (track !! 0) (track !! 4) $ BV.fromBuffer buffer
