@@ -39,9 +39,8 @@ packages:
 # (e.g., acme-missiles-0.3)
 # extra-deps: []
 extra-deps:
-  #- portaudio-0.2.4@sha256:f16a1102187ecc3f08a7510eda5b3081a8a21f2c49d7b4ab5e3cfa8666a81d63
- - hsndfile-0.8.0@sha256:3e77b6a4997e2c92b99864b1d63ec8fa42c9e4e26988f74bdf9930eb6793a323
- - hsndfile-storablevector-0.5.2@sha256:f260b08d0d2670087f2a432437877dd93da7a8c763d3607548d6ccc0c7374a62
+- hsndfile-0.8.0@sha256:3e77b6a4997e2c92b99864b1d63ec8fa42c9e4e26988f74bdf9930eb6793a323,1757
+- hsndfile-storablevector-0.5.2@sha256:f260b08d0d2670087f2a432437877dd93da7a8c763d3607548d6ccc0c7374a62,1309 
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
