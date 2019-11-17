@@ -21,6 +21,9 @@ readSound filename = do
   return $ Sound { samples = BV.fromBuffer buffer
                  , sampleRate = samplerate info }
 
+numFrames :: Sound -> Int
+numFrames sound = (SV.length (samples sound)) `div` 2
+
 writeSound :: String -> Sound -> IO ()
 writeSound filename sound = do
   let numFrames = (SV.length (samples sound)) `div` 2

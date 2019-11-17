@@ -7,10 +7,15 @@ import System.IO
 import System.Process
 
 import Aubio
+import Resample
 import Sound
 import Util
 
----- IO
+bmp = 120
+meter = 4
+loopLengthSeconds = (60.0 / fromInteger bmp) * meter
+standardSR = 44100
+loopLengthFrames = floor $ (fromInteger standardSR) * loopLengthSeconds
 
 main = do
   let file = "Grace Jones - Pull Up To The Bumper-Tc1IphRx1pk.f135.wav"
@@ -19,4 +24,7 @@ main = do
   let track = dropWhile (< 40.0) track'
   let loop = snip (track !! 0) (track !! 4) sound
   writeSound "snip.wav" loop
+  msp $ numFrames loop
+  loop' <- resampleSound (numFrames loop * 2) loop
+  writeSound "snap.wav" loop'
   msp "hi"
