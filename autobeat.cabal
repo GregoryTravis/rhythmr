@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 executable autobeat
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Util
+  other-modules:       Util, External, Aubio, Sound
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
                        base16-bytestring,
@@ -26,6 +26,7 @@ executable autobeat
                        directory,
                        hsndfile >= 0.8.0,
                        hsndfile-storablevector >= 0.5.2,
+                       --conduit-audio-samplerate,
                        --portaudio >= 0.2.4,
                        pretty-simple,
                        process,

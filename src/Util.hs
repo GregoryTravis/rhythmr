@@ -71,13 +71,12 @@ ttesp x = eesp ("_ :: " ++ (sp (typeOf x))) x
 -- Really surprised this doesn't exist
 fromLeftReal (Left a) = a
 
-massert :: Bool -> IO ()
---massert b = return $ assert b ()
-massert b = do let _ = assert b ()
-               -- And again in case they're turned off
-               if not b
-                 then throw $ AssertionFailed "Assertion Failed"
-                 else return ()
+massert :: Show m => m -> Bool -> IO ()
+massert m b = do let _ = assert b ()
+                 -- And again in case they're turned off
+                 if not b
+                   then throw $ AssertionFailed ("Assertion Failed: " ++ (show m))
+                   else return ()
 
 assertM :: Show b => b -> Bool -> a -> a
 assertM m b a
