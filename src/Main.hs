@@ -26,21 +26,28 @@ aubioTrack file = do
   s <- readFromProc "aubiotrack" [file]
   return $ map (\row -> case row of [fs] -> (read fs) :: Double) (parseAubioOutput s)
 
-clop :: SV.Vector Float -> SV.Vector Float
-clop v = SV.take num (SV.drop start v)
-  where start = floor $ 0.5 * 48000 * 2
-        num = floor $ 2.5 * 48000 * 2
+--clop :: SV.Vector Float -> SV.Vector Float
+clop s e v = SV.take num (SV.drop start v)
+  where start = esp $ 2 * (floor $ s * 48000)
+        num = esp $ 2 * (floor $ (e - s) * 48000)
 
 main = do
   let file = "Grace Jones - Pull Up To The Bumper-Tc1IphRx1pk.f135.wav"
+
+  -- 120 bpm, beat = 0.5, should be 0, 0.5, 1, ...
+  --let file = "clik.wav"
+
   (info, Just (buffer :: BV.Buffer Float)) <- SF.readFile file
   msp $ SV.length $ BV.fromBuffer buffer
-  track <- aubioTrack file
-  msp track
+  track' <- aubioTrack file
+  msp $ take 10 track'
   --msp $ map (uncurry (flip (-))) $ zip track (tail track)
   msp info
+  let track = dropWhile (< 40.0) track'
+  msp $ take 10 track
 
-  let clopt = clop $ BV.fromBuffer buffer
+  let clopt = clop (track !! 0) (track !! 4) $ BV.fromBuffer buffer
+  msp $ SV.length clopt
   let numFrames = (SV.length clopt) `div` 2
 
   let cloptInfo = Info
