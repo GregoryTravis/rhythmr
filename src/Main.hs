@@ -12,7 +12,7 @@ import Sequence
 import Sound
 import Util
 
-theSequence = Sequence [[1], [1, 2]]
+theSequence = Seq [Par [Elem 1], Par [Elem 1, Elem 2]]
 
 main = do
   let file = "Grace Jones - Pull Up To The Bumper-Tc1IphRx1pk.f135.wav"

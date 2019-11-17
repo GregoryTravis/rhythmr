@@ -8,6 +8,7 @@ module Sequence
 
 import Control.Monad (replicateM)
 import Data.List
+import qualified Data.Map as M
 import qualified Data.Set as S
 import System.Random
 
@@ -16,7 +17,13 @@ import Resample
 import Sound
 import Util
 
-data Sequence = Sequence [[Int]]
+data Sequence a = Elem a | Par [Sequence a] | Seq [Sequence a]
+
+--mapSequence :: (a -> b) -> Sequence a -> Sequence b
+instance Functor Sequence where
+  fmap f (Elem e) = Elem (f e)
+  fmap f (Par es) = Par (map (fmap f) es)
+  fmap f (Seq es) = Seq (map (fmap f) es)
 
 data ProcessedFile = ProcessedFile Sound [Double]
 
@@ -26,9 +33,11 @@ loopLengthSeconds = (60.0 / fromInteger bmp) * meter
 standardSR = 44100
 loopLengthFrames = floor $ (fromInteger standardSR) * loopLengthSeconds
 
-getSequenceElements :: Sequence -> [Int]
-getSequenceElements (Sequence measures) =
-  sort $ S.toList $ S.unions $ map S.fromList measures
+getSequenceElements :: Ord a => Sequence a -> [a]
+getSequenceElements seq = sort $ nub $ get' seq
+  where get' (Elem a) = [a]
+        get' (Par seqs) = concat (map get' seqs)
+        get' (Seq seqs) = concat (map get' seqs)
 
 processFile :: String -> IO ProcessedFile
 processFile filename = do
@@ -36,14 +45,18 @@ processFile filename = do
   track <- aubioTrack filename
   return $ ProcessedFile sound track
 
-renderSequence :: Sequence -> [String] -> IO ()
+renderSequence :: Sequence Int -> [String] -> IO ()
 renderSequence sequence filenames = do
   let numLoops = length (getSequenceElements sequence)
   pfs <- mapM processFile filenames
   loops <- getRandomLoops numLoops pfs
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
+  let intToSound = M.fromList (zip (getSequenceElements sequence) resampledLoops)
   flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
     writeSound ("loop" ++ (show i) ++ ".wav") loop
+  let loopSequence = fmap (intToSound M.!) sequence
+  let song = mixdown loopSequence
+  writeSound "song.wav" song
   return ()
 
 getRandomLoops :: Int -> [ProcessedFile] -> IO [Sound]
@@ -60,3 +73,8 @@ getRandomLoops numLoops pfs = do
     let end = ticks !! loopSig
     msp $ ("snip", startTick, start, end)
     return $ snip start end sound
+
+mixdown :: Sequence Sound -> Sound
+mixdown (Elem sound) = sound
+mixdown (Par mixes) = mixSounds (map mixdown mixes)
+mixdown (Seq mixes) = appendSounds (map mixdown mixes)
