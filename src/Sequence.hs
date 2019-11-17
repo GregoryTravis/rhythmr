@@ -12,12 +12,19 @@ import qualified Data.Set as S
 import System.Random
 
 import Aubio
+import Resample
 import Sound
 import Util
 
 data Sequence = Sequence [[Int]]
 
 data ProcessedFile = ProcessedFile Sound [Double]
+
+bmp = 120
+meter = 4
+loopLengthSeconds = (60.0 / fromInteger bmp) * meter
+standardSR = 44100
+loopLengthFrames = floor $ (fromInteger standardSR) * loopLengthSeconds
 
 getSequenceElements :: Sequence -> [Int]
 getSequenceElements (Sequence measures) =
@@ -34,7 +41,8 @@ renderSequence sequence filenames = do
   let numLoops = length (getSequenceElements sequence)
   pfs <- mapM processFile filenames
   loops <- getRandomLoops numLoops pfs
-  flip mapM (zip [0..] loops) $ \(i, loop) -> do
+  resampledLoops <- mapM (resampleSound loopLengthFrames) loops
+  flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
     writeSound ("loop" ++ (show i) ++ ".wav") loop
   return ()
 

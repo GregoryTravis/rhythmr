@@ -7,6 +7,7 @@ import System.Process
 import Sound
 import Util
 
+resampleSound :: Int -> Sound -> IO Sound
 resampleSound destLengthFrames sound = do
   tmpSrc <- emptySystemTempFile "src.wav"
   tmpDest <- emptySystemTempFile "dest.wav"
