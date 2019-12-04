@@ -7,4 +7,4 @@
 # (stack build autobeat && stack exec autobeat) 2>&1 | tee out
 
 # Download mp3s
-python get-mp3s.py
+python get-mp3s.py | tee out.json

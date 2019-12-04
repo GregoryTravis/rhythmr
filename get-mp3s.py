@@ -48,9 +48,14 @@ def main():
     youtube = googleapiclient.discovery.build(
         api_service_name, api_version, credentials=credentials)
 
-    request = youtube.channels().list(
-        part="snippet,contentDetails,statistics",
-        id="UC_x5XG1OV2P6uZZ5FSM9Ttw"
+    # request = youtube.channels().list(
+    #     part="snippet,contentDetails,statistics",
+    #     id="UC_x5XG1OV2P6uZZ5FSM9Ttw"
+    # )
+    request = youtube.search().list(
+            part = "snippet",
+            maxResults = 25,
+            q = "grace jones"
     )
     response = request.execute()
 
