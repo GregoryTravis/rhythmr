@@ -31,5 +31,5 @@ main = do
   -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
   -- renderSequence theSequence [file]
   msp "hi"
-  d <- jsonCommand "python" ["get-mp3s.py"]
+  d <- cachedJsonCommand "python" ["get-mp3s.py"]
   msp d
