@@ -19,6 +19,7 @@ executable autobeat
   other-modules:       Util, External, Aubio, Sound, Resample, Sequence
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
+                       aeson,
                        base16-bytestring,
                        bytestring,
                        containers,
@@ -34,6 +35,7 @@ executable autobeat
                        storablevector,
                        temporary,
                        text,
+                       utf8-string,
                        vector
                        --vector,
                        --hsndfile,

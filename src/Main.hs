@@ -3,10 +3,11 @@ module Main where
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
 import qualified Data.StorableVector as SV
-import System.IO
-import System.Process
+--import System.IO
+--import System.Process
 
 import Aubio
+import External
 import Resample
 import Sequence
 import Sound
@@ -27,6 +28,8 @@ theSequence = toSequence
   , [1] ]
 
 main = do
-  let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
-  renderSequence theSequence [file]
+  -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
+  -- renderSequence theSequence [file]
   msp "hi"
+  d <- jsonCommand "python" ["get-mp3s.py"]
+  msp d
