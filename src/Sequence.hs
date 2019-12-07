@@ -75,6 +75,7 @@ getRandomLoops numLoops pfs = do
     return $ snip start end sound
 
 mixdown :: Sequence Sound -> Sound
-mixdown (Elem sound) = sound
-mixdown (Par mixes) = mixSounds (map mixdown mixes)
-mixdown (Seq mixes) = appendSounds (map mixdown mixes)
+mixdown seq = normalize (mixdown' seq)
+  where mixdown' (Elem sound) = sound
+        mixdown' (Par mixes) = mixSounds (map mixdown mixes)
+        mixdown' (Seq mixes) = appendSounds (map mixdown mixes)

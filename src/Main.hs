@@ -27,6 +27,6 @@ theSequence = toSequence
   , [1] ]
 
 main = do
-  let file = "Grace Jones - Pull Up To The Bumper-Tc1IphRx1pk.f135.wav"
+  let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
   renderSequence theSequence [file]
   msp "hi"
