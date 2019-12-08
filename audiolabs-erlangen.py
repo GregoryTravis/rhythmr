@@ -99,7 +99,7 @@ def plot_spectrogram_hp(Y_h, Y_p, Fs=22050, N=4096, H=2048, figsize =(10, 2),
     
 Fs = 22050
 #fn_wav = os.path.join('FMP_0.1.1', 'data', 'C8', 'FMP_C8_F02_Long_CastanetsViolin.wav')
-fn_wav = 'Grace Jones - Pull Up To The Bumper-Tc1IphRx1pk.f135.wav'
+fn_wav = sys.argv[1]
 x, Fs = librosa.load(fn_wav, sr=Fs, mono=True)
 N, H = 1024, 512
 X = librosa.stft(x, n_fft=N, hop_length=H, win_length=N, window='hann', center=True, pad_mode='constant')
