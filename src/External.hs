@@ -1,5 +1,6 @@
 module External
 ( readFromProc
+, runProc
 , jsonCommand
 , cachedReadFromProc
 , cachedJsonCommand
@@ -22,6 +23,13 @@ readFromProc exe args = do
   let cp = (proc exe args) { std_out = CreatePipe }
   (_, Just out, _, _) <- createProcess cp
   hGetContents out
+
+-- Just ignore the output
+runProc exe args = do
+  msp $ exe ++ " " ++ (show args)
+  output <- readFromProc exe args
+  msp output
+  return ()
 
 jsonCommand exe args = do
   rawOutput <- readFromProc exe args

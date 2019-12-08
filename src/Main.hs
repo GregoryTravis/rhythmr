@@ -7,6 +7,7 @@ import qualified Data.StorableVector as SV
 --import System.Process
 
 import Aubio
+import Download
 import Resample
 import Search
 import Sequence
@@ -30,6 +31,9 @@ theSequence = toSequence
 main = do
   -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
   -- renderSequence theSequence [file]
-  s <- search
-  msp s
+  ids <- search
+  msp ids
+  --let ids' = [ids !! 0]
+  filenames <- mapM download ids
+  msp filenames
   msp "hi"
