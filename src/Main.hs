@@ -29,11 +29,11 @@ theSequence = toSequence
   , [1] ]
 
 main = do
-  -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
-  -- renderSequence theSequence [file]
   ids <- search
   msp ids
   --let ids' = [ids !! 0]
   filenames <- mapM download ids
   msp filenames
+  -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
+  -- renderSequence theSequence [file]
   msp "hi"
