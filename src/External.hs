@@ -11,6 +11,7 @@ import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as C8
 import Data.ByteString.Lazy.UTF8 as BLU (fromString)
 import Data.ByteString.UTF8 as BSU (fromString, toString)
+import Data.Time
 import qualified Crypto.Hash.MD5 as MD5
 import System.Directory
 import System.IO
@@ -18,15 +19,20 @@ import System.Process
 
 import Util
 
+verbose = False
+
 readFromProc :: String -> [String] -> IO String
 readFromProc exe args = do
+  start <- getCurrentTime
   let cp = (proc exe args) { std_out = CreatePipe }
   (_, Just out, _, _) <- createProcess cp
-  hGetContents out
+  output <- hGetContents out
+  end <- getCurrentTime
+  if verbose then msp (show (diffUTCTime end start) ++ " " ++ exe ++ " " ++ (show args)) else return ()
+  return output
 
 -- Just ignore the output
 runProc exe args = do
-  msp $ exe ++ " " ++ (show args)
   output <- readFromProc exe args
   msp output
   return ()

@@ -35,6 +35,7 @@ executable autobeat
                        storablevector,
                        temporary,
                        text,
+                       time,
                        unordered-containers,
                        utf8-string,
                        vector

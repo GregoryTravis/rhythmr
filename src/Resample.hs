@@ -4,6 +4,7 @@ import System.Directory
 import System.IO.Temp
 import System.Process
 
+import External
 import Sound
 import Util
 
@@ -12,7 +13,7 @@ resampleSound destLengthFrames sound = do
   tmpSrc <- emptySystemTempFile "src.wav"
   tmpDest <- emptySystemTempFile "dest.wav"
   writeSound tmpSrc sound
-  callProcess "/usr/local/bin/sox" [tmpSrc, tmpDest, "speed", show speedRatio]
+  runProc "/usr/local/bin/sox" [tmpSrc, tmpDest, "speed", show speedRatio]
   dest <- readSound tmpDest
   removeFile tmpSrc
   removeFile tmpDest
