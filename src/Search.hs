@@ -15,7 +15,6 @@ import Util
 search = do
   Just d <- cachedJsonCommand "python" ["get-mp3s.py"]
   let items = objLookup d "items"
-  let items' = arrLookup items 1
   return $ arrMap getId (arrFilter isVideo items)
   where objLookup (Object x) field = x HM.! (T.pack field)
         arrLookup (Array a) i = (V.toList a) !! i
