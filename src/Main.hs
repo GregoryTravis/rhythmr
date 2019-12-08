@@ -7,8 +7,8 @@ import qualified Data.StorableVector as SV
 --import System.Process
 
 import Aubio
-import External
 import Resample
+import Search
 import Sequence
 import Sound
 import Util
@@ -30,6 +30,6 @@ theSequence = toSequence
 main = do
   -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
   -- renderSequence theSequence [file]
+  s <- search
+  msp s
   msp "hi"
-  d <- cachedJsonCommand "python" ["get-mp3s.py"]
-  msp d
