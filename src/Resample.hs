@@ -13,7 +13,7 @@ resampleSound destLengthFrames sound = do
   tmpSrc <- emptySystemTempFile "src.wav"
   tmpDest <- emptySystemTempFile "dest.wav"
   writeSound tmpSrc sound
-  runProc "/usr/local/bin/sox" [tmpSrc, tmpDest, "speed", show speedRatio]
+  runProc "/usr/local/bin/sox" ["-G", tmpSrc, tmpDest, "speed", show speedRatio]
   dest <- readSound tmpDest
   removeFile tmpSrc
   removeFile tmpDest

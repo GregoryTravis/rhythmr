@@ -52,8 +52,8 @@ renderSequence sequence filenames = do
   loops <- getRandomLoops numLoops pfs
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
   let intToSound = M.fromList (zip (getSequenceElements sequence) resampledLoops)
-  flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
-    writeSound ("loop" ++ (show i) ++ ".wav") loop
+  -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
+  --   writeSound ("loop" ++ (show i) ++ ".wav") loop
   let loopSequence = fmap (intToSound M.!) sequence
   let song = mixdown loopSequence
   writeSound "song.wav" song
