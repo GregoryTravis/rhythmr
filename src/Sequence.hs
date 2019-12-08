@@ -25,7 +25,7 @@ instance Functor Sequence where
   fmap f (Par es) = Par (map (fmap f) es)
   fmap f (Seq es) = Seq (map (fmap f) es)
 
-data ProcessedFile = ProcessedFile Sound [Double]
+data ProcessedFile = ProcessedFile Sound [Int]
 
 bmp = 120
 meter = 4

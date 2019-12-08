@@ -20,7 +20,7 @@ applyToSamples f sound = sound { samples = f (samples sound) }
 applyToSamples2 :: (SV.Vector Float -> SV.Vector Float -> SV.Vector Float) -> Sound -> Sound -> Sound
 applyToSamples2 f a b = Sound { samples = f (samples a) (samples b)
                               , sampleRate = sameSr }
-  where sameSr = assertM (show ("sample rates differ", map sampleRate [a, b])) (sameSampleRates [a, b]) (sampleRate a)
+  where sameSr = sampleRate a -- assertM (show ("sample rates differ", map sampleRate [a, b])) (sameSampleRates [a, b]) (sampleRate a)
 
 sameSampleRates :: [Sound] -> Bool
 sameSampleRates sounds = length srs == 1
@@ -57,10 +57,10 @@ writeSound filename sound = do
 
 --clop :: SV.Vector Float -> SV.Vector Float
 -- start, end: start and end (seconds)
-snip :: Double -> Double -> Sound -> Sound
+snip :: Int -> Int -> Sound -> Sound
 snip start end sound = Sound { samples = newSamples, sampleRate = sr }
-  where startFrame = esp $ 2 * (floor $ start * (fromIntegral sr))
-        numFrames = esp $ 2 * (floor $ (end - start) * (fromIntegral sr))
+  where startFrame = esp $ 2 * start
+        numFrames = esp $ 2 * (end - start)
         sr = sampleRate sound
         newSamples = SV.take numFrames (SV.drop startFrame (samples sound))
 

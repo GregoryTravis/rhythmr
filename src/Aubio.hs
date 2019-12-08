@@ -1,12 +1,18 @@
 module Aubio
 ( aubioTrack ) where
 
+import Sound.File.Sndfile as SF hiding (hGetContents)
+
 import External
 
 parseAubioOutput :: String -> [[String]]
 parseAubioOutput s = map words (lines s)
 
-aubioTrack :: String -> IO [Double]
+aubioTrack :: String -> IO [Int]
 aubioTrack file = do
   s <- readFromProc "aubiotrack" [file]
-  return $ map (\row -> case row of [fs] -> (read fs) :: Double) (parseAubioOutput s)
+  info <- getFileInfo file
+  let sampleRate = samplerate info
+  let toFrame :: Double -> Int
+      toFrame t = floor (t * (fromIntegral sampleRate))
+  return $ map (\row -> case row of [fs] -> toFrame ((read fs) :: Double)) (parseAubioOutput s)
