@@ -20,7 +20,7 @@ applyToSamples f sound = sound { samples = f (samples sound) }
 applyToSamples2 :: (SV.Vector Float -> SV.Vector Float -> SV.Vector Float) -> Sound -> Sound -> Sound
 applyToSamples2 f a b = Sound { samples = f (samples a) (samples b)
                               , sampleRate = sameSr }
-  where sameSr = assertM "sample rates differ" (sameSampleRates [a, b]) (sampleRate a)
+  where sameSr = assertM (show ("sample rates differ", map sampleRate [a, b])) (sameSampleRates [a, b]) (sampleRate a)
 
 sameSampleRates :: [Sound] -> Bool
 sameSampleRates sounds = length srs == 1

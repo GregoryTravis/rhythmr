@@ -34,6 +34,5 @@ main = do
   --let ids' = [ids !! 0]
   filenames <- mapM download ids
   msp filenames
-  -- let file = "Grace Jones - Slave to the Rhythm (official video)-Z0XLzIswI2s.wav"
-  -- renderSequence theSequence [file]
+  renderSequence theSequence filenames
   msp "hi"

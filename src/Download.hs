@@ -18,7 +18,7 @@ diskMemoize check cachedResult get = do
 
 download id = diskMemoize check outputFilename get
   where outputFilename = downloadDir ++ "/a-" ++ id ++ ".wav"
-        outputTemplate = downloadDir ++ "/a-%(id)s.wav"
+        outputTemplate = downloadDir ++ "/a-%(id)s.%(ext)s"
         check = doesFileExist outputFilename
         get = do runProc "youtube-dl" ["-o", outputTemplate, "-x", "--audio-format", "wav", "https://www.youtube.com/watch?v=" ++ id]
                  return outputFilename
