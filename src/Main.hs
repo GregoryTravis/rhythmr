@@ -29,6 +29,7 @@ theSequence = toSequence
   , [1] ]
 
 main = do
+  noBuffering
   ids <- search
   msp ids
   --let ids' = [ids !! 0]

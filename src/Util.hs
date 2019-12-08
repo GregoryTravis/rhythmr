@@ -19,6 +19,7 @@ module Util
 , mappily
 , mcompose
 , time
+, noBuffering
 ) where
 
 import Control.Exception
@@ -28,7 +29,7 @@ import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
 import Data.Typeable (typeOf)
 import System.CPUTime
-import System.IO (appendFile, hFlush, stdout)
+import System.IO (appendFile, hFlush, stdout, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
 import Text.Pretty.Simple (pShow, pShowNoColor)
 import Text.Printf
@@ -107,3 +108,5 @@ time s a = do
     --printf "%s %0.3f sec\n" s (diff :: Double)
     printf "%s %f sec\n" s (diff :: Double)
     return v
+
+noBuffering = hSetBuffering stdout NoBuffering
