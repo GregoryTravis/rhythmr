@@ -1,6 +1,7 @@
 module Memoize
 ( DiskAction(..)
-, diskMemoize ) where
+, diskMemoize
+, returnsString ) where
 
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
@@ -31,6 +32,20 @@ diskMemoize functionName (TakesFile f) args = do
             else do msp $ "cache miss " ++ key
                     f filename args
                     return filename
+
+-- returnsValue :: Show b => (a -> IO b) -> DiskAction a
+-- returnsValue f = TakesFile tf
+--   where tf filename a = do
+--           b <- f a
+--           msp $ ("write it", filename, (show b))
+--           writeFile filename (show b)
+
+returnsString :: (a -> IO String) -> DiskAction a
+returnsString f = TakesFile tf
+  where tf filename a = do
+          b <- f a
+          msp $ ("write it", filename, (show b))
+          writeFile filename b
 
 md5 :: Show a => a -> String
 md5 x = C8.unpack $ B16.encode $ MD5.finalize $ MD5.update MD5.init (BSU.fromString $ show x)

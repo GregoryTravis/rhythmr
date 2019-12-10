@@ -6,7 +6,6 @@ import External
 import Memoize
 import Util
 
---download :: String -> 
 download = diskMemoize "download" $ TakesFile f
   where f filename id = do
           let outputFilename = "a-" ++ id ++ ".wav"

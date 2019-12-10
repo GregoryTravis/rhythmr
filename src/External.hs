@@ -1,7 +1,7 @@
 module External
 ( readFromProc
 , runProc
-, jsonCommand
+--, jsonCommand
 , cachedReadFromProc
 , cachedJsonCommand
 ) where
@@ -17,9 +17,24 @@ import System.Directory
 import System.IO
 import System.Process
 
+import Memoize
 import Util
 
 verbose = False
+
+-- _readFromProc exe args = vrah (exe, args)
+-- vrah = diskMemoize "pleh" lala
+-- lala = returnsString oof
+-- oof :: (String, [String]) -> IO String
+-- oof (exe, args) = readFromProc' exe args
+
+cachedReadFromProc exe args = readTheFile $ (diskMemoize "readFromProc" (returnsString f)) (exe, args)
+  where f (exe, args) = readFromProc exe args
+        readTheFile :: IO String -> IO String
+        readTheFile m = do
+          filename <- m
+          s <- readFile filename
+          return s
 
 readFromProc :: String -> [String] -> IO String
 readFromProc exe args = do
@@ -37,28 +52,38 @@ runProc exe args = do
   msp output
   return ()
 
-jsonCommand exe args = do
-  rawOutput <- readFromProc exe args
+cachedJsonCommand exe args = do
+  rawOutput <- cachedReadFromProc exe args
   return $ (decode (BLU.fromString rawOutput) :: Maybe Value)
+
+-- cachedJsonCommand exe args = decodeResult $ (diskMemoize "cachedJsonCommand" (returnsString f)) (exe, args)
+--   where f (exe, args) = jsonCommand exe args
+--         decodeResult :: IO String -> IO (Maybe Value)
+--         decodeResult m = do
+--           rawOutput <- m
+--           msp "raw"
+--           putStrLn rawOutput
+--           return $ (decode (BLU.fromString rawOutput) :: Maybe Value)
+-- geh (exe, args) = jsonCommand exe args
 
 md5 :: Show a => a -> String
 --md5 x = BSU.toString $ C8.unpack $ B16.encode $ MD5.finalize $ MD5.update MD5.init (BSU.fromString $ show x)
 md5 x = C8.unpack $ B16.encode $ MD5.finalize $ MD5.update MD5.init (BSU.fromString $ show x)
 
-cachedReadFromProc exe args = do
-  createDirectoryIfMissing False dir
-  let memoFilename = dir ++ "/" ++ hash
-  exists <- doesFileExist memoFilename
-  if exists
-     then do -- msp "cache hit"
-             readFile memoFilename
-     else do -- msp "cache miss"
-             output <- readFromProc exe args
-             writeFile memoFilename output
-             return output
-  where dir = ".memo"
-        hash = md5 (exe, args)
+-- _cachedReadFromProc exe args = do
+--   createDirectoryIfMissing False dir
+--   let memoFilename = dir ++ "/" ++ hash
+--   exists <- doesFileExist memoFilename
+--   if exists
+--      then do -- msp "cache hit"
+--              readFile memoFilename
+--      else do -- msp "cache miss"
+--              output <- readFromProc exe args
+--              writeFile memoFilename output
+--              return output
+--   where dir = ".memo"
+--         hash = md5 (exe, args)
 
-cachedJsonCommand exe args = do
+_cachedJsonCommand exe args = do
   rawOutput <- cachedReadFromProc exe args
   return $ (decode (BLU.fromString rawOutput) :: Maybe Value)
