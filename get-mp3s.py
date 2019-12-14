@@ -54,8 +54,8 @@ def main():
     # )
     request = youtube.search().list(
             part = "snippet",
-            maxResults = 25,
-            q = "grace jones"
+            maxResults = 8,
+            q = "percussion track"
     )
     response = request.execute()
 
