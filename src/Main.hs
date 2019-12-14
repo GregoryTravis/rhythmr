@@ -30,7 +30,7 @@ main = do
   ids <- search
   msp ids
   --let ids' = [ids !! 0]
-  let seeds = take 3 [124..]
+  let seeds = take 4 [127..]
   filenames <- mapM download ids
   msp filenames
   mapM (renderSequence theSequence filenames) seeds

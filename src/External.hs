@@ -2,6 +2,7 @@ module External
 ( readFromProc
 , runProc
 --, jsonCommand
+, csvCommand
 , cachedReadFromProc
 , cachedJsonCommand
 ) where
@@ -11,6 +12,7 @@ import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as C8
 import Data.ByteString.Lazy.UTF8 as BLU (fromString)
 import Data.ByteString.UTF8 as BSU (fromString, toString)
+import Data.List.Split (splitOn)
 import Data.Time
 import qualified Crypto.Hash.MD5 as MD5
 import System.Directory
@@ -38,6 +40,7 @@ cachedReadFromProc exe args = readTheFile $ (diskMemoize "readFromProc" (returns
 
 readFromProc :: String -> [String] -> IO String
 readFromProc exe args = do
+  -- msp $ "readFromProc " ++ exe ++ " " ++ show args
   start <- getCurrentTime
   let cp = (proc exe args) { std_out = CreatePipe }
   (_, Just out, _, _) <- createProcess cp
@@ -55,6 +58,12 @@ runProc exe args = do
 cachedJsonCommand exe args = do
   rawOutput <- cachedReadFromProc exe args
   return $ (decode (BLU.fromString rawOutput) :: Maybe Value)
+
+csvCommand :: String -> [String] -> IO [[String]]
+csvCommand exe args = do
+  rawOutput <- cachedReadFromProc exe args
+  return $ map uncomma (lines rawOutput)
+  where uncomma = splitOn ","
 
 -- cachedJsonCommand exe args = decodeResult $ (diskMemoize "cachedJsonCommand" (returnsString f)) (exe, args)
 --   where f (exe, args) = jsonCommand exe args

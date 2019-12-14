@@ -25,7 +25,7 @@ instance Functor Sequence where
   fmap f (Par es) = Par (map (fmap f) es)
   fmap f (Seq es) = Seq (map (fmap f) es)
 
-data ProcessedFile = ProcessedFile Sound [Int]
+data ProcessedFile = ProcessedFile Sound [Int] deriving Show
 
 bmp = 120
 meter = 4
@@ -42,7 +42,7 @@ getSequenceElements seq = sort $ nub $ get' seq
 processFile :: String -> IO ProcessedFile
 processFile filename = do
   sound <- readSound filename
-  track <- aubioTrack filename
+  track <- barBeat filename
   return $ ProcessedFile sound track
 
 renderSequence :: Sequence Int -> [String] -> Int -> IO ()
@@ -66,7 +66,7 @@ showDiffs ns = do
 
 getRandomLoops :: Int -> [ProcessedFile] -> Int -> IO [Sound]
 getRandomLoops numLoops pfs seed = do
-  let loopSig = 4
+  let loopSig = 1
   setStdGen $ mkStdGen seed
   replicateM numLoops do
     pfNum <- getStdRandom (randomR (0, length pfs - 1))

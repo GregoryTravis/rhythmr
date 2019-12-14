@@ -13,6 +13,8 @@ import Util
 
 data Sound = Sound { samples :: SV.Vector Float }
 
+instance Show Sound where show sound = "Sound[" ++ (show (SV.length (samples sound))) ++ "]"
+
 applyToSamples :: (SV.Vector Float -> SV.Vector Float) -> Sound -> Sound
 applyToSamples f sound = sound { samples = f (samples sound) }
 
