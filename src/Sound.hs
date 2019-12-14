@@ -23,7 +23,7 @@ readSound :: String -> IO Sound
 readSound filename = do
   (info, Just (buffer :: BV.Buffer Float)) <- SF.readFile filename
   massert "sections != 1" (sections info == 1) 
-  massert "channels != 2" (channels info == 2)
+  massert ("channels != 2: " ++ filename) (channels info == 2)
   return $ Sound { samples = BV.fromBuffer buffer }
 
 numFrames :: Sound -> Int
@@ -69,3 +69,10 @@ appendSounds sounds = Sound { samples = newSamples }
 normalize :: Sound -> Sound
 normalize sound = applyToSamples (SV.map (/mx)) sound
   where mx = SV.maximum (samples (applyToSamples (SV.map abs) sound))
+
+rangeSeconds filename start end = do
+  info <- getFileInfo filename
+  let sr = fromIntegral (samplerate info)
+  return (s/sr, e/sr)
+  where s = fromIntegral start
+        e = fromIntegral end

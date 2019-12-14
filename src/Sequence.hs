@@ -45,33 +45,38 @@ processFile filename = do
   track <- aubioTrack filename
   return $ ProcessedFile sound track
 
-renderSequence :: Sequence Int -> [String] -> IO ()
-renderSequence sequence filenames = do
+renderSequence :: Sequence Int -> [String] -> Int -> IO ()
+renderSequence sequence filenames seed = do
   let numLoops = length (getSequenceElements sequence)
   pfs <- mapM processFile filenames
-  loops <- getRandomLoops numLoops pfs
+  loops <- getRandomLoops numLoops pfs seed
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
   let intToSound = M.fromList (zip (getSequenceElements sequence) resampledLoops)
-  -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
-  --   writeSound ("loop" ++ (show i) ++ ".wav") loop
+  flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
+    writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
   let loopSequence = fmap (intToSound M.!) sequence
   let song = mixdown loopSequence
-  writeSound "song.wav" song
+  writeSound ("song-" ++ (show seed) ++ ".wav") song
   return ()
 
-getRandomLoops :: Int -> [ProcessedFile] -> IO [Sound]
-getRandomLoops numLoops pfs = do
+--showDiffs :: [Int] -> IO ()
+showDiffs ns = do
+  let diffs = map (uncurry (-)) $ zip ns (0:ns)
+  mapM (putStrLn . show) (zip ns diffs)
+
+getRandomLoops :: Int -> [ProcessedFile] -> Int -> IO [Sound]
+getRandomLoops numLoops pfs seed = do
   let loopSig = 4
-  setStdGen $ mkStdGen 23
+  setStdGen $ mkStdGen seed
   replicateM numLoops do
     pfNum <- getStdRandom (randomR (0, length pfs - 1))
     msp $ "pf " ++ show pfNum
     let ProcessedFile sound track = pfs !! pfNum
     startTick <- getStdRandom (randomR (0, length track - loopSig))
-    let ticks = drop startTick track
+    let ticks = take (loopSig + 1) $ drop startTick track
     let start = ticks !! 0
     let end = ticks !! loopSig
-    msp $ ("snip", startTick, start, end)
+    msp ("snip", startTick, start, end)
     return $ snip start end sound
 
 mixdown :: Sequence Sound -> Sound
