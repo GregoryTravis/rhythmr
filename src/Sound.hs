@@ -25,8 +25,11 @@ readSound :: String -> IO Sound
 readSound filename = do
   (info, Just (buffer :: BV.Buffer Float)) <- SF.readFile filename
   massert "sections != 1" (sections info == 1) 
-  massert ("channels != 2: " ++ filename) (channels info == 2)
-  return $ Sound { samples = BV.fromBuffer buffer }
+  massert ("channels: " ++ filename) (channels info == 1 || channels info == 2)
+  return $ Sound { samples = stereoize (channels info) $ BV.fromBuffer buffer }
+  where stereoize :: Int -> SV.Vector Float -> SV.Vector Float
+        stereoize 1 fs = SV.interleave [fs, fs]
+        stereoize 2 fs = fs
 
 numFrames :: Sound -> Int
 numFrames sound = (SV.length (samples sound)) `div` 2

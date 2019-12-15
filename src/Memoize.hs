@@ -44,7 +44,7 @@ returnsString :: (a -> IO String) -> DiskAction a
 returnsString f = TakesFile tf
   where tf filename a = do
           b <- f a
-          msp $ ("write it", filename, (show b))
+          --msp $ ("write it", filename, (show b))
           writeFile filename b
 
 md5 :: Show a => a -> String

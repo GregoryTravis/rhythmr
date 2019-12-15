@@ -52,8 +52,8 @@ renderSequence sequence filenames seed = do
   loops <- getRandomLoops numLoops pfs seed
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
   let intToSound = M.fromList (zip (getSequenceElements sequence) resampledLoops)
-  flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
-    writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
+  -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
+  --   writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
   let loopSequence = fmap (intToSound M.!) sequence
   let song = mixdown loopSequence
   writeSound ("song-" ++ (show seed) ++ ".wav") song
@@ -64,15 +64,28 @@ showDiffs ns = do
   let diffs = map (uncurry (-)) $ zip ns (0:ns)
   mapM (putStrLn . show) (zip ns diffs)
 
+brep rand = do
+  getStdRandom rand
+
+brepDebug rand = do
+  sg <- getStdGen
+  msp $ "RND before " ++ (show sg)
+  x <- getStdRandom rand
+  msp $ "RND n " ++ (show x)
+  sg' <- getStdGen
+  msp $ "RND after " ++ (show sg')
+  return x
+
 getRandomLoops :: Int -> [ProcessedFile] -> Int -> IO [Sound]
 getRandomLoops numLoops pfs seed = do
   let loopSig = 1
   setStdGen $ mkStdGen seed
   replicateM numLoops do
-    pfNum <- getStdRandom (randomR (0, length pfs - 1))
+    msp $ "num pfs " ++ (show $ length pfs)
+    pfNum <- brep (randomR (0, length pfs - 1))
     msp $ "pf " ++ show pfNum
     let ProcessedFile sound track = pfs !! pfNum
-    startTick <- getStdRandom (randomR (0, length track - loopSig))
+    startTick <- brep (randomR (0, length track - loopSig - 1))
     let ticks = take (loopSig + 1) $ drop startTick track
     let start = ticks !! 0
     let end = ticks !! loopSig

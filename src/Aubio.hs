@@ -25,5 +25,5 @@ barBeat filename = do
   let sampleRate = samplerate info
   let toFrame :: Double -> Int
       toFrame t = floor (t * (fromIntegral sampleRate))
-  csv <- csvCommand "sonic-annotator-1.5-osx-amd64/sonic-annotator" ["-d", "vamp:qm-vamp-plugins:qm-barbeattracker:bars", filename, "-w", "csv", "--csv-stdout"]
+  csv <- csvCommand "bin/sonic-annotator" ["-q", "-d", "vamp:qm-vamp-plugins:qm-barbeattracker:bars", filename, "-w", "csv", "--csv-stdout"]
   return $ map (toFrame . read . (!! 1)) csv
