@@ -11,6 +11,10 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 import json
+import sys
+
+search_string, count = sys.argv[1:]
+count = int(count)
 
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 
@@ -54,8 +58,8 @@ def main():
     # )
     request = youtube.search().list(
             part = "snippet",
-            maxResults = 12,
-            q = "percussion track"
+            maxResults = count,
+            q = search_string
     )
     response = request.execute()
 

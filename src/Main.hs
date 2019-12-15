@@ -27,7 +27,7 @@ theSequence = toSequence
 
 main = do
   noBuffering
-  ids <- search
+  ids <- search "percussion track" 8
   msp ids
   --let ids' = [ids !! 0]
   let seeds = take 4 [227..]

@@ -12,8 +12,8 @@ import Util
 
 -- todo: overloaded strings
 
-search = do
-  Just d <- cachedJsonCommand "python" ["get-mp3s.py"]
+search serchString count = do
+  Just d <- cachedJsonCommand "python" ["get-mp3s.py", serchString, show count]
   let items = objLookup d "items"
   return $ map strGet $ V.toList $ arrMap getId (arrFilter isVideo items)
   where objLookup (Object x) field = x HM.! (T.pack field)
