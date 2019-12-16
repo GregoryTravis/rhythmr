@@ -87,6 +87,10 @@ getRandomLoops numLoops pfs seed = do
     let ProcessedFile sound track = pfs !! pfNum
     startTick <- brep (randomR (0, length track - loopSig - 1))
     let ticks = take (loopSig + 1) $ drop startTick track
+    msp "ticks"
+    msp ticks
+    msp (length track)
+    msp startTick
     let start = ticks !! 0
     let end = ticks !! loopSig
     msp ("snip", startTick, start, end)

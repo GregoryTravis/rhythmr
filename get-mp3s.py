@@ -13,7 +13,7 @@ import googleapiclient.errors
 import json
 import sys
 
-search_string, count = sys.argv[1:]
+search_string, count, pageToken = sys.argv[1:]
 count = int(count)
 
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
@@ -59,7 +59,8 @@ def main():
     request = youtube.search().list(
             part = "snippet",
             maxResults = count,
-            q = search_string
+            q = search_string,
+            pageToken = pageToken
     )
     response = request.execute()
 

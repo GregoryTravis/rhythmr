@@ -28,15 +28,17 @@ theSequence = toSequence
   , [4, 5] -- m 14
   , [4, 5, 0]
   , [4, 5, 2]
-  , [2, 3, 4, 6] ] -- m
+  , [2, 3, 4, 6] -- m
+  , [0, 1, 2, 3, 4, 5, 6] -- m
+  , [0, 1, 2, 3, 4, 5, 6] ] -- m
 
 main = do
   noBuffering
   --ids <- search "percussion track" 20
-  ids <- search "drum breaks" 20
+  ids <- searchNoPaging "drum breaks" 20
   msp ids
   --let ids' = [ids !! 0]
-  let seeds = take 2 [85, 834..]
+  let seeds = drop 4 $ take 10 [85, 834..]
   msp ("seeds", seeds)
   filenames <- mapM download ids
   --msp filenames
