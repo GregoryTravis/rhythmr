@@ -7,6 +7,7 @@ module External
 , cachedJsonCommand
 ) where
 
+import Control.Exception (evaluate)
 import Data.Aeson
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as C8
@@ -43,8 +44,10 @@ readFromProc exe args = do
   -- msp $ "readFromProc " ++ exe ++ " " ++ show args
   start <- getCurrentTime
   let cp = (proc exe args) { std_out = CreatePipe }
-  (_, Just out, _, _) <- createProcess cp
-  output <- hGetContents out
+  (stdin, Just stdout, stderr, processHandle) <- createProcess cp
+  output <- hGetContents stdout
+  evaluate $ length output
+  cleanupProcess (stdin, Just stdout, stderr, processHandle)
   end <- getCurrentTime
   if verbose then msp (show (diffUTCTime end start) ++ " " ++ exe ++ " " ++ (show args)) else return ()
   return output
