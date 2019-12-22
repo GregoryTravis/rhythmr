@@ -62,7 +62,20 @@ def main():
             q = search_string,
             pageToken = pageToken
     )
-    response = request.execute()
+    searchResponse = request.execute()
+
+    videoResponses = []
+    for item in searchResponse['items']:
+        id = item['id']['videoId']
+        request = youtube.videos().list(
+                part = "snippet,contentDetails",
+                id = id
+        )
+        videoResponse = request.execute()
+        videoResponses += [videoResponse]
+        #print(json.dumps(response))
+
+    response = { 'search': searchResponse, 'videos': videoResponses }
 
     print(json.dumps(response))
 

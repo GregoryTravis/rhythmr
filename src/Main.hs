@@ -1,8 +1,11 @@
 module Main where
 
+import Data.List.Utils (replace)
+import qualified Data.StorableVector as SV
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
-import qualified Data.StorableVector as SV
+import System.Directory
+import System.FilePath.Posix (takeBaseName)
 
 import Analysis
 import Aubio
@@ -34,15 +37,23 @@ theSequence = toSequence
 showit vs = mapM putStrLn (map s vs)
   where s ((t0, t1), dx) = (show t0) ++ " " ++ (show dx)
 
+downloadMain searchString count = do
+  ids <- searchNoPaging searchString count
+  msp ids
+  filenames <- mapM download ids
+  mapM save filenames
+  where save filename = do
+          msp ("copy", filename, dest filename)
+          createDirectoryIfMissing True dir
+          copyFile filename (dest filename)
+        dir = "tracks/" ++ searchStringDir
+        dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
+        searchStringDir = replace " " "-" searchString
+
 main = do
   noBuffering
-  --ids <- search "percussion track" 20
-  ids <- searchNoPaging "percussion instrumental" 20
-  msp ids
-  --let ids' = [ids !! 0]
-  let seeds = drop 4 $ take 10 [885, 8834..]
+  downloadMain "percussion instrumental" 2
+  let seeds = take 10 [885, 8834..]
   msp ("seeds", seeds)
-  filenames <- mapM download ids
-  --msp filenames
-  mapM (renderSequence theSequence filenames) seeds
+  --mapM (renderSequence theSequence filenames) seeds
   msp "hi"
