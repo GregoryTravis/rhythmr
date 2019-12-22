@@ -3,6 +3,7 @@ FMP_0.1.1
 .stack-work
 stack.yaml.lock
 misc
+rhythm
 out
 notes.txt
 todo.txt
