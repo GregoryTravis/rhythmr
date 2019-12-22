@@ -6,6 +6,7 @@ import qualified Data.StorableVector as SV
 --import System.IO
 --import System.Process
 
+import Analysis
 import Aubio
 import Download
 import Resample
@@ -32,10 +33,13 @@ theSequence = toSequence
   , [0, 1, 2, 3, 4, 5, 6] -- m
   , [0, 1, 2, 3, 4, 5, 6] ] -- m
 
+showit vs = mapM putStrLn (map s vs)
+  where s ((t0, t1), dx) = (show t0) ++ " " ++ (show dx)
+
 main = do
   noBuffering
   --ids <- search "percussion track" 20
-  ids <- searchNoPaging "neil peart drum tracks" 20
+  ids <- searchNoPaging "bun e carlos drum tracks" 20
   msp ids
   --let ids' = [ids !! 0]
   let seeds = drop 4 $ take 10 [885, 8834..]
