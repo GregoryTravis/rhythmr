@@ -8,6 +8,7 @@ import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as C8
 import Data.ByteString.UTF8 as BSU (fromString, toString)
 import System.Directory
+import System.IO.Temp
 
 import Util
 
@@ -30,7 +31,9 @@ diskMemoize functionName (TakesFile f) args = do
   if exists then do msp $ "cache hit " ++ key
                     return filename
             else do msp $ "cache miss " ++ key
-                    f filename args
+                    tmp <- emptySystemTempFile "src.wav"
+                    f tmp args
+                    renameFile tmp filename
                     return filename
 
 -- returnsValue :: Show b => (a -> IO b) -> DiskAction a

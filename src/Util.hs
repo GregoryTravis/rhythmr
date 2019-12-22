@@ -20,6 +20,7 @@ module Util
 , mcompose
 , time
 , noBuffering
+, die
 ) where
 
 import Control.Exception
@@ -29,6 +30,7 @@ import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
 import Data.Typeable (typeOf)
 import System.CPUTime
+import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
 import Text.Pretty.Simple (pShow, pShowNoColor)

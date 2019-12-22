@@ -3,8 +3,6 @@ module Main where
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
 import qualified Data.StorableVector as SV
---import System.IO
---import System.Process
 
 import Analysis
 import Aubio
@@ -39,7 +37,7 @@ showit vs = mapM putStrLn (map s vs)
 main = do
   noBuffering
   --ids <- search "percussion track" 20
-  ids <- searchNoPaging "bun e carlos drum tracks" 20
+  ids <- searchNoPaging "percussion instrumental" 20
   msp ids
   --let ids' = [ids !! 0]
   let seeds = drop 4 $ take 10 [885, 8834..]
