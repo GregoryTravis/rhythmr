@@ -38,7 +38,8 @@ showit vs = mapM putStrLn (map s vs)
   where s ((t0, t1), dx) = (show t0) ++ " " ++ (show dx)
 
 downloadMain searchString count = do
-  ids <- searchNoPaging searchString count
+  ids <- search searchString count
+  msp "ids"
   msp ids
   filenames <- mapM download ids
   mapM save filenames
@@ -52,7 +53,7 @@ downloadMain searchString count = do
 
 main = do
   noBuffering
-  downloadMain "percussion instrumental" 2
+  downloadMain "percussion instrumental" 10
   let seeds = take 10 [885, 8834..]
   msp ("seeds", seeds)
   --mapM (renderSequence theSequence filenames) seeds
