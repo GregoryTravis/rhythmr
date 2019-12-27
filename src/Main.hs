@@ -47,14 +47,15 @@ downloadMain searchString count = do
           msp ("copy", filename, dest filename)
           createDirectoryIfMissing True dir
           copyFile filename (dest filename)
+          return $ dest filename
         dir = "tracks/" ++ searchStringDir
         dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
         searchStringDir = replace " " "-" searchString
 
 main = do
   noBuffering
-  downloadMain "percussion instrumental" 10
+  filenames <- downloadMain "percussion instrumental" 10
   let seeds = take 10 [885, 8834..]
   msp ("seeds", seeds)
-  --mapM (renderSequence theSequence filenames) seeds
+  mapM (renderSequence theSequence filenames) seeds
   msp "hi"

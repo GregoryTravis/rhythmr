@@ -34,13 +34,14 @@ searchNoPaging searchString count = do
 
 search' :: Maybe String -> String -> Int -> IO (Maybe String, [String])
 search' pageToken searchString count = do
-  msp ("hey", pageToken, searchString, count)
+  --msp ("hey", pageToken, searchString, count)
   Just d <- cachedJsonCommand "python" ["get-mp3s.py", searchString, show count, pageTokenParam pageToken]
-  msp $ "has nextPageToken " ++ show (objHas d "nextPageToken")
+  --msp $ "has nextPageToken " ++ show (objHas d "nextPageToken")
+  --msp $ objKeys d
   let search = objLookup d "search"
       videos = objLookup d "videos"
       items = objLookup search "items"
-      nextPageToken = objLookupMaybe d "nextPageToken"
+      nextPageToken = objLookupMaybe search "nextPageToken"
       durationMap = getDurationMap videos
       ids = filter (durationIsOk durationMap) $ map strGet $ V.toList $ arrMap getId (arrFilter isVideo items)
    in do --msp ("GOSH", count, length ids)
@@ -53,6 +54,7 @@ search' pageToken searchString count = do
         objLookup x field = undefined
         objLookupMaybe (Object x) field = fmap strGet $ HM.lookup (T.pack field) x
         objHas (Object x) field = HM.member (T.pack field) x
+        objKeys (Object x) = HM.keys x
         arrLookup (Array a) i = (V.toList a) !! i
         arrGet (Array a) = a
         arrMap f (Array a) = fmap f a

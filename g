@@ -3,7 +3,7 @@
 # python audiolabs-erlangen.py
 
 # Construct a song
-rm song.wav loop?.wav
+# rm song.wav loop?.wav
 (stack build autobeat && stack exec autobeat) 2>&1 | tee out
 
 # Download mp3s
