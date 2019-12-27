@@ -59,9 +59,8 @@ search' pageToken searchString count = do
         --getDurationMap :: Value -> M.Map String String
         --getDurationMap videos = M.fromList $ map getIdAndDuration (V.toList $ arrGet (objLookup videos "items"))
         getDurationMap videos = M.fromList $ map getIdAndDuration $ map one $ map (flip objLookup "items") $ V.toList $ arrGet videos
-        durationIsOk durationMap id = case (durationMap M.!? id) of Nothing -> False
-                                                                    (Just ds) -> durationIsNotTooLong ds
-        durationIsNotTooLong ds = (parseDuration ds) < (8 * 60)
+        durationIsOk durationMap id = maybe False durationIsNotTooLong $ durationMap M.!? id
+        durationIsNotTooLong = (< (8*60)) . parseDuration
 
 search :: String -> Int -> IO [String]
 search searchString count = untilDoneM (SomeGetter firstGetter) count
