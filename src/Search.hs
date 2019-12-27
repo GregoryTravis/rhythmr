@@ -33,31 +33,22 @@ searchNoPaging searchString count = do
 
 search' :: Maybe String -> String -> Int -> IO (Maybe String, [String])
 search' pageToken searchString count = do
-  --msp ("hey", pageToken, searchString, count)
   Just d <- cachedJsonCommand "python" ["get-mp3s.py", searchString, show count, pageTokenParam pageToken]
-  --msp $ "has nextPageToken " ++ show (objHas d "nextPageToken")
-  --msp $ objKeys d
   let search = objLookup d "search"
       videos = objLookup d "videos"
       items = objLookup search "items"
       nextPageToken = objLookupMaybe search "nextPageToken"
       durationMap = getDurationMap videos
       ids = filter (durationIsOk durationMap) $ map strGet $ V.toList $ arrMap getId (arrFilter isVideo items)
-   in do --msp ("GOSH", count, length ids)
-         msp $ M.map parseDuration durationMap
-         --msp $ M.map parseDuration durationMap
-         --msp "ok"
+   in do msp $ M.map parseDuration durationMap
          return (nextPageToken, ids)
-         --return ("", ids)
-  where getId item = objLookup (objLookup item "id") "videoId"
-        isVideo item = strGet (objLookup (objLookup item "id") "kind") == "youtube#video"
+  where getId item = objLookups item ["id", "videoId"]
+        isVideo item = strGet (objLookups item ["id", "kind"]) == "youtube#video"
         pageTokenParam (Just t) = t
         pageTokenParam Nothing = ""
         getIdAndDuration item = (id, duration)
             where id = strGet $ objLookup item "id"
-                  duration = strGet $ objLookup (objLookup item "contentDetails") "duration"
-        --getDurationMap :: Value -> M.Map String String
-        --getDurationMap videos = M.fromList $ map getIdAndDuration (V.toList $ arrGet (objLookup videos "items"))
+                  duration = strGet $ objLookups item ["contentDetails", "duration"]
         getDurationMap videos = M.fromList $ map getIdAndDuration $ map one $ map (flip objLookup "items") $ V.toList $ arrGet videos
         durationIsOk durationMap id = maybe False durationIsNotTooLong $ durationMap M.!? id
         durationIsNotTooLong = (< (8*60)) . parseDuration

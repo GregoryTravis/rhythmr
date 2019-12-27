@@ -9,6 +9,8 @@ import Util
 
 objLookup (Object x) field = x HM.! (T.pack field)
 objLookup x field = undefined
+objLookups x (field : fields) = objLookups (objLookup x field) fields
+objLookups x [] = x
 objLookupMaybe (Object x) field = fmap strGet $ HM.lookup (T.pack field) x
 objHas (Object x) field = HM.member (T.pack field) x
 objKeys (Object x) = HM.keys x
