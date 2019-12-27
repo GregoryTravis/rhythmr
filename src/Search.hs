@@ -1,14 +1,13 @@
 module Search (search, searchNoPaging) where
 
-import Data.Aeson (Value(Array, String, Object))
+--import Data.Aeson (Value(Array, String, Object))
 import Data.ByteString.UTF8 as BSU (fromString, toString)
-import qualified Data.HashMap.Strict as HM
 import qualified Data.Map as M
-import qualified Data.Text as T
 --import Data.Time.ISO8601.Duration
 import qualified Data.Vector as V
 import GHC.Exts
 
+import AesonHelpers
 import External
 import ISO8601Duration
 import Util
@@ -50,28 +49,16 @@ search' pageToken searchString count = do
          --msp "ok"
          return (nextPageToken, ids)
          --return ("", ids)
-  where objLookup (Object x) field = x HM.! (T.pack field)
-        objLookup x field = undefined
-        objLookupMaybe (Object x) field = fmap strGet $ HM.lookup (T.pack field) x
-        objHas (Object x) field = HM.member (T.pack field) x
-        objKeys (Object x) = HM.keys x
-        arrLookup (Array a) i = (V.toList a) !! i
-        arrGet (Array a) = a
-        arrMap f (Array a) = fmap f a
-        arrFilter f (Array a) = Array $ V.fromList $ filter f (V.toList a)
-        strGet (String t) = T.unpack t
-        one xs = let l = V.toList (arrGet xs)
-                  in assertM "one" (length l == 1) (l !! 0)
-        getId item = objLookup (objLookup item "id") "videoId"
+  where getId item = objLookup (objLookup item "id") "videoId"
         isVideo item = strGet (objLookup (objLookup item "id") "kind") == "youtube#video"
         pageTokenParam (Just t) = t
         pageTokenParam Nothing = ""
         getIdAndDuration item = (id, duration)
             where id = strGet $ objLookup item "id"
                   duration = strGet $ objLookup (objLookup item "contentDetails") "duration"
-        getDurationMap :: Value -> M.Map String String
+        --getDurationMap :: Value -> M.Map String String
         --getDurationMap videos = M.fromList $ map getIdAndDuration (V.toList $ arrGet (objLookup videos "items"))
-        getDurationMap videos = M.fromList $ map getIdAndDuration $ map one $ map (\v -> objLookup v "items") $ V.toList $ arrGet videos
+        getDurationMap videos = M.fromList $ map getIdAndDuration $ map one $ map (flip objLookup "items") $ V.toList $ arrGet videos
         durationIsOk durationMap id = case (durationMap M.!? id) of Nothing -> False
                                                                     (Just ds) -> durationIsNotTooLong ds
         durationIsNotTooLong ds = (parseDuration ds) < (8 * 60)
