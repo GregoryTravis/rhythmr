@@ -99,5 +99,5 @@ getRandomLoops numLoops pfs seed = do
 mixdown :: Sequence Sound -> Sound
 mixdown seq = normalize (mixdown' seq)
   where mixdown' (Elem sound) = sound
-        mixdown' (Par mixes) = mixSounds (map mixdown mixes)
-        mixdown' (Seq mixes) = appendSounds (map mixdown mixes)
+        mixdown' (Par mixes) = mixSounds (map mixdown' mixes)
+        mixdown' (Seq mixes) = appendSounds (map mixdown' mixes)

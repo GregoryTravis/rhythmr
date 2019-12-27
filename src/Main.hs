@@ -54,9 +54,9 @@ downloadMain searchString count = do
 
 main = do
   noBuffering
-  ids <- search "percussion instrumental" 10
-  -- filenames <- downloadMain "percussion instrumental" 10
-  -- let seeds = take 10 [885, 8834..]
-  -- msp ("seeds", seeds)
-  -- mapM (renderSequence theSequence filenames) seeds
+  --ids <- search "drum tracks instrumental" 30
+  filenames <- downloadMain "percussion isolated" 20
+  let seeds = drop 10 $ take 20 [885, 8834..]
+  msp ("seeds", seeds)
+  mapM (renderSequence theSequence filenames) seeds
   msp "hi"
