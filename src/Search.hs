@@ -2,7 +2,6 @@ module Search (search, searchNoPaging) where
 
 import Data.Aeson (Value(Array, String, Object))
 import Data.ByteString.UTF8 as BSU (fromString, toString)
-import Data.List (groupBy)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map as M
 import qualified Data.Text as T
@@ -11,6 +10,7 @@ import qualified Data.Vector as V
 import GHC.Exts
 
 import External
+import ISO8601Duration
 import Util
 
 -- todo: overloaded strings
@@ -45,7 +45,7 @@ search' pageToken searchString count = do
       durationMap = getDurationMap videos
       ids = filter (durationIsOk durationMap) $ map strGet $ V.toList $ arrMap getId (arrFilter isVideo items)
    in do --msp ("GOSH", count, length ids)
-         --msp durationMap
+         msp $ M.map parseDuration durationMap
          --msp $ M.map parseDuration durationMap
          --msp "ok"
          return (nextPageToken, ids)
@@ -75,25 +75,6 @@ search' pageToken searchString count = do
         durationIsOk durationMap id = case (durationMap M.!? id) of Nothing -> False
                                                                     (Just ds) -> durationIsNotTooLong ds
         durationIsNotTooLong ds = (parseDuration ds) < (8 * 60)
-        parseDuration ds = sum (map calc (zipUp $ removePT $ (predSplit isDigit ds)))
-        zipUp (a : b : xs) = (a, b) : zipUp xs
-        zipUp [] = []
-        removePT ("PT" : rest) = rest
-        calc :: (String, String) -> Int
-        calc (n, c) = assertM m b (read n :: Int) * (durationLetter M.! (c !! 0))
-          where m = "iso8601 duration thing isn't 1 char, or missing " ++ c
-                b = length c == 1 && M.member (c !! 0) durationLetter
-        durationLetter :: M.Map Char Int
-        durationLetter = M.fromList [
-          ('S', 1),
-          ('M', 60),
-          ('H', 3600) ]
-        isDigit c = c >= '0' && c <= '9'
-        -- parseISO8601Duration s = parseDuration bs
-        --   where bs = BSU.fromString s
-
-predSplit p xs = groupBy same xs
-  where same a b = p a == p b
 
 search :: String -> Int -> IO [String]
 search searchString count = untilDoneM (SomeGetter firstGetter) count

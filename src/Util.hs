@@ -21,11 +21,13 @@ module Util
 , time
 , noBuffering
 , die
+, predSplit
 ) where
 
 import Control.Exception
 import Control.Exception.Base
 import Data.Either
+import Data.List (groupBy)
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
 import Data.Typeable (typeOf)
@@ -112,3 +114,6 @@ time s a = do
     return v
 
 noBuffering = hSetBuffering stdout NoBuffering
+
+predSplit p xs = groupBy same xs
+  where same a b = p a == p b
