@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 
-module Sequence
-( renderSequence
+module Song
+( renderSong
 ) where
 
 import Control.Monad (replicateM)
@@ -30,18 +30,18 @@ processFile filename = do
   track <- barBeat filename
   return $ ProcessedFile sound track
 
-renderSequence :: TiledArrangement Int -> [String] -> Int -> IO ()
-renderSequence sequence filenames seed = do
-  let numLoops = length (getTiledArrangementElements sequence)
+renderSong :: TiledArrangement Int -> [String] -> Int -> IO ()
+renderSong arrangement filenames seed = do
+  let numLoops = length (getTiledArrangementElements arrangement)
   pfs <- mapM processFile filenames
   loops <- getRandomLoops numLoops pfs seed
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
   --spleeteredLoops <- mapM spleeter resampledLoops
-  let intToSound = M.fromList (zip (getTiledArrangementElements sequence) resampledLoops)
+  let intToSound = M.fromList (zip (getTiledArrangementElements arrangement) resampledLoops)
   -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
   --   writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
-  let loopSequence = fmap (intToSound M.!) sequence
-  let song = mixdown loopSequence
+  let loopArrangement = fmap (intToSound M.!) arrangement
+  let song = mixdown loopArrangement
   writeSound ("song-" ++ (show seed) ++ ".wav") song
   return ()
 

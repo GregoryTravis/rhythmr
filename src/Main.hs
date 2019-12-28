@@ -13,14 +13,13 @@ import Aubio
 import Download
 import Resample
 import Search
-import Sequence
+import Song
 import Sound
 import Util
 
-toSequence :: [[Int]] -> TiledArrangement Int
-toSequence nses = Seq (map (\ns -> Par (map Elem ns)) nses)
---theSequence = Seq [Par [Elem 1], Par [Elem 1, Elem 2]]
-theSequence = toSequence
+toTiledArrangement :: [[Int]] -> TiledArrangement Int
+toTiledArrangement nses = Seq (map (\ns -> Par (map Elem ns)) nses)
+theTiledArrangement = toTiledArrangement
   [ [0]
   , [0, 1]
   , [0, 2]
@@ -59,5 +58,5 @@ main = do
   filenames <- downloadMain "percussion isolated" 20
   let seeds = take 1 $ drop 3 $ take 10 [2885, 8834..]
   msp ("seeds", seeds)
-  mapM (renderSequence theSequence filenames) seeds
+  mapM (renderSong theTiledArrangement filenames) seeds
   msp "hi"

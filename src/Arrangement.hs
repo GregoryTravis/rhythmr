@@ -1,4 +1,4 @@
-module TiledArrangement
+module Arrangement
 ( TiledArrangement(..)
 , getTiledArrangementElements
 , mixdown ) where
