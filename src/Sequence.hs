@@ -30,14 +30,14 @@ processFile filename = do
   track <- barBeat filename
   return $ ProcessedFile sound track
 
-renderSequence :: Arrangement Int -> [String] -> Int -> IO ()
+renderSequence :: TiledArrangement Int -> [String] -> Int -> IO ()
 renderSequence sequence filenames seed = do
-  let numLoops = length (getArrangementElements sequence)
+  let numLoops = length (getTiledArrangementElements sequence)
   pfs <- mapM processFile filenames
   loops <- getRandomLoops numLoops pfs seed
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
   --spleeteredLoops <- mapM spleeter resampledLoops
-  let intToSound = M.fromList (zip (getArrangementElements sequence) resampledLoops)
+  let intToSound = M.fromList (zip (getTiledArrangementElements sequence) resampledLoops)
   -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
   --   writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
   let loopSequence = fmap (intToSound M.!) sequence
