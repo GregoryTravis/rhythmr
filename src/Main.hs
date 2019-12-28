@@ -57,7 +57,7 @@ main = do
   noBuffering
   --ids <- search "drum tracks instrumental" 30
   filenames <- downloadMain "percussion isolated" 20
-  let seeds = take 2 [885, 8834..]
+  let seeds = take 1 $ drop 3 $ take 10 [2885, 8834..]
   msp ("seeds", seeds)
   mapM (renderSequence theSequence filenames) seeds
   msp "hi"

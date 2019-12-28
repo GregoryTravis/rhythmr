@@ -4,4 +4,6 @@ module Mess
 
 import Sound
 
+scrunch :: Int -> Double -> Sound -> Sound
 scrunch = undefined
+--scrunch numPieces scrunchFactor is
