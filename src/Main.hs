@@ -8,6 +8,7 @@ import System.Directory
 import System.FilePath.Posix (takeBaseName)
 
 import Analysis
+import Arrangement
 import Aubio
 import Download
 import Resample
@@ -16,7 +17,7 @@ import Sequence
 import Sound
 import Util
 
-toSequence :: [[Int]] -> Sequence Int
+toSequence :: [[Int]] -> Arrangement Int
 toSequence nses = Seq (map (\ns -> Par (map Elem ns)) nses)
 --theSequence = Seq [Par [Elem 1], Par [Elem 1, Elem 2]]
 theSequence = toSequence
@@ -56,7 +57,7 @@ main = do
   noBuffering
   --ids <- search "drum tracks instrumental" 30
   filenames <- downloadMain "percussion isolated" 20
-  let seeds = drop 10 $ take 20 [885, 8834..]
+  let seeds = take 2 [885, 8834..]
   msp ("seeds", seeds)
   mapM (renderSequence theSequence filenames) seeds
   msp "hi"
