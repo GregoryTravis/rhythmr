@@ -51,6 +51,7 @@ renderSequence sequence filenames seed = do
   pfs <- mapM processFile filenames
   loops <- getRandomLoops numLoops pfs seed
   resampledLoops <- mapM (resampleSound loopLengthFrames) loops
+  --spleeteredLoops <- mapM spleeter resampledLoops
   let intToSound = M.fromList (zip (getSequenceElements sequence) resampledLoops)
   -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
   --   writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
