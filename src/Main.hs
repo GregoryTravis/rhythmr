@@ -17,9 +17,6 @@ import Song
 import Sound
 import Util
 
-toTiledArrangement :: [[Int]] -> TiledArrangement Int
-toTiledArrangement nses = Seq (map (\ns -> Par (map Elem ns)) nses)
-theTiledArrangement = toTiledArrangement theArrayArrangement
 theArrayArrangement =
   [ [0]
   , [0, 1]
@@ -72,6 +69,5 @@ main = do
   filenames <- downloadMain "percussion isolated" 20
   let seeds = take 1 $ drop 3 $ take 10 [2885, 8834..]
   msp ("seeds", seeds)
-  --mapM (renderSong theTiledArrangement filenames) seeds
   mapM (renderSong' theArrayArrangement filenames) seeds
   msp "hi"

@@ -2,13 +2,10 @@ module Arrangement
 ( Arrangement(..)
 , Placement(..)
 , Span(..)
-, TiledArrangement(..)
-, getTiledArrangementElements
 , renderArrangement
 , parArrangement
 , seqArrangement
-, singleSoundArrangement
-, mixdown ) where
+, singleSoundArrangement ) where
 
 import Control.Monad.ST
 import Data.List
@@ -18,8 +15,6 @@ import qualified Data.StorableVector.ST.Strict as MSV
 import Resample
 import Sound
 import Util
-
-data TiledArrangement a = Elem a | Par [TiledArrangement a] | Seq [TiledArrangement a]
 
 -- The end sample of a Span is the sample *just after* the end of the audio
 data Span = Span Int Int deriving Show
@@ -33,45 +28,6 @@ data Arrangement = Arrangement [Placement] deriving Show
 
 -- mapOverSpans :: (Spen -> Span) -> Arrangement -> Arrangement
 -- mapOverSpans f arr = fmap (applyToSpan f) arr
-
-instance Functor TiledArrangement where
-  fmap f (Elem e) = Elem (f e)
-  fmap f (Par es) = Par (map (fmap f) es)
-  fmap f (Seq es) = Seq (map (fmap f) es)
-
-getTiledArrangementElements :: Ord a => TiledArrangement a -> [a]
-getTiledArrangementElements seq = sort $ nub $ get' seq
-  where get' (Elem a) = [a]
-        get' (Par seqs) = concat (map get' seqs)
-        get' (Seq seqs) = concat (map get' seqs)
-
----- Checks that all elements of a Par are the same length, throws if not
---checkTiledArrangment :: TiledArrangement Sound -> Bool
---checkTiledArrangment arr = foo (getLength arr)
---  where foo Nothing = False
---        foo (Just _) = True
-
----- Returns nothing if the contents of any Par are inconsistent (not all equal)
---getLength :: TiledArrangement Sound -> Maybe Int
---getLength (Elem s) = Just $ numFrames s
---getLength (Seq xs) = fmap sum $ sequence (map getLength xs)
---getLength (Par xs) = justOne $ sequence (map getLength xs)
---  where justOne (Just xs) | length (nub xs) == 1 = Just (head xs)
---                          | otherwise = Nothing
---        justOne Nothing = Nothing
-
---translate :: Int -> Arrangement -> Arrangement
---translate n arr = mapOverSpans (translateSpan n) arr
-
---translateSpan n (Span s e) = Span (s+n, e+n)
-
-----getSpan arr
-
---tiledArrangementToArrangement :: TiledArrangement Sound -> Arrangement
---tiledArrangementToArrangement arr = fmap (translate n) arr
-
--- mapPlacements :: (Placement -> Placement) -> Arrangement -> Arrangement
--- mapPlacements f (Arrangement ps) = Arrangement (map f ps)
 
 -- Convert any Placements to NRPlacements
 arrNrpToP :: Arrangement -> IO Arrangement
@@ -187,9 +143,3 @@ seqArrangement' _ [] = Arrangement []
 translateSpan n (Span s e) = Span (s+n) (e+n)
 translateArr :: Int -> Arrangement -> Arrangement
 translateArr n = mapSpans (translateSpan n)
-
-mixdown :: TiledArrangement Sound -> Sound
-mixdown seq = normalize (mixdown' seq)
-  where mixdown' (Elem sound) = sound
-        mixdown' (Par mixes) = mixSounds (map mixdown' mixes)
-        mixdown' (Seq mixes) = appendSounds (map mixdown' mixes)

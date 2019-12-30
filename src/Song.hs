@@ -1,8 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 
 module Song
-( renderSong
-, renderSong'
+( renderSong'
 ) where
 
 import Control.Monad (replicateM)
@@ -48,22 +47,6 @@ renderSong' ises filenames seed = do
   msp arrangement
   song <- renderArrangement arrangement
   writeSound ("song-" ++ (show seed) ++ "-new.wav") song
-  return ()
-
-
-renderSong :: TiledArrangement Int -> [String] -> Int -> IO ()
-renderSong arrangement filenames seed = do
-  let numLoops = length (getTiledArrangementElements arrangement)
-  pfs <- mapM processFile filenames
-  loops <- getRandomLoops numLoops pfs seed
-  resampledLoops <- mapM (resampleSound loopLengthFrames) loops
-  --spleeteredLoops <- mapM spleeter resampledLoops
-  let intToSound = M.fromList (zip (getTiledArrangementElements arrangement) resampledLoops)
-  -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
-  --   writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
-  let loopArrangement = fmap (intToSound M.!) arrangement
-  let song = mixdown loopArrangement
-  writeSound ("song-" ++ (show seed) ++ ".wav") song
   return ()
 
 --showDiffs :: [Int] -> IO ()
