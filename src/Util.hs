@@ -39,34 +39,36 @@ import Text.Pretty.Simple (pShow, pShowNoColor)
 import Text.Printf
 
 esp a = unsafePerformIO $ do
-  putStrLn $ show $ a
+  putStrLn $ evalString $ show $ a
   return a
 
 eesp s a = unsafePerformIO $ do
-  putStrLn $ show $ s
+  putStrLn $ evalString $ show $ s
   hFlush stdout
   return a
 
 fesp f a = unsafePerformIO $ do
-  putStrLn $ show $ f a
+  putStrLn $ evalString $ show $ f a
   return a
 
-lesp logFile a = leesp logFile (show a) a
+lesp logFile a = leesp logFile (evalString $ show a) a
 
 leesp logFile s a = unsafePerformIO $ do
-  appendFile logFile (show s ++ "\n")
+  appendFile logFile (evalString $ show s ++ "\n")
   return a
 
 eeesp s a = unsafePerformIO $ do
-  putStrLn $ show $ (s, a)
+  putStrLn $ evalString $ show $ (s, a)
   return a
 
 -- Fake ones for quickly disabling
 feesp s a = a
 
+evalString s = seq (length s) s
+
 sp x = unpack $ toStrict $ pShowNoColor $ x
 --sp x = show x
-msp x = putStrLn $ sp x
+msp x = putStrLn $ evalString $ sp x
 
 tsp x = putStrLn $ (sp x) ++ " :: " ++ (sp (typeOf x))
 ttsp x = putStrLn $ "_ :: " ++ (sp (typeOf x))

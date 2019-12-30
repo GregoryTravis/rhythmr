@@ -2,6 +2,7 @@ module Arrangement
 ( Arrangement(..)
 , Placement(..)
 , Span(..)
+, mapSpans
 , renderArrangement
 , parArrangement
 , seqArrangement

@@ -11,6 +11,7 @@ import Analysis
 import Arrangement
 import Aubio
 import Download
+import Mess
 import Resample
 import Search
 import Song
@@ -56,10 +57,13 @@ downloadMain searchString count = do
 _main = do
   s0 <- readSound "loop-0-20732.wav"
   s1 <- readSound "loop-1-20732.wav"
-  msp $ SV.length (samples s0)
-  let arr = Arrangement [Placement s0 (Span 0 b), Placement s1 (Span b (b*2))]
-      b = 44100
-  song <- renderArrangement arr
+  -- msp $ SV.length (samples s0)
+  -- let arr = Arrangement [Placement s0 (Span 0 b), Placement s1 (Span b (b*2))]
+  --     b = 44100 * 2
+  let arr = scrunch 16 0.75 s0
+      arr2 = scrunch 16 0.75 s1
+      arr' = seqArrangement [arr, arr2, arr, arr2]
+  song <- renderArrangement arr'
   writeSound "hoho.wav" song
   msp "hi"
 
