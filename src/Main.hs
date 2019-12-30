@@ -69,5 +69,5 @@ main = do
   filenames <- downloadMain "percussion isolated" 20
   let seeds = take 1 $ drop 3 $ take 10 [2885, 8834..]
   msp ("seeds", seeds)
-  mapM (renderSong' theArrayArrangement filenames) seeds
+  time "render" $ mapM (renderSong' theArrayArrangement filenames) seeds
   msp "hi"

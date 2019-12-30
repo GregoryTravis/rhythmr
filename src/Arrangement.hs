@@ -80,7 +80,6 @@ mixOnto mix v pos = do
           mixSample <- MSV.read mix (i + (pos * 2))
           let vSample = SV.index v i
           MSV.write mix (i + (pos * 2)) (mixSample + vSample)
-          where db = show ("MIX", i, pos, SV.length v, MSV.length mix)
 
 -- This must be something
 -- wha :: (a -> b -> IO a) -> a -> [b] -> IO a
