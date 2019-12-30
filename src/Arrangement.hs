@@ -5,6 +5,9 @@ module Arrangement
 , TiledArrangement(..)
 , getTiledArrangementElements
 , renderArrangement
+, parArrangement
+, seqArrangement
+, singleSoundArrangement
 , mixdown ) where
 
 import Control.Monad.ST
@@ -88,7 +91,7 @@ renderArrangement arr = do
   msp arr
   nrpArr <- arrNrpToP arr
   msp nrpArr
-  mixNRPs nrpArr
+  fmap normalize $ mixNRPs nrpArr
 
 mixNRPs :: Arrangement -> IO Sound
 mixNRPs arr = do
@@ -144,9 +147,46 @@ pmixOnto v (i, x) = runST foo
           v' <- MSV.freeze mv
           return v'
 
+mapPlacements :: (Placement -> Placement) -> Arrangement -> Arrangement
+mapPlacements f (Arrangement ps) = Arrangement (map f ps)
+mapPlacementSpan :: (Span -> Span) -> Placement -> Placement
+mapPlacementSpan f (Placement sound span) = Placement sound (f span)
+mapSpans :: (Span -> Span) -> Arrangement -> Arrangement
+mapSpans = mapPlacements . mapPlacementSpan
+
 arrangementLength :: Arrangement -> Int
 arrangementLength (Arrangement nrps) = maximum (map endOf nrps)
   where endOf (NRPlacement sound start) = start + numFrames sound
+        endOf (Placement sound (Span start end)) = end
+
+singleSoundArrangement :: Int -> Sound -> Arrangement
+singleSoundArrangement numFrames sound = Arrangement [Placement sound (Span 0 numFrames)]
+
+-- Simply concatenate the lists of placements
+mergeArrangements :: [Arrangement] -> Arrangement
+mergeArrangements arrs = Arrangement (concat $ map getPs arrs)
+  where getPs (Arrangement ps) = ps
+parArrangement = mergeArrangements
+
+seqArrangement :: [Arrangement] -> Arrangement
+seqArrangement arrs = seqArrangement' 0 arrs
+seqArrangement' offset (arr : arrs) =
+  let len = arrangementLength arr
+      tArr = translateArr offset arr
+      tArrs = seqArrangement' (offset+len) arrs
+   in mergeArrangements [tArr, tArrs]
+seqArrangement' _ [] = Arrangement []
+-- seqArrangement arrs = mergeArrangements (seqArrangements arrs)
+--   where seqArrangements :: [Arrangement] -> [Arrangement]
+--         seqArrangements (arr : arrs) =
+--           let len = arrangementLength arr
+--               translatedArrs = seqArrangements $ map (translateArr len) arrs
+--            in arr : translatedArrs
+--         seqArrangements [] = []
+
+translateSpan n (Span s e) = Span (s+n) (e+n)
+translateArr :: Int -> Arrangement -> Arrangement
+translateArr n = mapSpans (translateSpan n)
 
 mixdown :: TiledArrangement Sound -> Sound
 mixdown seq = normalize (mixdown' seq)
