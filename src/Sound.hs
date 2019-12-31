@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Sound where
@@ -32,6 +33,18 @@ readSound filename = do
 
 numFrames :: Sound -> Int
 numFrames sound = (SV.length (samples sound)) `div` 2
+
+getSample :: Sound -> Int -> (Float, Float)
+getSample (Sound { samples }) i = (SV.index samples (i*2), SV.index samples (i*2+1))
+
+fromSamples :: [(Float, Float)] -> Sound
+fromSamples pairs = 
+  let flattened = flatten pairs
+      flatten :: [(a, a)] -> [a]
+      flatten pairs = concat (map (\(a, b) -> [a, b]) pairs)
+      vec = SV.pack flattened
+      sound = Sound { samples = vec }
+   in sound
 
 writeSound :: String -> Sound -> IO ()
 writeSound filename sound = do

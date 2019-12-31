@@ -6,6 +6,7 @@ import System.FilePath.Posix (takeBaseName)
 
 import Arrangement
 import Download
+import Feh
 import Mess
 import Search
 import Song
@@ -60,6 +61,11 @@ _main = do
   song <- renderArrangement arr'
   writeSound "hoho.wav" song
   msp "hi"
+
+fehmain = do
+  s0 <- readSound "loop-0-20732.wav"
+  let s1 = render s0
+  writeSound "hehe.wav" s1
 
 main = do
   noBuffering

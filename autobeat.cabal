@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 executable autobeat
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Util, External, Aubio, Sound, Resample, Song, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Arrangement, Mess
+  other-modules:       Util, External, Aubio, Sound, Resample, Song, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Arrangement, Mess, Feh
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
                        aeson,
