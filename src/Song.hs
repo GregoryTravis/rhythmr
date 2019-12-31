@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 
 module Song
-( renderSong'
+( renderSong
 ) where
 
 import Control.Monad (replicateM)
@@ -30,8 +30,8 @@ processFile filename = do
   track <- barBeat filename
   return $ ProcessedFile sound track
 
-renderSong' :: [[Int]] -> [String] -> Int -> IO ()
-renderSong' ises filenames seed = do
+renderSong :: [[Int]] -> [String] -> Int -> IO ()
+renderSong ises filenames seed = do
   let loopInts = sort $ nub $ concat ises
       numLoops = length loopInts
   pfs <- mapM processFile filenames
