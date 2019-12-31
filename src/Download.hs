@@ -4,7 +4,6 @@ import System.Directory
 
 import External
 import Memoize
-import Util
 
 download = diskMemoize "download" $ TakesFile f
   where f filename id = do

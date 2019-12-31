@@ -7,12 +7,10 @@ module Song
 import Control.Monad (replicateM)
 import Data.List
 import qualified Data.Map as M
-import qualified Data.Set as S
 import System.Random
 
 import Arrangement
 import Aubio
-import Resample
 import Sound
 import Util
 
@@ -50,21 +48,21 @@ renderSong ises filenames seed = do
   return ()
 
 --showDiffs :: [Int] -> IO ()
-showDiffs ns = do
-  let diffs = map (uncurry (-)) $ zip ns (0:ns)
-  mapM (putStrLn . show) (zip ns diffs)
+-- showDiffs ns = do
+--   let diffs = map (uncurry (-)) $ zip ns (0:ns)
+--   mapM (putStrLn . show) (zip ns diffs)
 
 brep rand = do
   getStdRandom rand
 
-brepDebug rand = do
-  sg <- getStdGen
-  msp $ "RND before " ++ (show sg)
-  x <- getStdRandom rand
-  msp $ "RND n " ++ (show x)
-  sg' <- getStdGen
-  msp $ "RND after " ++ (show sg')
-  return x
+-- brepDebug rand = do
+--   sg <- getStdGen
+--   msp $ "RND before " ++ (show sg)
+--   x <- getStdRandom rand
+--   msp $ "RND n " ++ (show x)
+--   sg' <- getStdGen
+--   msp $ "RND after " ++ (show sg')
+--   return x
 
 getRandomLoops :: Int -> [ProcessedFile] -> Int -> IO [Sound]
 getRandomLoops numLoops pfs seed = do

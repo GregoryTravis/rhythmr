@@ -1,11 +1,9 @@
 module Search (search, searchNoPaging) where
 
 --import Data.Aeson (Value(Array, String, Object))
-import Data.ByteString.UTF8 as BSU (fromString, toString)
 import qualified Data.Map as M
 --import Data.Time.ISO8601.Duration
 import qualified Data.Vector as V
-import GHC.Exts
 
 import AesonHelpers
 import External

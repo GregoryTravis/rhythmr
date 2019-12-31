@@ -1,7 +1,6 @@
 module Spleeter (spleeter) where
 
 import System.FilePath.Posix (takeBaseName)
-import System.IO.Temp
 
 import External
 import Sound

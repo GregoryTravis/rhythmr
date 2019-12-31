@@ -2,11 +2,9 @@ module Resample (resampleSound) where
 
 import System.Directory
 import System.IO.Temp
-import System.Process
 
 import External
 import Sound
-import Util
 
 resampleSound :: Int -> Sound -> IO Sound
 resampleSound destLengthFrames sound = do

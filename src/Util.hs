@@ -25,8 +25,6 @@ module Util
 ) where
 
 import Control.Exception
-import Control.Exception.Base
-import Data.Either
 import Data.List (groupBy)
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
@@ -35,7 +33,7 @@ import System.CPUTime
 import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
-import Text.Pretty.Simple (pShow, pShowNoColor)
+import Text.Pretty.Simple (pShowNoColor)
 import Text.Printf
 
 esp a = unsafePerformIO $ do

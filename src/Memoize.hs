@@ -6,7 +6,7 @@ module Memoize
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as C8
-import Data.ByteString.UTF8 as BSU (fromString, toString)
+import Data.ByteString.UTF8 as BSU (fromString)
 import System.Directory
 import System.IO.Temp
 

@@ -2,8 +2,6 @@
 
 module Sound where
 
-import Data.List (nub)
-import Data.List.Split (chunksOf)
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
 import qualified Data.StorableVector as SV

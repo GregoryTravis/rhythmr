@@ -5,7 +5,6 @@ module Aubio
 import Sound.File.Sndfile as SF hiding (hGetContents)
 
 import External
-import Util
 
 parseAubioOutput :: String -> [[String]]
 parseAubioOutput s = map words (lines s)

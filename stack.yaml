@@ -20,6 +20,11 @@
 # resolver: lts-13.8
 resolver: lts-14.18
 
+# Uncomment to find dead code
+# rebuild-ghc-options: true
+# ghc-options:
+#   autobeat: "-fforce-recomp -fwarn-unused-binds -fwarn-unused-imports"
+
 # User packages to be built.
 # Various formats can be used as shown in the example below.
 #

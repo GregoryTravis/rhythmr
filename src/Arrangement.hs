@@ -9,7 +9,6 @@ module Arrangement
 , singleSoundArrangement ) where
 
 import Control.Monad.ST
-import Data.List
 import qualified Data.StorableVector as SV
 import qualified Data.StorableVector.ST.Strict as MSV
 
