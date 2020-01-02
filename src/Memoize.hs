@@ -1,7 +1,7 @@
 module Memoize
 ( DiskAction(..)
 , diskMemoize
-, returnsString ) where
+, returnsString) where
 
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16

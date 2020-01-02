@@ -54,7 +54,7 @@ getBars = do
   filenames <- downloadMain "percussion isolated" 1
   barses <- mapM barBeat filenames
   loopses <- mapM (uncurry splitIntoLoops) (zip filenames barses)
-  let loops = concat loopses -- TODO Surely some applicative can happen here
+  let loops = take 1 $ concat loopses -- TODO Surely some applicative can happen here
   msp $ map numFrames loops
   -- mapM (\(i, loop) -> writeSound ("loop-" ++ (show i) ++ ".wav") loop) (zip [0..] loops)
   -- msp filenames
@@ -62,8 +62,8 @@ getBars = do
   spleeteredLoops <- mapM (time "spleeter" . spleeter) loops
   --let spleeteredLoops = loops
 
-  let comp = map (uncurry (compareRms frameSize)) (zip loops spleeteredLoops)
-  msp $ comp -- !! 0
+  msp $ map (uncurry (compareRms frameSize)) (zip loops spleeteredLoops)
+  msp $ map (uncurry (rmsSimilarity frameSize)) (zip loops spleeteredLoops)
 
 splitIntoLoops :: String -> [Int] -> IO [Sound]
 splitIntoLoops filename bars = do

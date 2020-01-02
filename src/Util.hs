@@ -22,6 +22,7 @@ module Util
 , noBuffering
 , die
 , predSplit
+, chomp
 ) where
 
 import Control.Exception
@@ -119,3 +120,8 @@ noBuffering = do
 
 predSplit p xs = groupBy same xs
   where same a b = p a == p b
+
+chomp :: String -> String
+chomp s =
+  let ('\n' : rs) = reverse s
+   in reverse rs

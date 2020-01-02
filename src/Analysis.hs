@@ -1,6 +1,7 @@
 module Analysis
 ( rms
-, compareRms) where
+, compareRms
+, rmsSimilarity) where
 
 import Data.List.Split (chunksOf)
 import qualified Data.StorableVector as SV
@@ -22,4 +23,7 @@ compareRms frameSize s0 s1 =
    in map diff (zip rms0 rms1)
   where diff ((t0, x0), (t1, x1)) = ((t0, t1), x1-x0)
 
-
+rmsSimilarity frameSize s0 s1 =
+  avg $ map snd $ compareRms frameSize s0 s1
+  where avg :: [Float] -> Float
+        avg xs = (sum xs) / fromIntegral (length xs)

@@ -5,6 +5,7 @@ module External
 , csvCommand
 , cachedReadFromProc
 , cachedJsonCommand
+, withContentHashNamedFile
 ) where
 
 import Control.Exception (evaluate)
@@ -13,7 +14,9 @@ import Data.ByteString.Lazy.UTF8 as BLU (fromString)
 import Data.List.Split (splitOn)
 import Data.List (intercalate)
 import Data.Time
+import System.Directory
 import System.IO
+import System.IO.Temp
 import System.Process
 
 import Memoize
@@ -95,3 +98,17 @@ csvCommand exe args = do
 _cachedJsonCommand exe args = do
   rawOutput <- cachedReadFromProc exe args
   return $ (decode (BLU.fromString rawOutput) :: Maybe Value)
+
+-- This should be in memoize, but then there's a circular dependency
+withContentHashNamedFile :: String -> (String -> IO ()) -> (String -> IO a) -> IO a
+withContentHashNamedFile label fileWriter action = do
+  tmp <- emptySystemTempFile label
+  tmpDir <- getCanonicalTemporaryDirectory
+  fileWriter tmp
+  hashWithNewline <- readFromProc "md5" ["-q", tmp]
+  let hash = chomp hashWithNewline
+      newPath = tmpDir ++ "/" ++ label ++ "-" ++ hash
+  renameFile tmp newPath
+  a <- action newPath
+  removeFile newPath
+  return a
