@@ -11,6 +11,7 @@ import Control.Exception (evaluate)
 import Data.Aeson
 import Data.ByteString.Lazy.UTF8 as BLU (fromString)
 import Data.List.Split (splitOn)
+import Data.List (intercalate)
 import Data.Time
 import System.IO
 import System.Process
@@ -36,7 +37,7 @@ cachedReadFromProc exe args = readTheFile $ (diskMemoize "readFromProc" (returns
 
 readFromProc :: String -> [String] -> IO String
 readFromProc exe args = do
-  -- msp $ "readFromProc " ++ exe ++ " " ++ show args
+  -- msp $ intercalate " " ([exe] ++ args)
   start <- getCurrentTime
   let cp = (proc exe args) { std_out = CreatePipe }
   (stdin, Just stdout, stderr, processHandle) <- createProcess cp

@@ -5,12 +5,15 @@ import System.Directory
 import System.FilePath.Posix (takeBaseName)
 
 import Arrangement
+import Aubio
 import Download
 import Feh
 import Mess
+import Analysis
 import Search
 import Song
 import Sound
+import Spleeter
 import Util
 
 theArrayArrangement =
@@ -46,8 +49,26 @@ downloadMain searchString count = do
         dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
         searchStringDir = replace " " "-" searchString
 
--- anArr = [p]
---   where p = Placement
+getBars = do
+  let frameSize = 1000
+  filenames <- downloadMain "percussion isolated" 1
+  barses <- mapM barBeat filenames
+  loopses <- mapM (uncurry splitIntoLoops) (zip filenames barses)
+  let loops = concat loopses -- TODO Surely some applicative can happen here
+  msp $ map numFrames loops
+  -- mapM (\(i, loop) -> writeSound ("loop-" ++ (show i) ++ ".wav") loop) (zip [0..] loops)
+  -- msp filenames
+
+  spleeteredLoops <- mapM (time "spleeter" . spleeter) loops
+  --let spleeteredLoops = loops
+
+  let comp = map (uncurry (compareRms frameSize)) (zip loops spleeteredLoops)
+  msp $ comp -- !! 0
+
+splitIntoLoops :: String -> [Int] -> IO [Sound]
+splitIntoLoops filename bars = do
+  sound <- readSound filename
+  return $ map (\(s, e) -> snip s e sound) (zip bars (drop 1 bars))
 
 _main = do
   s0 <- readSound "loop-0-20732.wav"
@@ -67,11 +88,15 @@ fehmain = do
   let s1 = render s0
   writeSound "hehe.wav" s1
 
-main = do
-  noBuffering
+generateSome = do
   --ids <- search "drum tracks instrumental" 30
   filenames <- downloadMain "percussion isolated" 20
   let seeds = take 1 $ drop 3 $ take 10 [2885, 8834..]
   msp ("seeds", seeds)
   time "render" $ mapM (renderSong theArrayArrangement filenames) seeds
+
+main = do
+  noBuffering
+  --generateSome
+  getBars
   msp "hi"

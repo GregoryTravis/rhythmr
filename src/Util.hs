@@ -28,10 +28,11 @@ import Control.Exception
 import Data.List (groupBy)
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
+import Data.Time.Clock (diffUTCTime)
+import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Typeable (typeOf)
-import System.CPUTime
 import System.Exit (die)
-import System.IO (appendFile, hFlush, stdout, hSetBuffering, BufferMode(..))
+import System.IO (appendFile, hFlush, stdout, stderr, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Printf
@@ -105,15 +106,16 @@ mcompose f g x = case g x of Just y -> f y
 -- Taken from https://wiki.haskell.org/Timing_computations
 time :: String -> IO t -> IO t
 time s a = do
-    start <- getCPUTime
+    start <- getSystemTime
     v <- a
-    end   <- getCPUTime
-    let diff = (fromIntegral (end - start)) / (10^12)
-    --printf "%s %0.3f sec\n" s (diff :: Double)
-    printf "%s %f sec\n" s (diff :: Double)
+    end <- getSystemTime
+    let diff = (systemToUTCTime end) `diffUTCTime` (systemToUTCTime start)
+    printf "%s %s\n" s (show diff)
     return v
 
-noBuffering = hSetBuffering stdout NoBuffering
+noBuffering = do
+  hSetBuffering stdout NoBuffering
+  hSetBuffering stderr NoBuffering
 
 predSplit p xs = groupBy same xs
   where same a b = p a == p b
