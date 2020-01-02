@@ -14,11 +14,9 @@ import Util
 
 memoDir = ".memo"
 
--- Two kinds of disk-based actions to memoize:
--- - One that returns a filename
--- - One that takes a filename
-
-data DiskAction a = TakesFile (String -> a -> IO ()) | GivesFile (a -> IO String)
+-- String: filename
+-- a: other args
+data DiskAction a = TakesFile (String -> a -> IO ())
 
 -- Turn a disk action into a memoized function that returns a filename
 diskMemoize :: Show a => String -> DiskAction a -> (a -> IO String)

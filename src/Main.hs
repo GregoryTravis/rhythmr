@@ -50,17 +50,18 @@ downloadMain searchString count = do
         searchStringDir = replace " " "-" searchString
 
 getBars = do
-  let frameSize = 1000
-  filenames <- downloadMain "percussion isolated" 1
+  let frameSize = 100
+  --filenames <- downloadMain "percussion isolated" 2
+  filenames <- downloadMain "grace jones" 2
+  msp filenames
   barses <- mapM barBeat filenames
   loopses <- mapM (uncurry splitIntoLoops) (zip filenames barses)
-  let loops = take 1 $ concat loopses -- TODO Surely some applicative can happen here
+  let loops = take 1 $ drop 40 $ concat loopses -- TODO Surely some applicative can happen here
   msp $ map numFrames loops
   -- mapM (\(i, loop) -> writeSound ("loop-" ++ (show i) ++ ".wav") loop) (zip [0..] loops)
-  -- msp filenames
 
   spleeteredLoops <- mapM (time "spleeter" . spleeter) loops
-  --let spleeteredLoops = loops
+  -- mapM (\(i, loop) -> writeSound ("sloop-" ++ (show i) ++ ".wav") loop) (zip [0..] spleeteredLoops)
 
   msp $ map (uncurry (compareRms frameSize)) (zip loops spleeteredLoops)
   msp $ map (uncurry (rmsSimilarity frameSize)) (zip loops spleeteredLoops)
