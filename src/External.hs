@@ -6,6 +6,7 @@ module External
 , cachedReadFromProc
 , cachedJsonCommand
 , withContentHashNamedFile
+, contentAddressableWrite
 ) where
 
 import Control.Exception (evaluate)
@@ -112,3 +113,15 @@ withContentHashNamedFile label fileWriter action = do
   a <- action newPath
   removeFile newPath
   return a
+
+-- Takes a destination directory and a file writer and returns the final
+-- location of the file
+contentAddressableWrite :: String -> String -> String -> (String -> IO ()) -> IO String
+contentAddressableWrite label destDir ext fileWriter = do
+  tmp <- emptySystemTempFile label
+  fileWriter tmp
+  hashWithNewline <- readFromProc "md5" ["-q", tmp]
+  let hash = chomp hashWithNewline
+      newPath = destDir ++ "/" ++ label ++ "-" ++ hash ++ "." ++ ext
+  renameFile tmp newPath
+  return newPath
