@@ -28,15 +28,17 @@ processFile filename = do
   track <- barBeat filename
   return $ ProcessedFile sound track
 
-renderSong :: [[Int]] -> [String] -> Int -> IO ()
-renderSong ises filenames seed = do
+renderSong :: [[Int]] -> [String] -> Int -> IO Sound
+renderSong ises loopFilenames seed = do
+  let rand = mkStdGen seed
+  setStdGen $ mkStdGen seed
   let loopInts = sort $ nub $ concat ises
       numLoops = length loopInts
-  pfs <- mapM processFile filenames
-  loops <- getRandomLoops numLoops pfs seed
+  let randomLoopFilenameIndices = take numLoops $ randomRs (0, length loopFilenames - 1) rand
+      randomLoopFilenames = map (loopFilenames !!) randomLoopFilenameIndices
+  msp randomLoopFilenames
+  loops <- mapM readSound randomLoopFilenames
   let intToSound = M.fromList (zip loopInts loops)
-  -- flip mapM (zip [0..] resampledLoops) $ \(i, loop) -> do
-  --   writeSound ("loop-" ++ (show i) ++ "-" ++ (show seed) ++ ".wav") loop
   let loopArrangement :: [[Sound]]
       loopArrangement = fmap (fmap (intToSound M.!)) ises
   msp loopArrangement
@@ -44,8 +46,7 @@ renderSong ises filenames seed = do
       arrangement = seqArrangement $ map (\pas -> parArrangement (map (singleSoundArrangement loopLengthFrames) pas)) loopArrangement
   msp arrangement
   song <- renderArrangement arrangement
-  writeSound ("song-" ++ (show seed) ++ "-new.wav") song
-  return ()
+  return song
 
 --showDiffs :: [Int] -> IO ()
 -- showDiffs ns = do

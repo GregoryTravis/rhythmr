@@ -114,7 +114,15 @@ generateSome = do
   msp ("seeds", seeds)
   time "render" $ mapM (renderSong theArrayArrangement filenames) seeds
 
+song :: IO ()
+song = do
+  let seed = 2885
+  loopFilenames <- fmap (map ("loops/"++)) $ listDirectory "loops"
+  song <- renderSong theArrayArrangement loopFilenames seed
+  writeSound "song.wav" song
+
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
+doStuff ["song"] = song
   --generateSome
 
 main = do
