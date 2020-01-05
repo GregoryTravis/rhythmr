@@ -1,5 +1,6 @@
 module Affinity (affinityMain) where
 
+import Control.Concurrent
 import System.Directory (listDirectory)
 import System.Random
 
@@ -17,7 +18,16 @@ affinityMain seed = do
       g = add (add empty 3 4) 1 2
   msp g
   msp $ showComponents $ components g
-  startLooper
+  sound <- readSound "aloop.wav"
+  sound2 <- readSound "bloop.wav"
+  looper <- startLooper
+  msp "wait"
+  threadDelay $ 2 * 1000000
+  sendCommand looper $ Play sound
+  threadDelay $ 6 * 1000000
+  sendCommand looper $ Play sound2
+  --threadDelay $ 3 * 1000000
+  --sendCommand looper $ Stop
   msp "aff hi"
 
 _affinityMain seed = do

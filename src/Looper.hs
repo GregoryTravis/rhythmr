@@ -1,30 +1,72 @@
 module Looper
-( startLooper
-, setLoop
+( Looper
+, LoopCommand(..)
+, startLooper
+, sendCommand
 ) where
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Chan
+--import qualified Control.Concurrent.MVar as MV
+import Data.IORef
 import qualified Data.StorableVector as SV
 import Data.StorableVector.Base as SVB
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
 import Sound
+import Util
 
 foreign import ccall "init_audio" init_audio :: IO ()
 foreign import ccall "write_audio" write_audio :: Ptr Float -> Int -> IO ()
 foreign import ccall "term_audio" term_audio :: IO ()
 
-startLooper = do
-  sound <- readSound "aloop.wav"
-  let Sound { samples = buffer } = sound
-  init_audio
-  writeAudioAllAtOnce buffer
-  writeAudioAllAtOnce buffer
-  writeAudioAllAtOnce buffer
-  writeAudioAllAtOnce buffer
-  term_audio
+-- TODO: StopAndWait?
+data LoopCommand = Play Sound deriving Show
+-- TODO probably doesn't need to be a Maybe, or even part of this?
+data Looper = Looper (Chan LoopCommand) (IORef (Maybe Sound)) -- (MV.MVar Sound)
 
-setLoop = undefined
+startLooper = do
+  init_audio
+  chan <- newChan
+  --cur <- MV.newEmptyMVar
+  cur <- newIORef Nothing
+  let looper = Looper chan cur
+  forkIO (backgroundLooper looper)
+  return looper
+
+backgroundLooper :: Looper -> IO ()
+backgroundLooper looper = do
+  waitForFirstSound looper
+  forkIO $ updateIORef looper
+  playCurrentSound4EVA looper
+
+waitForFirstSound :: Looper -> IO ()
+waitForFirstSound (Looper chan ioref) = do
+  command <- readChan chan
+  msp $ "Got " ++ (show command)
+  case command of Play sound -> do writeIORef ioref (Just sound)
+                                   return ()
+
+updateIORef :: Looper -> IO ()
+updateIORef looper@(Looper chan ioref) = do
+  Play sound <- readChan chan
+  msp $ "Setting " ++ (show sound)
+  writeIORef ioref (Just sound)
+  updateIORef looper
+
+-- Assumes ioref is not Nothing
+playCurrentSound4EVA :: Looper -> IO ()
+playCurrentSound4EVA looper@(Looper chan ioref) = do
+  Just sound <- readIORef ioref
+  msp $ "Playing " ++ (show sound)
+  let Sound { samples = buffer } = sound
+  writeAudioAllAtOnce buffer
+  playCurrentSound4EVA looper
+
+sendCommand :: Looper -> LoopCommand -> IO ()
+sendCommand (Looper chan _) command = do
+  writeChan chan command
 
 writeAudioAllAtOnce :: Vector Float -> IO ()
 writeAudioAllAtOnce v =
