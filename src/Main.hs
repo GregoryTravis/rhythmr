@@ -7,6 +7,7 @@ import System.FilePath.Posix (takeBaseName)
 
 import Arrangement
 import Aubio
+import Display
 import Download
 import External (contentAddressableWrite)
 import Feh
@@ -53,7 +54,7 @@ downloadMain searchString count = do
 
 bars :: String -> Int -> IO ()
 bars searchString numTracks = do
-  filenames <- downloadMain "percussion isolated" 8
+  filenames <- downloadMain searchString 8
   --filenames <- downloadMain "grace jones" 2
   mapM_ extractLoops filenames
 
@@ -120,8 +121,11 @@ song seed = do
   song <- renderSong theArrayArrangement loopFilenames seed
   writeSound ("song-" ++ (show seed) ++ ".wav") song
 
+doStuffDefault = ["display"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
+doStuff ["display"] = displayMain
+doStuff [] = doStuff doStuffDefault
   --generateSome
 
 main = do

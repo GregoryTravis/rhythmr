@@ -1,0 +1,3 @@
+#stack repl --ghc-options -fobject-code -- autobeat
+echo don\'t forget to :l Main
+stack ghci --ghci-options "-fobject-code -O src/Sound.hs"
