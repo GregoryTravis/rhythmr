@@ -5,11 +5,20 @@ import System.Random
 
 import Arrangement
 import Constants
+import Graph
 import Sound
 import Util
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
+  let g :: Graph Int
+      --g = add (add (add empty 3 4) 1 2) 1 3
+      g = add (add empty 3 4) 1 2
+  msp g
+  msp $ showComponents $ components g
+  msp "aff hi"
+
+_affinityMain seed = do
   let rand = mkStdGen seed
   loopFilenames <- fmap (map ("loops/"++)) $ listDirectory "loops"
   let someLoopFilenames = map (loopFilenames !!) $ take 4 $ randomRs (0, length loopFilenames - 1) rand

@@ -122,7 +122,7 @@ song seed = do
   song <- renderSong theArrayArrangement loopFilenames seed
   writeSound ("song-" ++ (show seed) ++ ".wav") song
 
-doStuffDefault = ["aff"]
+doStuffDefault = ["aff", "98238"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
 doStuff ["display"] = displayMain
