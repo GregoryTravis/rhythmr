@@ -6,6 +6,7 @@ import System.Random
 import Arrangement
 import Constants
 import Graph
+import Looper
 import Sound
 import Util
 
@@ -16,6 +17,7 @@ affinityMain seed = do
       g = add (add empty 3 4) 1 2
   msp g
   msp $ showComponents $ components g
+  startLooper
   msp "aff hi"
 
 _affinityMain seed = do
