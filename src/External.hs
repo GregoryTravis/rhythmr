@@ -55,7 +55,7 @@ readFromProc exe args = do
 -- Just ignore the output
 runProc exe args = do
   output <- readFromProc exe args
-  msp output
+  --msp output
   return ()
 
 cachedJsonCommand exe args = do

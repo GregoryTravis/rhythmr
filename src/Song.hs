@@ -11,16 +11,11 @@ import System.Random
 
 import Arrangement
 import Aubio
+import Constants
 import Sound
 import Util
 
 data ProcessedFile = ProcessedFile Sound [Int] deriving Show
-
-bmp = 120
-meter = 4
-loopLengthSeconds = (60.0 / fromInteger bmp) * meter
-standardSR = 44100
-loopLengthFrames = floor $ (fromInteger standardSR) * loopLengthSeconds
 
 processFile :: String -> IO ProcessedFile
 processFile filename = do

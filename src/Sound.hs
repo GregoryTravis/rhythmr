@@ -68,8 +68,8 @@ writeSound filename sound = do
 -- start, end: start and end (seconds)
 snip :: Int -> Int -> Sound -> Sound
 snip start end sound = Sound { samples = newSamples }
-  where startFrame = esp $ 2 * start
-        numFrames = esp $ 2 * (end - start)
+  where startFrame = 2 * start
+        numFrames = 2 * (end - start)
         newSamples = SV.take numFrames (SV.drop startFrame (samples sound))
 
 mixSounds :: [Sound] -> Sound

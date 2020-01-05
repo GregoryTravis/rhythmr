@@ -5,6 +5,7 @@ import System.Directory
 import System.Environment (getArgs)
 import System.FilePath.Posix (takeBaseName)
 
+import Affinity
 import Arrangement
 import Aubio
 import Display
@@ -121,10 +122,11 @@ song seed = do
   song <- renderSong theArrayArrangement loopFilenames seed
   writeSound ("song-" ++ (show seed) ++ ".wav") song
 
-doStuffDefault = ["display"]
+doStuffDefault = ["aff"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
 doStuff ["display"] = displayMain
+doStuff ["aff", seed] = affinityMain (read seed)
 doStuff [] = doStuff doStuffDefault
   --generateSome
 

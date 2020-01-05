@@ -5,6 +5,7 @@ import System.IO.Temp
 
 import External
 import Sound
+import Util
 
 resampleSound :: Int -> Sound -> IO Sound
 resampleSound destLengthFrames sound = do

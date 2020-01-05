@@ -44,21 +44,21 @@ nrpToP (Placement sound (Span s e)) = do
 -- All Placements must be Placements and not NRPlacements
 renderArrangement :: Arrangement -> IO Sound
 renderArrangement arr = do
-  msp arr
+  --msp arr
   nrpArr <- arrNrpToP arr
-  msp nrpArr
+  --msp nrpArr
   fmap normalize $ mixNRPs nrpArr
 
 mixNRPs :: Arrangement -> IO Sound
 mixNRPs arr = do
   let len = arrangementLength arr
-  msp len
+  --msp len
   let mix = SV.replicate (len * 2) 0 :: SV.Vector Float
-  msp $ SV.index mix 0
-  msp $ SV.index mix 1
+  --msp $ SV.index mix 0
+  --msp $ SV.index mix 1
   let mix' = wha pmixOnto mix [(0, 10.0), (1, 20.0)]
-  msp $ SV.index mix' 0
-  msp $ SV.index mix' 1
+  --msp $ SV.index mix' 0
+  --msp $ SV.index mix' 1
   let nrps = case arr of Arrangement nrps -> nrps
   let mix'' = runST $ guv mix nrps
   return Sound { samples = mix'' }
