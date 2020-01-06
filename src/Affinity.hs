@@ -20,14 +20,14 @@ affinityMain seed = do
   msp $ showComponents $ components g
   sound <- readSound "aloop.wav"
   sound2 <- readSound "bloop.wav"
-  looper <- startLooper
-  msp "wait"
-  threadDelay $ 2 * 1000000
-  sendCommand looper $ Play sound
-  threadDelay $ 6 * 1000000
-  sendCommand looper $ Play sound2
-  --threadDelay $ 3 * 1000000
-  --sendCommand looper $ Stop
+  withLooper $ \looper -> do
+    msp "wait"
+    threadDelay $ 2 * 1000000
+    sendCommand looper $ Play sound
+    threadDelay $ 6 * 1000000
+    sendCommand looper $ Play sound2
+    threadDelay $ 3 * 1000000
+    sendCommand looper $ Stop
   msp "aff hi"
 
 _affinityMain seed = do
