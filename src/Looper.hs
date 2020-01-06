@@ -58,6 +58,7 @@ waitForFirstSound (Looper chan ioref) = do
 updateIORef :: Looper -> IO ()
 updateIORef looper@(Looper chan ioref) = do
   command <- readChan chan
+  msp $ "Got " ++ (show command)
   handle command
   where handle :: LoopCommand -> IO ()
         handle (Play sound) = do
