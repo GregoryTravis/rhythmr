@@ -12,7 +12,9 @@ handler s = return $ s ++ ":" ++ s
 rpc = do
   forkIO $ do
     threadDelay $ 1 * 1000000
-    client "127.0.0.1" 3000
+    withClient "127.0.0.1" 3000 $ \c -> do
+      resp <- send c "hey now"
+      msp $ "Got " ++ resp
   threadId <- forkIO $ server 3000 handler
   msp "running"
   threadDelay $ 5 * 1000000

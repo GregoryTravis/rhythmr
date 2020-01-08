@@ -1,6 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
 
-module ClientServer (client, server) where
+module ClientServer
+( Client
+, withClient
+, send
+, server ) where
 
 import Control.Concurrent (forkIO, forkFinally, killThread, threadDelay)
 import qualified Control.Exception as E
@@ -13,6 +17,8 @@ import Network.Socket
 import Network.Socket.ByteString (recv, sendAll)
 
 import Util
+
+data Client = Client Socket
 
 -- todo
 -- move this to TCP.hs
@@ -30,9 +36,9 @@ server port handler = do
         bs <- recv s 1024000000
         unless (S.null bs) $ do
           let request = C.unpack bs
-          msp $ "Request " ++ request
+          msp $ "S Request " ++ request
           response <- handler request
-          msp $ "Response " ++ response
+          msp $ "S Response " ++ response
           sendAll s $ C.pack response
           talk s
 
@@ -59,12 +65,17 @@ runTCPServer mhost port server = withSocketsDo $ do
         (conn, _peer) <- accept sock
         void $ forkFinally (server conn) (const $ gracefulClose conn 5000)-- import Network.Socket
 
-client :: String -> Int -> IO ()
-client host port = runTCPClient host (show port) $ \s -> do
-    sendAll s $ C.pack "Hello, world!"
-    msg <- recv s 1024000000
-    putStr "Received: "
-    C.putStrLn msg
+withClient :: String -> Int -> (Client -> IO a) -> IO a
+withClient host port handler = runTCPClient host (show port) $ \s -> handler (Client s)
+
+send :: Client -> String -> IO String
+send (Client s) request = do
+    msp $ "C Request " ++ request
+    sendAll s $ C.pack request
+    bs <- recv s 1024000000
+    let response = C.unpack bs
+    msp $ "C Response " ++ response
+    return  response
 
 -- from the "network-run" package.
 runTCPClient :: HostName -> ServiceName -> (Socket -> IO a) -> IO a
