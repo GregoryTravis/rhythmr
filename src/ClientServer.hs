@@ -22,12 +22,12 @@ import Util
 -- Open a gfx window in the server
 -- only draw the circle when the command comes
 
-server = do
-  runTCPServer Nothing "3000" talk
+server port = do
+  runTCPServer Nothing (show port) talk
   where
     talk s = do
         msg <- recv s 1024000000
-        msp $ C.unpack msg
+        msp $ "Got " ++ C.unpack msg
         unless (S.null msg) $ do
           sendAll s msg
           talk s
@@ -55,8 +55,8 @@ runTCPServer mhost port server = withSocketsDo $ do
         (conn, _peer) <- accept sock
         void $ forkFinally (server conn) (const $ gracefulClose conn 5000)-- import Network.Socket
 
-client :: IO ()
-client = runTCPClient "127.0.0.1" "3000" $ \s -> do
+client :: String -> Int -> IO ()
+client host port = runTCPClient host (show port) $ \s -> do
     sendAll s $ C.pack "Hello, world!"
     msg <- recv s 1024000000
     putStr "Received: "

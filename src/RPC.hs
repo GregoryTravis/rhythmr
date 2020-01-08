@@ -10,8 +10,8 @@ import Util
 rpc = do
   forkIO $ do
     threadDelay $ 1 * 1000000
-    client
-  threadId <- forkIO $ server
+    client "127.0.0.1" 3000
+  threadId <- forkIO $ server 3000
   msp "running"
   threadDelay $ 5 * 1000000
   killThread threadId
