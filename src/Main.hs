@@ -1,11 +1,12 @@
 module Main where
 
-import Data.List.Utils (replace)
+--import Data.List.Utils (replace)
 import System.Directory
 import System.Environment (getArgs)
 import System.FilePath.Posix (takeBaseName)
 
 import Affinity
+import Analysis
 import Arrangement
 import Aubio
 import Display
@@ -13,7 +14,7 @@ import Download
 import External (contentAddressableWrite)
 import Feh
 import Mess
-import Analysis
+import RPC
 import Search
 import Song
 import Sound
@@ -51,7 +52,7 @@ downloadMain searchString count = do
           return $ dest filename
         dir = "tracks/" ++ searchStringDir
         dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
-        searchStringDir = replace " " "-" searchString
+        searchStringDir = replace ' ' '-' searchString
 
 bars :: String -> Int -> IO ()
 bars searchString numTracks = do
@@ -122,11 +123,13 @@ song seed = do
   song <- renderSong theArrayArrangement loopFilenames seed
   writeSound ("song-" ++ (show seed) ++ ".wav") song
 
-doStuffDefault = ["aff", "98238"]
+--doStuffDefault = ["aff", "98238"]
+doStuffDefault = ["rpc"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
 doStuff ["display"] = displayMain
 doStuff ["aff", seed] = affinityMain (read seed)
+doStuff ["rpc"] = rpc
 doStuff [] = doStuff doStuffDefault
   --generateSome
 

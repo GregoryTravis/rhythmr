@@ -23,6 +23,7 @@ module Util
 , die
 , predSplit
 , chomp
+, replace
 ) where
 
 import Control.Exception
@@ -125,3 +126,6 @@ chomp :: String -> String
 chomp s =
   let ('\n' : rs) = reverse s
    in reverse rs
+
+replace a b (x : xs) | a == x = b : (replace a b xs)
+replace a b [] = []
