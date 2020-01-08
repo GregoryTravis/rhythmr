@@ -22,14 +22,18 @@ import Util
 -- Open a gfx window in the server
 -- only draw the circle when the command comes
 
-server port = do
+server :: Int -> (String -> IO String) -> IO ()
+server port handler = do
   runTCPServer Nothing (show port) talk
   where
     talk s = do
-        msg <- recv s 1024000000
-        msp $ "Got " ++ C.unpack msg
-        unless (S.null msg) $ do
-          sendAll s msg
+        bs <- recv s 1024000000
+        unless (S.null bs) $ do
+          let request = C.unpack bs
+          msp $ "Request " ++ request
+          response <- handler request
+          msp $ "Response " ++ response
+          sendAll s $ C.pack response
           talk s
 
 -- from the "network-run" package.
