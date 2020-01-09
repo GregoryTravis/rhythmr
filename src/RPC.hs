@@ -9,16 +9,20 @@ import Util
 
 handler s = return $ s ++ ":" ++ s
 
+-- clientHandler :: Client -> IO ()
+-- clientHandler c = do
+--   Bar y = rpcSend c (Foo 12)
+--   msp y
+
+serverHandler (Foo x) = Bar (x*2)
+
 rpc = do
   forkIO $ do
     threadDelay $ 1 * 1000000
     withRPCClient "127.0.0.1" 3000 $ \c -> do
-      resp <- rpcSend c "hey now"
+      resp <- rpcSend c (Foo 12)
       msp $ "Got " ++ resp
-      threadDelay $ 1 * 1000000
-      resp' <- rpcSend c "hey now2"
-      msp $ "Got " ++ resp'
-  threadId <- forkIO $ rpcServer 3000 handler
+  threadId <- forkIO $ rpcServer 3000 (return . serverHandler)
   msp "running"
   threadDelay $ 5 * 1000000
   killThread threadId

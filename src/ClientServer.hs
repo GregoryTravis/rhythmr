@@ -2,6 +2,8 @@
 
 module ClientServer
 ( Client
+, Foo(..)
+, Bar(..)
 , withSocketClient
 , socketSend
 , socketServer ) where
@@ -27,6 +29,9 @@ data Client = Client Socket
 -- withRemote wrapper which provides the client chan
 -- Open a gfx window in the server
 -- only draw the circle when the command comes
+
+data Foo a = Foo a deriving (Read, Show)
+data Bar a = Bar a deriving (Read, Show)
 
 socketServer :: Int -> (String -> IO String) -> IO ()
 socketServer port handler = do
