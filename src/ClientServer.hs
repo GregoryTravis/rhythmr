@@ -2,9 +2,9 @@
 
 module ClientServer
 ( Client
-, withClient
-, send
-, server ) where
+, withSocketClient
+, socketSend
+, socketServer ) where
 
 import Control.Concurrent (forkIO, forkFinally, killThread, threadDelay)
 import qualified Control.Exception as E
@@ -28,8 +28,8 @@ data Client = Client Socket
 -- Open a gfx window in the server
 -- only draw the circle when the command comes
 
-server :: Int -> (String -> IO String) -> IO ()
-server port handler = do
+socketServer :: Int -> (String -> IO String) -> IO ()
+socketServer port handler = do
   runTCPServer Nothing (show port) talk
   where
     talk s = do
@@ -65,11 +65,11 @@ runTCPServer mhost port server = withSocketsDo $ do
         (conn, _peer) <- accept sock
         void $ forkFinally (server conn) (const $ gracefulClose conn 5000)-- import Network.Socket
 
-withClient :: String -> Int -> (Client -> IO a) -> IO a
-withClient host port handler = runTCPClient host (show port) $ \s -> handler (Client s)
+withSocketClient :: String -> Int -> (Client -> IO a) -> IO a
+withSocketClient host port handler = runTCPClient host (show port) $ \s -> handler (Client s)
 
-send :: Client -> String -> IO String
-send (Client s) request = do
+socketSend :: Client -> String -> IO String
+socketSend (Client s) request = do
     msp $ "C Request " ++ request
     sendAll s $ C.pack request
     bs <- recv s 1024000000
