@@ -124,12 +124,16 @@ song seed = do
   writeSound ("song-" ++ (show seed) ++ ".wav") song
 
 --doStuffDefault = ["aff", "98238"]
-doStuffDefault = ["rpc"]
+--doStuffDefault = ["rpc"]
+doStuffDefault = ["displayServer"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
-doStuff ["display"] = displayMain
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["rpc"] = rpc
+doStuff ["displayServer"] = displayServer
+doStuff ["displaySend"] = withDisplay $ \d -> do
+  displaySend d (Circ 70)
+  return ()
 doStuff [] = doStuff doStuffDefault
   --generateSome
 

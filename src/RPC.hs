@@ -1,6 +1,11 @@
 -- Code lifted from https://hackage.haskell.org/package/network-3.1.1.1/docs/Network-Socket.html
 
-module RPC (rpc) where
+module RPC
+( RPCClient
+, rpc 
+, rpcSend
+, withRPCClient
+, rpcServer ) where
 
 import Control.Concurrent (forkIO, forkFinally, killThread, threadDelay)
 

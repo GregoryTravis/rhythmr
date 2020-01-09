@@ -22,14 +22,6 @@ import Util
 
 data Client = Client Socket
 
--- todo
--- move this to TCP.hs
--- withServer wrapper so we can clean it up
--- Use a chan
--- withRemote wrapper which provides the client chan
--- Open a gfx window in the server
--- only draw the circle when the command comes
-
 data Foo a = Foo a deriving (Read, Show)
 data Bar a = Bar a deriving (Read, Show)
 
