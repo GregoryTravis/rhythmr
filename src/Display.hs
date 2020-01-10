@@ -25,8 +25,12 @@ displayServer = do
 serverHandler :: DisplayRequest -> IO DispayResponse
 
 serverHandler (Circ w) = do
-  display (InWindow "Nice Window" (200, 200) (10, 10)) white (Circle w)
+  -- display (InWindow "Nice Window" (200, 200) (10, 10)) white (Circle w)
+  animate (InWindow "Nice Window" (200, 200) (10, 10)) white anim
   return DispayResponse
+
+anim :: Float -> Picture
+anim t = Circle $ 20 + t * 10
 
 withDisplay :: (Display -> IO a) -> IO a
 withDisplay handler = withRPCClient "127.0.0.1" 3000 $ \c -> handler $ Display c
