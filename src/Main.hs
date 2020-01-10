@@ -9,7 +9,7 @@ import Affinity
 import Analysis
 import Arrangement
 import Aubio
-import Display
+import Terminal
 import Download
 import External (contentAddressableWrite)
 import Feh
@@ -133,7 +133,7 @@ doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["rpc"] = rpc
 doStuff ["displayServer"] = displayServer
 doStuff ["dm"] = displayMain
-doStuff ["displaySend"] = withDisplay $ \d -> do
+doStuff ["displaySend"] = withTerminal $ \d -> do
   displaySend d (Circ 70)
   return ()
 doStuff [] = doStuff doStuffDefault

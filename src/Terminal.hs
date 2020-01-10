@@ -1,8 +1,8 @@
-module Display
-( DisplayRequest(..)
-, DispayResponse(..)
+module Terminal
+( TerminalRequest(..)
+, TerminalResponse(..)
 , displayServer
-, withDisplay
+, withTerminal
 , displayMain
 , displaySend ) where
 
@@ -13,10 +13,10 @@ import Graphics.Gloss.Interface.IO.Game
 import RPC
 import Util
 
-data Disp = Disp RPCClient
+data Terminal = Terminal RPCClient
 
-data DisplayRequest = Circ Float deriving (Read, Show)
-data DispayResponse = DispayResponse deriving (Read, Show)
+data TerminalRequest = Circ Float deriving (Read, Show)
+data TerminalResponse = TerminalResponse deriving (Read, Show)
 
 displayServer = do
   forkIO $ do
@@ -24,12 +24,12 @@ displayServer = do
     threadDelay $ 7200 * 1000000
   return ()
 
-serverHandler :: DisplayRequest -> IO DispayResponse
+serverHandler :: TerminalRequest -> IO TerminalResponse
 
 serverHandler (Circ w) = do
   -- display (InWindow "Nice Window" (200, 200) (10, 10)) white (Circle w)
   displayMain
-  return DispayResponse
+  return TerminalResponse
 
 -- x position of circle center
 type World = Int
@@ -56,8 +56,8 @@ stepIteration dt w = do
 anim :: Float -> Picture
 anim t = Circle $ 20 + t * 20
 
-withDisplay :: (Disp -> IO a) -> IO a
-withDisplay handler = withRPCClient "127.0.0.1" 3000 $ \c -> handler $ Disp c
+withTerminal :: (Terminal -> IO a) -> IO a
+withTerminal handler = withRPCClient "127.0.0.1" 3000 $ \c -> handler $ Terminal c
 
-displaySend :: Disp -> DisplayRequest -> IO DispayResponse
-displaySend (Disp c) request = rpcSend c request
+displaySend :: Terminal -> TerminalRequest -> IO TerminalResponse
+displaySend (Terminal c) request = rpcSend c request
