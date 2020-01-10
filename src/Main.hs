@@ -125,12 +125,14 @@ song seed = do
 
 --doStuffDefault = ["aff", "98238"]
 --doStuffDefault = ["rpc"]
-doStuffDefault = ["displayServer"]
+--doStuffDefault = ["displayServer"]
+doStuffDefault = ["dm"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["rpc"] = rpc
 doStuff ["displayServer"] = displayServer
+doStuff ["dm"] = displayMain
 doStuff ["displaySend"] = withDisplay $ \d -> do
   displaySend d (Circ 70)
   return ()
