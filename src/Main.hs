@@ -19,6 +19,7 @@ import Search
 import Song
 import Sound
 import Spleeter
+import TUI
 import Util
 
 theArrayArrangement =
@@ -123,10 +124,7 @@ song seed = do
   song <- renderSong theArrayArrangement loopFilenames seed
   writeSound ("song-" ++ (show seed) ++ ".wav") song
 
---doStuffDefault = ["aff", "98238"]
---doStuffDefault = ["rpc"]
---doStuffDefault = ["displayServer"]
-doStuffDefault = ["dm"]
+doStuffDefault = ["tui"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["song", seed] = song (read seed)
 doStuff ["aff", seed] = affinityMain (read seed)
@@ -136,6 +134,7 @@ doStuff ["dm"] = displayMain
 doStuff ["displaySend"] = withTerminal $ \d -> do
   displaySend d (Circ 70)
   return ()
+doStuff ["tui"] = tui
 doStuff [] = doStuff doStuffDefault
   --generateSome
 
