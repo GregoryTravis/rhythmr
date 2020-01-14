@@ -2,12 +2,18 @@
 module TUI (tui) where
 
 import Control.Exception (finally)
+import System.Console.ANSI
 import System.Posix.IO (stdInput)
 import System.Posix.Terminal
 
 import Util
 
----- jditor
+---- Editor
+--clearScreen = putStr "\027[2J"
+setCursorPos x y = setCursorPosition y x
+resetTerm = do
+  setCursorPos 0 0
+  clearScreen
 
 -- Bool is exit?
 type KeyboardHandler s = s -> Char -> (s, Bool)
@@ -15,10 +21,12 @@ type Displayer s = s -> String
 
 editor :: s -> KeyboardHandler s -> Displayer s -> IO ()
 editor initState keyboardHandler displayer = do
+  resetTerm
   let loop s = do
         c <- getChar
-        msp $ "char " ++ (show c)
+        --msp $ "char " ++ (show c)
         let (s', exitP) = keyboardHandler s c
+        resetTerm
         msp $ displayer s'
         if exitP then return () else loop s'
    in loop initState
