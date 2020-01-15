@@ -4,8 +4,10 @@ module Graph
 ( Graph
 , empty
 , add
+, addMulti
 , components
-, showComponents ) where
+, showComponents
+, showGraphAsComponents ) where
 
 ---- Really dumb undirected graph: extremely slow!!
 
@@ -32,6 +34,11 @@ add g x y =
    -- in eesp (show ("hoy", m, m', m'')) $ Graph m''
    in Graph m''
 
+-- TODO this is a fold
+addMulti :: (Ord a, Show a) => Graph a -> [(a, a)] -> Graph a
+addMulti g ((x, y) : ps) = addMulti (add g x y) ps
+addMulti g [] = g
+
 edges :: (Eq a, Ord a) => Graph a -> [(a, a)]
 edges g = nub $ map sortEdge $ directedEdges g
 
@@ -52,6 +59,9 @@ components g = nub $ Prelude.map (closure g) (S.toList (elements g))
 
 showComponents :: Show a => [S.Set a] -> String
 showComponents sets = intercalate " " $ map show (map S.toList sets)
+
+showGraphAsComponents :: (Eq a, Ord a, Show a) => Graph a -> String
+showGraphAsComponents = showComponents . components
 
 elements :: Ord a => Graph a -> S.Set a
 elements (Graph m) = flatten (M.elems m)

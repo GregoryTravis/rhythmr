@@ -1,5 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
-module TUI (tui) where
+
+module TUI
+( KeyboardHandler
+, Displayer
+, editor
+, runEditor ) where
 
 import Control.Exception (finally)
 import System.Console.ANSI
@@ -16,18 +21,18 @@ resetTerm = do
   clearScreen
 
 -- Bool is exit?
-type KeyboardHandler s = s -> Char -> (s, Bool)
+type KeyboardHandler s = s -> Char -> IO (s, Bool)
 type Displayer s = s -> String
 
 editor :: s -> KeyboardHandler s -> Displayer s -> IO ()
 editor initState keyboardHandler displayer = do
   resetTerm
   let loop s = do
+        putStrLn $ displayer s
         c <- getChar
         --msp $ "char " ++ (show c)
-        let (s', exitP) = keyboardHandler s c
+        (s', exitP) <- keyboardHandler s c
         resetTerm
-        msp $ displayer s'
         if exitP then return () else loop s'
    in loop initState
   msp "editor done"
@@ -61,22 +66,12 @@ withRawInput vmin vtime action = do
    -}
   action `finally` revert
 
-data State = State [Char]
-
-keyboardHandler :: KeyboardHandler State
-keyboardHandler (State cs) c = do
-  let cs' = cs ++ [c]
-      exitP = c == '\ESC'
-   in (State cs', exitP)
-
-displayer :: Displayer State
-displayer (State cs) = show cs
-
-tui = withRawInput 0 1 $ do
+runEditor editor = withRawInput 0 1 $ do
   -- let loop = do
   --       c <- getChar
   --       msp $ "char " ++ (show c)
   --       if c /= '\ESC' then loop else return ()
   --  in loop
-  editor (State []) keyboardHandler displayer
+  --editor (State []) keyboardHandler displayer
+  editor
   msp "tui"
