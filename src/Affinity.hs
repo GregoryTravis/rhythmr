@@ -21,14 +21,14 @@ data State =
   State { sounds :: [Sound]
         , likes :: Graph Int
         , dislikes :: Graph Int
-        , currentGroup :: [Int] }
-emptyState = State { sounds = [], likes = empty, dislikes = empty, currentGroup = [] }
+        , currentGroup :: [Int]
+        , looper :: Looper }
 
-initState :: IO State
-initState = do
+initState :: Looper -> IO State
+initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 8) $ listDirectory "loops"
   sounds <- mapM readSound filenames
-  return $ emptyState { sounds = sounds }
+  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
@@ -36,9 +36,19 @@ keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
   let s' = s { currentGroup = group }
+  playCurrent s'
   return (s', False)
 keyboardHandler s 'y' = return (judge True s, False)
 keyboardHandler s 'n' = return (judge False s, False)
+
+playCurrent :: State -> IO ()
+playCurrent s = do
+  let ss :: [Sound]
+      ss = map ((sounds s) !!) (currentGroup s)
+      arr :: Arrangement
+      arr = parArrangement (map (singleSoundArrangement loopLengthFrames) ss)
+  mix <- renderArrangement arr
+  sendCommand (looper s) (Play mix)
 
 judge :: Bool -> State -> State
 judge isLike s = do
@@ -74,8 +84,9 @@ displayer s = intercalate "\n" lines
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  s <- initState
-  runEditor (editor s keyboardHandler displayer)
+  withLooper $ \looper -> do
+                    s <- initState looper
+                    runEditor (editor s keyboardHandler displayer)
 
 __affinityMain :: Int -> IO ()
 __affinityMain seed = do

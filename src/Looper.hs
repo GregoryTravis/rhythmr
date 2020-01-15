@@ -77,7 +77,7 @@ playCurrentSound4EVA looper@(Looper chan ioref) = do
   playOrQuit soundMaybe
   where playOrQuit :: Maybe Sound -> IO ()
         playOrQuit (Just sound) = do
-          msp $ "Playing " ++ (show sound)
+          --msp $ "Playing " ++ (show sound)
           let Sound { samples = buffer } = sound
           writeAudioAllAtOnce buffer
           playCurrentSound4EVA looper
