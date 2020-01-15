@@ -26,6 +26,7 @@ type Displayer s = s -> String
 
 editor :: s -> KeyboardHandler s -> Displayer s -> IO ()
 editor initState keyboardHandler displayer = do
+  -- TODO don't need two resetTerms?
   resetTerm
   let loop s = do
         putStrLn $ displayer s

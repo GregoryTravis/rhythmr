@@ -1,9 +1,11 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 
 module Affinity (affinityMain) where
 
 import Control.Concurrent
 import Data.List (intercalate)
+import qualified Data.Set as S
 import System.Directory (listDirectory)
 import System.Random
 
@@ -53,13 +55,21 @@ randomGroup s = do
   indices <- mapM (\_ -> getStdRandom (randomR (0, numLoops-1))) [0..groupSize-1]
   return indices
 
+acceptable :: State -> [[Int]]
+acceptable (State { likes, dislikes }) = map S.toList $ components likes
+  -- let allPairs = esp [(ca, cb) | ca <- components likes, cb <- components dislikes]
+  --  in map S.toList $ map (uncurry S.difference) allPairs
+   --in map (map S.toList) $ map (uncurry setDiff) allPairs
+  --where setDiff a b = S.fromList a `difference` S.fromList b
+
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
-  where lines = [currentS, soundsS, likesS, dislikesS]
+  where lines = [currentS, soundsS, likesS, dislikesS, acceptableS]
         soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
         dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
+        acceptableS = "Acceptable: " ++ show (acceptable s)
         showList xs = intercalate " " (map show xs)
 
 affinityMain :: Int -> IO ()
