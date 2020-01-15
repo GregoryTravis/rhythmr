@@ -40,6 +40,12 @@ keyboardHandler s 'r' = do
   return (s', False)
 keyboardHandler s 'y' = return (judge True s, False)
 keyboardHandler s 'n' = return (judge False s, False)
+keyboardHandler s 'A' = do
+  case acceptable s of [] -> return (s, False)
+                       (g:gs) -> do
+                                   let s' = s { currentGroup = g }
+                                   playCurrent s'
+                                   return (s', False)
 
 playCurrent :: State -> IO ()
 playCurrent s = do

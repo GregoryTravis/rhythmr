@@ -51,18 +51,18 @@ backgroundLooper looper = do
 waitForFirstSound :: Looper -> IO ()
 waitForFirstSound (Looper chan ioref) = do
   command <- readChan chan
-  msp $ "Got " ++ (show command)
+  --msp $ "Got " ++ (show command)
   case command of Play sound -> do writeIORef ioref (Just sound)
                                    return ()
 
 updateIORef :: Looper -> IO ()
 updateIORef looper@(Looper chan ioref) = do
   command <- readChan chan
-  msp $ "Got " ++ (show command)
+  --msp $ "Got " ++ (show command)
   handle command
   where handle :: LoopCommand -> IO ()
         handle (Play sound) = do
-          msp $ "Setting " ++ (show sound)
+          --msp $ "Setting " ++ (show sound)
           writeIORef ioref (Just sound)
           updateIORef looper
         handle Stop = do
