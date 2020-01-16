@@ -19,6 +19,7 @@ setCursorPos x y = setCursorPosition y x
 resetTerm = do
   setCursorPos 0 0
   clearScreen
+  --putStr "\ESC[7m"
 
 -- Bool is exit?
 type KeyboardHandler s = s -> Char -> IO (s, Bool)
