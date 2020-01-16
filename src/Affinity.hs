@@ -27,7 +27,7 @@ data State =
 
 initState :: Looper -> IO State
 initState looper = do
-  filenames <- fmap (map ("loops/" ++)) $ fmap (take 64) $ listDirectory "loops"
+  filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
   return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
 
