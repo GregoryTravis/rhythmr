@@ -5,6 +5,7 @@ module Graph
 , empty
 , add
 , addMulti
+, nodes
 , components
 , showComponents
 , showGraphAsComponents ) where
@@ -55,7 +56,7 @@ nodeEdges (Graph m) x = map (x,) $ S.toList (m M.! x)
 
 -- This is extremely inefficient; it constructs a size-n component n times
 components :: (Eq a, Ord a, Show a) => Graph a -> [S.Set a]
-components g = nub $ Prelude.map (closure g) (S.toList (elements g))
+components g = nub $ Prelude.map (closure g) (S.toList (nodes g))
 
 showComponents :: Show a => [S.Set a] -> String
 showComponents sets = intercalate " " $ map show (map S.toList sets)
@@ -63,8 +64,8 @@ showComponents sets = intercalate " " $ map show (map S.toList sets)
 showGraphAsComponents :: (Eq a, Ord a, Show a) => Graph a -> String
 showGraphAsComponents = showComponents . components
 
-elements :: Ord a => Graph a -> S.Set a
-elements (Graph m) = flatten (M.elems m)
+nodes :: Ord a => Graph a -> S.Set a
+nodes (Graph m) = flatten (M.elems m)
 
 closure :: (Ord a, Show a) => Graph a -> a -> S.Set a
 closure g x = converge (closure' g) (S.singleton x)

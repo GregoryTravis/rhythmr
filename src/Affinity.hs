@@ -77,11 +77,16 @@ judge isLike s = do
       addComponent g xs = addMulti g (map (head xs,) (tail xs))
    in (setter s) $ addComponent (getter s) (currentGroup s)
 
+randFromList :: [a] -> IO a
+randFromList xs = do
+  i <- getStdRandom (randomR (0, length xs - 1))
+  return $ xs !! i
+
 randomGroup s = do
-  let numLoops = length $ sounds s
+  let inUse = nodes (likes s)
+      unused = S.toList $ (S.fromList [0..length (sounds s)-1]) `S.difference` inUse
   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
-  --indices <- fmap (take numLoops) $ getStdRandom (randomRs (0, numLoops-1)) :: IO [Int]
-  indices <- mapM (\_ -> getStdRandom (randomR (0, numLoops-1))) [0..groupSize-1]
+  indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
   return indices
 
 acceptable :: State -> [[Int]]
