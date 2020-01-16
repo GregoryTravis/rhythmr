@@ -94,12 +94,12 @@ acceptable (State { likes, dislikes }) = map S.toList $ components likes
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
   where gridS = grid s
-        lines = [gridS, "", currentS, soundsS, likesS, dislikesS, acceptableS, "", arrS]
-        soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
+        lines = [gridS, "", currentS, likesS, dislikesS, "", arrS]
+        --soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
         dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
-        acceptableS = "Acceptable: " ++ show (acceptable s)
+        --acceptableS = "Acceptable: " ++ show (acceptable s)
         arrS = showArr (acceptable s)
         showList xs = intercalate " " (map show xs)
 
