@@ -105,13 +105,23 @@ displayer s = intercalate "\n" lines
 rev :: String -> String
 rev s = "\ESC[7m" ++ s ++ "\ESC[0m" 
 
+-- box :: [Int] -> Int -> String
+-- box group i = rv i ("[" ++ (fmt i) ++ "]")
+--   where fmt i = printf "%4d" i
+--         rv :: Int -> String -> String
+--         rv i s = if elem i group then rev s else s
+box :: Bool -> Int -> String
+box reverse i =
+  let base = "[" ++ (fmt i) ++ "]"
+   in if reverse then rev base else base
+  where fmt i = printf "%4d" i
+
+boxShowMember :: [Int] -> Int -> String
+boxShowMember group i = box (elem i group) i
+
 grid :: State -> String
-grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 10 $ map (box currentGroup) [0..length sounds - 1]
+grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 10 $ map (boxShowMember currentGroup) [0..length sounds - 1]
   where format xs = intercalate " " xs
-        box group i = rv i ("[" ++ (fmt i) ++ "]")
-          where fmt i = printf "%4d" i
-                --m i = if elem i currentGroup then "***" else "   "
-                rv i s = if elem i currentGroup then rev s else s
         splitUp :: Int -> [a] -> [[a]]
         splitUp n [] = []
         splitUp n xs = take n xs : splitUp n (drop n xs)
