@@ -27,7 +27,7 @@ data State =
 
 initState :: Looper -> IO State
 initState looper = do
-  filenames <- fmap (map ("loops/" ++)) $ fmap (take 16) $ listDirectory "loops"
+  filenames <- fmap (map ("loops/" ++)) $ fmap (take 64) $ listDirectory "loops"
   sounds <- mapM readSound filenames
   return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
 
@@ -106,7 +106,7 @@ rev :: String -> String
 rev s = "\ESC[7m" ++ s ++ "\ESC[0m" 
 
 grid :: State -> String
-grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 4 $ map (box currentGroup) [0..length sounds - 1]
+grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 10 $ map (box currentGroup) [0..length sounds - 1]
   where format xs = intercalate " " xs
         box group i = rv i ("[" ++ (fmt i) ++ "]")
           where fmt i = printf "%4d" i
