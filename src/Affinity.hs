@@ -26,7 +26,7 @@ data State =
 
 initState :: Looper -> IO State
 initState looper = do
-  filenames <- fmap (map ("loops/" ++)) $ fmap (take 8) $ listDirectory "loops"
+  filenames <- fmap (map ("loops/" ++)) $ fmap (take 16) $ listDirectory "loops"
   sounds <- mapM readSound filenames
   return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
 
@@ -46,6 +46,18 @@ keyboardHandler s 'A' = do
                                    let s' = s { currentGroup = g }
                                    playCurrent s'
                                    return (s', False)
+keyboardHandler s 'S' = do
+  playSong s
+  return (s, False)
+
+playSong :: State -> IO ()
+playSong s = do
+  let acc = acceptable s
+      accSounds = map (map ((sounds s) !!)) acc
+      arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
+  songMix <- renderArrangement arr
+  sendCommand (looper s) (Play songMix)
+  where dub x = seqArrangement [x, x]
 
 playCurrent :: State -> IO ()
 playCurrent s = do
