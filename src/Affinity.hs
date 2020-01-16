@@ -4,7 +4,7 @@
 module Affinity (affinityMain) where
 
 import Control.Concurrent
-import Data.List (intercalate)
+import Data.List (intercalate, transpose)
 import qualified Data.Set as S
 import System.Directory (listDirectory)
 import System.Random
@@ -94,12 +94,13 @@ acceptable (State { likes, dislikes }) = map S.toList $ components likes
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
   where gridS = grid s
-        lines = [gridS, "", currentS, soundsS, likesS, dislikesS, acceptableS]
+        lines = [gridS, "", currentS, soundsS, likesS, dislikesS, acceptableS, "", arrS]
         soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
         dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
         acceptableS = "Acceptable: " ++ show (acceptable s)
+        arrS = showArr (acceptable s)
         showList xs = intercalate " " (map show xs)
 
 rev :: String -> String
@@ -115,6 +116,10 @@ box reverse i =
   let base = "[" ++ (fmt i) ++ "]"
    in if reverse then rev base else base
   where fmt i = printf "%4d" i
+
+showArr :: [[Int]] -> String
+showArr ises = gridize $ transpose $ map (\is -> (map (box False) is)) ises
+  where gridize xses = intercalate "\n" (map (\xs -> (intercalate " " xs)) xses)
 
 boxShowMember :: [Int] -> Int -> String
 boxShowMember group i = box (elem i group) i
