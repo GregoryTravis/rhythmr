@@ -40,8 +40,10 @@ withLooper action = do
   (action looper) `finally` cleanup
 
 setSound :: Looper -> Sound -> IO ()
-setSound (Looper sv) sound = do
-  msp ("set", SV.length (samples sound))
+setSound l sound = do
+  --msp ("set", SV.length (samples sound))
+  -- Dum way to make sure the sound is evaluated before putting it in the mvar
+  let (Looper sv) = (samples sound) `seq` l
   empty <- isEmptyMVar sv
   if empty
      then putMVar sv sound
