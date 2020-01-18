@@ -23,13 +23,13 @@ data State =
         , likes :: Graph Int
         , dislikes :: Graph Int
         , currentGroup :: [Int]
-        , nooper :: Nooper }
+        , looper :: Looper }
 
-initState :: Nooper -> IO State
-initState nooper = do
+initState :: Looper -> IO State
+initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
-  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], nooper = nooper }
+  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
@@ -57,7 +57,7 @@ playSong s = do
       accSounds = map (map ((sounds s) !!)) acc
       arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
   songMix <- renderArrangement arr
-  setSound (nooper s) songMix
+  setSound (looper s) songMix
   where dub x = seqArrangement [x, x]
 
 playCurrent :: State -> IO ()
@@ -69,7 +69,7 @@ playCurrent s = do
       arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (oneSeven : ss))
   mix <- renderArrangement arr
   --msp "setting sound"
-  setSound (nooper s) mix
+  setSound (looper s) mix
 
 judge :: Bool -> State -> State
 judge isLike s = do
@@ -140,6 +140,6 @@ grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  withNooper $ \nooper -> do
-                    s <- initState nooper
+  withLooper $ \looper -> do
+                    s <- initState looper
                     runEditor (editor s keyboardHandler displayer)

@@ -1,6 +1,6 @@
 module Looper
-( Nooper
-, withNooper
+( Looper
+, withLooper
 , setSound
 ) where
 
@@ -23,18 +23,18 @@ foreign import ccall "term_audio" term_audio :: IO ()
 
 granularity = 64
 
-data Nooper = Nooper (MVar Sound)
+data Looper = Looper (MVar Sound)
 
-withNooper :: (Nooper -> IO a) -> IO a
-withNooper action = do
+withLooper :: (Looper -> IO a) -> IO a
+withLooper action = do
   sv <- newEmptyMVar
-  let looper = Nooper sv
-  threadId <- forkIO $ noop looper
+  let looper = Looper sv
+  threadId <- forkIO $ loop looper
   let cleanup = killThread threadId
   (action looper) `finally` cleanup
 
-setSound :: Nooper -> Sound -> IO ()
-setSound (Nooper sv) sound = do
+setSound :: Looper -> Sound -> IO ()
+setSound (Looper sv) sound = do
   msp ("set", SV.length (samples sound))
   empty <- isEmptyMVar sv
   if empty
@@ -42,17 +42,17 @@ setSound (Nooper sv) sound = do
      else do swapMVar sv sound
              return ()
 
-noop :: Nooper -> IO ()
-noop looper = noop' looper 0
-noop' :: Nooper -> Int -> IO ()
-noop' l@(Nooper sv) currentIndex = do
+loop :: Looper -> IO ()
+loop looper = loop' looper 0
+loop' :: Looper -> Int -> IO ()
+loop' l@(Looper sv) currentIndex = do
   --msp currentIndex
   Sound { samples = buffer } <- readMVar sv
   let grain = SV.take granularity (SV.drop currentIndex buffer)
       grainLength = SV.length grain
       nextCurrentIndex = (currentIndex + (grainLength * 1)) `mod` (SV.length buffer)
   writeAudioAllAtOnce grain
-  noop' l nextCurrentIndex
+  loop' l nextCurrentIndex
 
 writeAudioAllAtOnce :: Vector Float -> IO ()
 writeAudioAllAtOnce v = do
