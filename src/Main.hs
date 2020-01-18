@@ -13,7 +13,7 @@ import Terminal
 import Download
 import External (contentAddressableWrite)
 import Feh
-import Looper (initAudio)
+import Looper (withPortaudio)
 import Mess
 import RPC
 import Search
@@ -138,9 +138,8 @@ doStuff ["displaySend"] = withTerminal $ \d -> do
 doStuff [] = doStuff doStuffDefault
   --generateSome
 
-main = do
+main = withPortaudio $ do
   noBuffering
-  initAudio
   args <- getArgs
   msp $ "++ " ++ (show args)
   doStuff args

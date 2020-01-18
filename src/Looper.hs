@@ -1,6 +1,6 @@
 module Looper
 ( Looper
-, initAudio
+, withPortaudio
 , withLooper
 , setSound
 ) where
@@ -26,7 +26,10 @@ granularity = 64
 
 data Looper = Looper (MVar Sound)
 
-initAudio = init_audio
+withPortaudio :: IO a -> IO a
+withPortaudio action = do
+  init_audio
+  action `finally` term_audio
 
 withLooper :: (Looper -> IO a) -> IO a
 withLooper action = do
