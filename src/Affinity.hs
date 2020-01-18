@@ -18,6 +18,10 @@ import Sound
 import TUI
 import Util
 
+addClick :: Maybe String
+addClick = Nothing
+--addClick = Just "looper/1-7.wav"
+
 data State =
   State { sounds :: [Sound]
         , likes :: Graph Int
@@ -62,11 +66,12 @@ playSong s = do
 
 playCurrent :: State -> IO ()
 playCurrent s = do
-  oneSeven <- readSound "1-7loops/1-7.wav"
+  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
+                                 Nothing -> return []
   let ss :: [Sound]
       ss = map ((sounds s) !!) (currentGroup s)
       arr :: Arrangement
-      arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (oneSeven : ss))
+      arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (clickTrack ++ ss))
   mix <- renderArrangement arr
   --msp "setting sound"
   setSound (looper s) mix
