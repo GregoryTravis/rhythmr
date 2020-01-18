@@ -57,7 +57,6 @@ playSong s = do
       accSounds = map (map ((sounds s) !!)) acc
       arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
   songMix <- renderArrangement arr
-  --sendCommand (nooper s) (Play songMix)
   setSound (nooper s) songMix
   where dub x = seqArrangement [x, x]
 
@@ -144,37 +143,3 @@ affinityMain seed = do
   withNooper $ \nooper -> do
                     s <- initState nooper
                     runEditor (editor s keyboardHandler displayer)
-
-__affinityMain :: Int -> IO ()
-__affinityMain seed = do
-  let g :: Graph Int
-      --g = add (add (add empty 3 4) 1 2) 1 3
-      g = add (add empty 3 4) 1 2
-  msp g
-  msp $ showComponents $ components g
-  sound <- readSound "aloop.wav"
-  sound2 <- readSound "bloop.wav"
-  sound3 <- readSound "cloop.wav"
-  withLooper $ \looper -> do
-    sendCommand looper $ Play sound
-    threadDelay $ 5 * 1000000
-    sendCommand looper $ Play sound3
-    sendCommand looper $ Play sound2
-    threadDelay $ 3 * 1000000
-    sendCommand looper $ Stop
-  msp "aff hi"
-
-_affinityMain seed = do
-  let rand = mkStdGen seed
-  loopFilenames <- fmap (map ("loops/"++)) $ listDirectory "loops"
-  let someLoopFilenames = map (loopFilenames !!) $ take 4 $ randomRs (0, length loopFilenames - 1) rand
-  msp someLoopFilenames
-  loops <- mapM readSound someLoopFilenames
-  msp loops
-  let arrangement :: Arrangement
-      arrangement = rep 4 $ parArrangement (map (singleSoundArrangement loopLengthFrames) loops)
-  msp arrangement
-  stack <- renderArrangement arrangement
-  msp "aff hi"
-  writeSound "group.wav" stack
-  where rep n arr = seqArrangement (take n $ repeat arr)
