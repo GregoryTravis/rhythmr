@@ -69,9 +69,6 @@ playCurrent s = do
       arr :: Arrangement
       arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (oneSeven : ss))
   mix <- renderArrangement arr
-  let a = 12
-      mix' = mix -- `seq` a
-  msp $ "a " ++ (show a)
   --msp "setting sound"
   setSound (nooper s) mix
 
