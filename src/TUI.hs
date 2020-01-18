@@ -34,7 +34,7 @@ editor initState keyboardHandler displayer = do
         c <- getChar
         --msp $ "char " ++ (show c)
         (s', exitP) <- keyboardHandler s c
-        resetTerm
+        --resetTerm
         if exitP then return () else loop s'
    in loop initState
   msp "editor done"

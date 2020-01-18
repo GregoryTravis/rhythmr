@@ -23,13 +23,13 @@ data State =
         , likes :: Graph Int
         , dislikes :: Graph Int
         , currentGroup :: [Int]
-        , looper :: Looper }
+        , nooper :: Nooper }
 
-initState :: Looper -> IO State
-initState looper = do
+initState :: Nooper -> IO State
+initState nooper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
-  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
+  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], nooper = nooper }
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
@@ -57,17 +57,23 @@ playSong s = do
       accSounds = map (map ((sounds s) !!)) acc
       arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
   songMix <- renderArrangement arr
-  sendCommand (looper s) (Play songMix)
+  --sendCommand (nooper s) (Play songMix)
+  setSound (nooper s) songMix
   where dub x = seqArrangement [x, x]
 
 playCurrent :: State -> IO ()
 playCurrent s = do
+  oneSeven <- readSound "1-7loops/1-7.wav"
   let ss :: [Sound]
       ss = map ((sounds s) !!) (currentGroup s)
       arr :: Arrangement
-      arr = parArrangement (map (singleSoundArrangement loopLengthFrames) ss)
+      arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (oneSeven : ss))
   mix <- renderArrangement arr
-  sendCommand (looper s) (Play mix)
+  let a = 12
+      mix' = mix -- `seq` a
+  msp $ "a " ++ (show a)
+  --msp "setting sound"
+  setSound (nooper s) mix
 
 judge :: Bool -> State -> State
 judge isLike s = do
@@ -138,8 +144,8 @@ grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  withLooper $ \looper -> do
-                    s <- initState looper
+  withNooper $ \nooper -> do
+                    s <- initState nooper
                     runEditor (editor s keyboardHandler displayer)
 
 __affinityMain :: Int -> IO ()

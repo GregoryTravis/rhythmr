@@ -63,7 +63,7 @@ mixNRPs arr = do
   let mix'' = runST $ guv mix nrps
   return Sound { samples = mix'' }
   where yeah :: MSV.Vector s Float -> Placement -> ST s ()
-        yeah mix (NRPlacement sound pos) = mixOnto mix (samples sound) pos
+        yeah mix (NRPlacement sound pos) = eesp "mixOnto" $ mixOnto mix (samples sound) pos
         guv :: SV.Vector Float -> [Placement] -> ST s (SV.Vector Float)
         guv mix nrps = do
           mmix <- MSV.thaw mix
