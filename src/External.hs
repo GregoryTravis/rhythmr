@@ -16,6 +16,7 @@ import Data.List.Split (splitOn)
 import Data.List (intercalate)
 import Data.Time
 import System.Directory
+import System.Exit (ExitCode(..))
 import System.IO
 import System.IO.Temp
 import System.Process
@@ -47,7 +48,8 @@ readFromProc exe args = do
   (stdin, Just stdout, stderr, processHandle) <- createProcess cp
   output <- hGetContents stdout
   evaluate $ length output
-  cleanupProcess (stdin, Just stdout, stderr, processHandle)
+  exitCode <- waitForProcess processHandle
+  massert "proc exit code" (exitCode == ExitSuccess)
   end <- getCurrentTime
   if verbose then msp (show (diffUTCTime end start) ++ " " ++ exe ++ " " ++ (show args)) else return ()
   return output
