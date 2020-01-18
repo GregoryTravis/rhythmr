@@ -165,8 +165,17 @@ void init_audio(void)
 
 void write_audio(float *buffer, int num_frames)
 {
+  PaError err;
   // printf("Writing %p %d\n", buffer, num_frames);
-  Pa_WriteStream(the_stream, (void*)buffer, num_frames);
+  err = Pa_WriteStream(the_stream, (void*)buffer, num_frames);
+  if( err == paOutputUnderflowed ) {
+    // fprintf( stderr, "write_audio underflow\n" );
+  } else if( err != paNoError ) {
+    Pa_Terminate();
+    fprintf( stderr, "write_audio returned %d\n", err );
+    fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
+    exit(1);
+  }
 }
 
 void term_audio(void) {

@@ -1,5 +1,6 @@
 module Looper
 ( Looper
+, initAudio
 , withLooper
 , setSound
 ) where
@@ -24,6 +25,8 @@ foreign import ccall "term_audio" term_audio :: IO ()
 granularity = 64
 
 data Looper = Looper (MVar Sound)
+
+initAudio = init_audio
 
 withLooper :: (Looper -> IO a) -> IO a
 withLooper action = do

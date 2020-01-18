@@ -13,6 +13,7 @@ import Terminal
 import Download
 import External (contentAddressableWrite)
 import Feh
+import Looper (initAudio)
 import Mess
 import RPC
 import Search
@@ -139,6 +140,7 @@ doStuff [] = doStuff doStuffDefault
 
 main = do
   noBuffering
+  initAudio
   args <- getArgs
   msp $ "++ " ++ (show args)
   doStuff args
