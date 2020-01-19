@@ -5,6 +5,7 @@ module Graph
 , empty
 , add
 , addMulti
+, addAll
 , nodes
 , components
 , showComponents
@@ -35,10 +36,17 @@ add g x y =
    -- in eesp (show ("hoy", m, m', m'')) $ Graph m''
    in Graph m''
 
+-- Add a list of pairs
 -- TODO this is a fold
 addMulti :: (Ord a, Show a) => Graph a -> [(a, a)] -> Graph a
 addMulti g ((x, y) : ps) = addMulti (add g x y) ps
 addMulti g [] = g
+
+-- Add all pairs from the list, which really means add each pair consisting of
+-- the head and one of the tail
+addAll :: (Ord a, Show a) => Graph a -> [a] -> Graph a
+addAll g (x:xs) = addMulti g (zip (repeat x) xs)
+addAll g [] = g
 
 edges :: (Eq a, Ord a) => Graph a -> [(a, a)]
 edges g = nub $ map sortEdge $ directedEdges g

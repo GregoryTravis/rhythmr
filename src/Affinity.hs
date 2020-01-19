@@ -27,7 +27,7 @@ addClick = Nothing
 data State =
   State { sounds :: [Sound]
         , likes :: Graph Int
-        , dislikes :: Graph Int
+        , dislikes :: S.Set [Int]
         , currentGroup :: [Int]
         , looper :: Looper
         , editorLog :: [String]
@@ -37,7 +37,7 @@ initState :: Looper -> IO State
 initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
-  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper,
+  return $ State { sounds = sounds, likes = empty, dislikes = S.empty, currentGroup = [], looper = looper,
                    editorLog = ["Welcome to autobeat"], stack = [] }
 
 khsuc :: State -> IO (State, Bool)
@@ -51,8 +51,8 @@ keyboardHandler s 'r' = do
   let s' = s { currentGroup = group }
   playCurrent s'
   return (s', False)
-keyboardHandler s 'y' = return (judge True s, False)
-keyboardHandler s 'n' = return (judge False s, False)
+keyboardHandler s 'y' = return (like s, False)
+keyboardHandler s 'n' = return (dislike s, False)
 keyboardHandler s 'A' = do
   case acceptable s of [] -> return (s, False)
                        (g:gs) -> do
@@ -81,7 +81,8 @@ pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
   where p2l (x, y) = [x, y]
 
 nextFromStack :: State -> State
-nextFromStack s = s { currentGroup = g, stack = gs }
+nextFromStack s | (stack s) /= [] = s { currentGroup = g, stack = gs }
+                | otherwise = s
   where (g:gs) = stack s
 
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
@@ -110,13 +111,10 @@ playCurrent s = do
   --msp "setting sound"
   setSound (looper s) mix
 
-judge :: Bool -> State -> State
-judge isLike s = do
-  let setter = \s g -> if isLike then s { likes = g } else s { dislikes = g }
-      getter = if isLike then likes else dislikes
-      addComponent :: Graph Int -> [Int] -> Graph Int
-      addComponent g xs = addMulti g (map (head xs,) (tail xs))
-   in (setter s) $ addComponent (getter s) (currentGroup s)
+like :: State -> State
+like s = s { likes = addAll (likes s) (currentGroup s) }
+dislike :: State -> State
+dislike s = s { dislikes = S.insert (currentGroup s) (dislikes s) }
 
 randFromList :: [a] -> IO a
 randFromList xs = do
@@ -131,7 +129,7 @@ randomGroup s = do
   return indices
 
 acceptable :: State -> [[Int]]
-acceptable (State { likes, dislikes }) = map S.toList $ components likes
+acceptable (State { likes }) = map S.toList $ components likes
   -- let allPairs = esp [(ca, cb) | ca <- components likes, cb <- components dislikes]
   --  in map S.toList $ map (uncurry S.difference) allPairs
    --in map (map S.toList) $ map (uncurry setDiff) allPairs
@@ -144,7 +142,7 @@ displayer s = intercalate "\n" lines
         --soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
-        dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
+        dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showList (stack s))
         --acceptableS = "Acceptable: " ++ show (acceptable s)
         arrS = showArr (acceptable s)
