@@ -58,15 +58,9 @@ renderArrangement arr = do
 mixNRPs :: Arrangement -> IO Sound
 mixNRPs arr = do
   let len = arrangementLength arr
-  --msp len
-  let mix = SV.replicate (len * 2) 0 :: SV.Vector Float
-  --msp $ SV.index mix 0
-  --msp $ SV.index mix 1
-  let mix' = wha pmixOnto mix [(0, 10.0), (1, 20.0)]
-  --msp $ SV.index mix' 0
-  --msp $ SV.index mix' 1
-  let nrps = case arr of Arrangement nrps -> nrps
-  let mix'' = runST $ guv mix nrps
+      mix = SV.replicate (len * 2) 0 :: SV.Vector Float
+      nrps = case arr of Arrangement nrps -> nrps
+      mix'' = runST $ guv mix nrps
   return Sound { samples = mix'' }
   where yeah :: MSV.Vector s Float -> Placement -> ST s ()
         yeah mix (NRPlacement sound pos) = {-eesp "mixOnto" $-} mixOnto mix (samples sound) pos
@@ -97,16 +91,6 @@ mixOnto mix v pos = do
 wha :: (a -> b -> a) -> a -> [b] -> a
 wha f a [] = a
 wha f a (b : bs) = wha f (f a b) bs
-
-pmixOnto :: SV.Vector Float -> (Int, Float) -> SV.Vector Float
-pmixOnto v (i, x) = runST foo
-  where foo = do
-          mv <- MSV.thaw v
-          -- let mv :: MSV.Vector Float
-          --     mv = mmv
-          MSV.write mv i x
-          v' <- MSV.freeze mv
-          return v'
 
 mapPlacements :: (Placement -> Placement) -> Arrangement -> Arrangement
 mapPlacements f (Arrangement ps) = Arrangement (map f ps)
