@@ -37,7 +37,7 @@ initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
   return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper,
-                   editorLog = ["Welcome to autobeat"] }
+                   editorLog = ["Welcome to autobeat"] ++ (take (editorLogLength-1) (repeat "")) }
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
