@@ -121,11 +121,19 @@ randFromList xs = do
   i <- getStdRandom (randomR (0, length xs - 1))
   return $ xs !! i
 
+-- This one only picks from the set of loops that aren't part of a like
+-- randomGroup s = do
+--   let inUse = nodes (likes s)
+--       unused = S.toList $ (S.fromList [0..length (sounds s)-1]) `S.difference` inUse
+--   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
+--   indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
+--   return indices
+
+randomGroup :: State -> IO [Int]
 randomGroup s = do
-  let inUse = nodes (likes s)
-      unused = S.toList $ (S.fromList [0..length (sounds s)-1]) `S.difference` inUse
+  let soundIndices = [0..length (sounds s)-1]
   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
-  indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
+  indices <- mapM (\_ -> randFromList soundIndices) [0..groupSize-1]
   return indices
 
 acceptable :: State -> [[Int]]
