@@ -85,7 +85,7 @@ appendSounds sounds = Sound { samples = newSamples }
 
 normalize :: Sound -> Sound
 normalize sound = applyToSamples (SV.map (/mx)) sound
-  where mx = max 0.005 $ esp $ SV.maximum (samples (applyToSamples (SV.map abs) sound))
+  where mx = max 0.005 $ SV.maximum (samples (applyToSamples (SV.map abs) sound))
 
 rangeSeconds filename start end = do
   info <- getFileInfo filename

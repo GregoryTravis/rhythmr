@@ -37,7 +37,7 @@ initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
   return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper,
-                   editorLog = ["Welcome to autobeat"] ++ (take (editorLogLength-1) (repeat "")) }
+                   editorLog = ["Welcome to autobeat"] }
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
@@ -122,7 +122,9 @@ displayer s = intercalate "\n" lines
         dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
         --acceptableS = "Acceptable: " ++ show (acceptable s)
         arrS = showArr (acceptable s)
-        logS = bar ++ "\n" ++ (intercalate "\n" (reverse $ editorLog s)) ++ "\n" ++ bar
+        logS = bar ++ "\n" ++ (intercalate "\n" (extend (reverse $ editorLog s))) ++ "\n" ++ bar
+          where extend :: [String] -> [String]
+                extend lines = take editorLogLength $ lines ++ (repeat "")
         showList xs = intercalate " " (map show xs)
         bar = "======================"
 
