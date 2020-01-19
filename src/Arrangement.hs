@@ -29,15 +29,21 @@ data Arrangement = Arrangement [Placement] deriving Show
 -- mapOverSpans :: (Spen -> Span) -> Arrangement -> Arrangement
 -- mapOverSpans f arr = fmap (applyToSpan f) arr
 
+mapOverSounds :: (Sound -> Sound) -> Arrangement -> Arrangement
+mapOverSounds f (Arrangement placements) = Arrangement (map (applyToPlacementSound f) placements)
+applyToPlacementSound :: (Sound -> Sound) -> Placement -> Placement
+applyToPlacementSound f (Placement sound span) = Placement (f sound) span
+applyToPlacementSound f (NRPlacement sound n) = NRPlacement (f sound) n
+
 -- Convert any Placements to NRPlacements
-arrNrpToP :: Arrangement -> IO Arrangement
-arrNrpToP (Arrangement ps) = do
-  newPs <- mapM nrpToP ps
+arrPToNrp :: Arrangement -> IO Arrangement
+arrPToNrp (Arrangement ps) = do
+  newPs <- mapM pToNrp ps
   return $ Arrangement newPs
 
-nrpToP :: Placement -> IO Placement
-nrpToP x@(NRPlacement _ _) = return x
-nrpToP (Placement sound (Span s e)) = do
+pToNrp :: Placement -> IO Placement
+pToNrp x@(NRPlacement _ _) = return x
+pToNrp (Placement sound (Span s e)) = do
   resampled <- resampleSound (e-s) sound
   return $ NRPlacement resampled s
 
@@ -45,9 +51,9 @@ nrpToP (Placement sound (Span s e)) = do
 renderArrangement :: Arrangement -> IO Sound
 renderArrangement arr = do
   --msp arr
-  nrpArr <- arrNrpToP arr
+  nrpArr <- arrPToNrp arr
   --msp nrpArr
-  fmap normalize $ mixNRPs nrpArr
+  fmap normalize $ mixNRPs (mapOverSounds normalize nrpArr)
 
 mixNRPs :: Arrangement -> IO Sound
 mixNRPs arr = do
