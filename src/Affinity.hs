@@ -49,7 +49,7 @@ keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
   let s' = s { currentGroup = group }
-  playCurrent s'
+  --playCurrent s'
   return (s', False)
 keyboardHandler s 'y' = return (like s, False)
 keyboardHandler s 'n' = return (dislike s, False)
@@ -57,7 +57,7 @@ keyboardHandler s 'A' = do
   case acceptable s of [] -> return (s, False)
                        (g:gs) -> do
                                    let s' = s { currentGroup = g }
-                                   playCurrent s'
+                                   --playCurrent s'
                                    return (s', False)
 keyboardHandler s 'S' = do
   playSong s
@@ -65,16 +65,24 @@ keyboardHandler s 'S' = do
 keyboardHandler s '\ESC' = return (s, True)
 keyboardHandler s 'p' = do
   let s' = nextFromStack $ pushCurrentGroup s
-  playCurrent s'
+  --playCurrent s'
   return (s', False)
   --khsuc $ (nextFromStack . pushCurrentGroup) s
 keyboardHandler s ' ' = do
   let s' = nextFromStack s
-  playCurrent s'
+  --playCurrent s'
   return (s', False)
   --khsuc $ nextFromStack s
 keyboardHandler s key = return (s', False)
   where s' = edlog s ("?? " ++ (show key))
+
+keyboardHandlerWrapper :: KeyboardHandlerWrapper State
+keyboardHandlerWrapper kh s k = do
+  (s', q) <- kh s k
+  if currentGroup s' /= currentGroup s
+     then playCurrent s'
+     else return ()
+  return (s', q)
 
 pushCurrentGroup :: State -> State
 pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
@@ -192,4 +200,4 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    runEditor (editor s keyboardHandler displayer)
+                    runEditor (editor s (keyboardHandlerWrapper keyboardHandler) displayer)

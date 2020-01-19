@@ -2,6 +2,7 @@
 
 module TUI
 ( KeyboardHandler
+, KeyboardHandlerWrapper
 , Displayer
 , editor
 , runEditor ) where
@@ -24,6 +25,7 @@ resetTerm = do
 -- Bool is exit?
 type KeyboardHandler s = s -> Char -> IO (s, Bool)
 type Displayer s = s -> String
+type KeyboardHandlerWrapper s = KeyboardHandler s -> KeyboardHandler s
 
 editor :: s -> KeyboardHandler s -> Displayer s -> IO ()
 editor initState keyboardHandler displayer = do
