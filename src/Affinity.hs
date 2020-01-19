@@ -30,14 +30,18 @@ data State =
         , dislikes :: Graph Int
         , currentGroup :: [Int]
         , looper :: Looper
-        , editorLog :: [String] }
+        , editorLog :: [String]
+        , stack :: [[Int]] }
 
 initState :: Looper -> IO State
 initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
   return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper,
-                   editorLog = ["Welcome to autobeat"] }
+                   editorLog = ["Welcome to autobeat"], stack = [] }
+
+khsuc :: State -> IO (State, Bool)
+khsuc s = return (s, False)
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
@@ -59,8 +63,29 @@ keyboardHandler s 'S' = do
   playSong s
   return (s, False)
 keyboardHandler s '\ESC' = return (s, True)
+keyboardHandler s 'p' = do
+  let s' = nextFromStack $ pushCurrentGroup s
+  playCurrent s'
+  return (s', False)
+  --khsuc $ (nextFromStack . pushCurrentGroup) s
+keyboardHandler s ' ' = do
+  let s' = nextFromStack s
+  playCurrent s'
+  return (s', False)
+  --khsuc $ nextFromStack s
 keyboardHandler s key = return (s', False)
   where s' = edlog s ("?? " ++ (show key))
+
+pushCurrentGroup :: State -> State
+pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
+  where p2l (x, y) = [x, y]
+
+nextFromStack :: State -> State
+nextFromStack s = s { currentGroup = g, stack = gs }
+  where (g:gs) = stack s
+
+allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
+allPairs [] = []
 
 edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
@@ -115,11 +140,12 @@ acceptable (State { likes, dislikes }) = map S.toList $ components likes
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
   where gridS = grid s
-        lines = [gridS, "", currentS, likesS, dislikesS, "", arrS, logS]
+        lines = [gridS, "", currentS, likesS, dislikesS, stackS, "", arrS, logS]
         --soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
         dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
+        stackS = "Stack: " ++ showList (map showList (stack s))
         --acceptableS = "Acceptable: " ++ show (acceptable s)
         arrS = showArr (acceptable s)
         logS = bar ++ "\n" ++ (intercalate "\n" (extend (reverse $ editorLog s))) ++ "\n" ++ bar
