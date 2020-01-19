@@ -65,14 +65,15 @@ keyboardHandler s 'S' = do
 keyboardHandler s '\ESC' = return (s, True)
 keyboardHandler s 'p' = do
   let s' = nextFromStack $ pushCurrentGroup s
-  --playCurrent s'
+  --msp ("eh", currentGroup s, stack s)
+  --msp ("eh", currentGroup s', stack s')
   return (s', False)
-  --khsuc $ (nextFromStack . pushCurrentGroup) s
 keyboardHandler s ' ' = do
-  let s' = nextFromStack s
-  --playCurrent s'
+  s' <- if stack s == []
+             then return $ edlog s "Stack empty, yo"
+             else return $ nextFromStack s
+  --let s' = nextFromStack s
   return (s', False)
-  --khsuc $ nextFromStack s
 keyboardHandler s key = return (s', False)
   where s' = edlog s ("?? " ++ (show key))
 
@@ -96,6 +97,7 @@ nextFromStack s | (stack s) /= [] = s { currentGroup = g, stack = gs }
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
 allPairs [] = []
 
+edlog :: State -> String -> State
 edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 playSong :: State -> IO ()
