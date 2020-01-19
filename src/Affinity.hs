@@ -18,6 +18,8 @@ import Sound
 import TUI
 import Util
 
+editorLogLength = 10
+
 addClick :: Maybe String
 addClick = Nothing
 --addClick = Just "looper/1-7.wav"
@@ -27,13 +29,15 @@ data State =
         , likes :: Graph Int
         , dislikes :: Graph Int
         , currentGroup :: [Int]
-        , looper :: Looper }
+        , looper :: Looper
+        , editorLog :: [String] }
 
 initState :: Looper -> IO State
 initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
-  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper }
+  return $ State { sounds = sounds, likes = empty, dislikes = empty, currentGroup = [], looper = looper,
+                   editorLog = ["Welcome to autobeat"] }
 
 -- TODO maybe function type aliases are not good
 -- type KeyboardHandler s = s -> Char -> IO (s, Bool)
@@ -54,6 +58,11 @@ keyboardHandler s 'A' = do
 keyboardHandler s 'S' = do
   playSong s
   return (s, False)
+keyboardHandler s '\ESC' = return (s, True)
+keyboardHandler s key = return (s', False)
+  where s' = edlog s ("?? " ++ (show key))
+
+edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 playSong :: State -> IO ()
 playSong s = do
@@ -63,7 +72,7 @@ playSong s = do
   songMix <- renderArrangement arr
   setSound (looper s) songMix
   where dub x = seqArrangement [x, x]
-
+  
 playCurrent :: State -> IO ()
 playCurrent s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
@@ -106,14 +115,16 @@ acceptable (State { likes, dislikes }) = map S.toList $ components likes
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
   where gridS = grid s
-        lines = [gridS, "", currentS, likesS, dislikesS, "", arrS]
+        lines = [gridS, "", currentS, likesS, dislikesS, "", arrS, logS]
         --soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
         dislikesS = "Dislikes: " ++ (showGraphAsComponents $ dislikes s)
         --acceptableS = "Acceptable: " ++ show (acceptable s)
         arrS = showArr (acceptable s)
+        logS = bar ++ "\n" ++ (intercalate "\n" (reverse $ editorLog s)) ++ "\n" ++ bar
         showList xs = intercalate " " (map show xs)
+        bar = "======================"
 
 rev :: String -> String
 rev s = "\ESC[7m" ++ s ++ "\ESC[0m" 
