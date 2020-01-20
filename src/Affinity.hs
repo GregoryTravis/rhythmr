@@ -4,7 +4,7 @@
 module Affinity (affinityMain) where
 
 import Control.Concurrent
-import Data.List (intercalate, transpose)
+import Data.List (intercalate, transpose, sortOn)
 import qualified Data.Set as S
 import System.Directory (listDirectory)
 import System.Random
@@ -200,12 +200,14 @@ displayer s = intercalate "\n" lines
         likesS = "Likes: " ++ showList (map showList (S.toList (likes s)))
         dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showList (stack s))
-        affS = "Affinities: " ++ intercalate "\n" (map show (acceptable s))
+        affS = "Affinities:\n" ++ intercalate "\n" (map show (bigToSmall $ acceptable s))
         logS = bar ++ "\n" ++ (intercalate "\n" (extend (reverse $ editorLog s))) ++ "\n" ++ bar
           where extend :: [String] -> [String]
                 extend lines = take editorLogLength $ lines ++ (repeat "")
         showList xs = intercalate " " (map show xs)
         bar = "======================"
+        bigToSmall :: [[a]] -> [[a]]
+        bigToSmall = reverse . sortOn length
 
 rev :: String -> String
 rev s = "\ESC[7m" ++ s ++ "\ESC[0m" 
