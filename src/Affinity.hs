@@ -26,7 +26,7 @@ addClick = Nothing
 
 data State =
   State { sounds :: [Sound]
-        , likes :: Graph Int
+        , likes :: S.Set [Int]
         , dislikes :: S.Set [Int]
         , currentGroup :: [Int]
         , looper :: Looper
@@ -41,7 +41,7 @@ initState :: Looper -> IO State
 initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
   sounds <- mapM readSound filenames
-  return $ State { sounds = sounds, likes = empty, dislikes = S.empty, currentGroup = [], looper = looper,
+  return $ State { sounds = sounds, likes = S.empty, dislikes = S.empty, currentGroup = [], looper = looper,
                    editorLog = ["Welcome to autobeat"], stack = [] }
 
 khsuc :: State -> IO (State, Bool)
@@ -135,7 +135,7 @@ playCurrent s = do
   setSound (looper s) mix
 
 like :: State -> State
-like s = s { likes = addAll (likes s) (currentGroup s) }
+like s = s { likes = S.insert (currentGroup s) (likes s) }
 dislike :: State -> State
 dislike s = s { dislikes = S.insert (currentGroup s) (dislikes s) }
 
@@ -160,7 +160,8 @@ randomGroup s = do
   return indices
 
 acceptable :: State -> [[Int]]
-acceptable (State { likes }) = map S.toList $ components likes
+--acceptable (State { likes }) = map S.toList likes
+acceptable = S.toList . likes
   -- let allPairs = esp [(ca, cb) | ca <- components likes, cb <- components dislikes]
   --  in map S.toList $ map (uncurry S.difference) allPairs
    --in map (map S.toList) $ map (uncurry setDiff) allPairs
@@ -172,7 +173,7 @@ displayer s = intercalate "\n" lines
         lines = [gridS, "", currentS, likesS, dislikesS, stackS, "", arrS, logS]
         --soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
         currentS = "Current: " ++ showList (currentGroup s)
-        likesS = "Likes: " ++ (showGraphAsComponents $ likes s)
+        likesS = "Likes: " ++ showList (map showList (S.toList (likes s)))
         dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showList (stack s))
         --acceptableS = "Acceptable: " ++ show (acceptable s)
