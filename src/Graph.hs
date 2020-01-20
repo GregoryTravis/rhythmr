@@ -73,6 +73,7 @@ showComponents sets = intercalate " " $ map show (map S.toList sets)
 showGraphAsComponents :: (Eq a, Ord a, Show a) => Graph a -> String
 showGraphAsComponents = showComponents . components
 
+-- TODO misnomer; the supplied components don't have to be disjoint, so (components . fromComponents) /= id
 fromComponents :: (Show a, Ord a) => [[a]] -> Graph a
 fromComponents [] = Graph M.empty
 fromComponents (c:cs) = addAll (fromComponents cs) c

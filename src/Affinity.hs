@@ -190,24 +190,17 @@ randomGroup s = do
   return indices
 
 acceptable :: State -> [[Int]]
---acceptable (State { likes }) = map S.toList likes
-acceptable = S.toList . likes
-  -- let allPairs = esp [(ca, cb) | ca <- components likes, cb <- components dislikes]
-  --  in map S.toList $ map (uncurry S.difference) allPairs
-   --in map (map S.toList) $ map (uncurry setDiff) allPairs
-  --where setDiff a b = S.fromList a `difference` S.fromList b
+acceptable = (map S.toList) . components . fromComponents . S.toList . likes
 
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
-  where gridS = grid s
-        lines = [gridS, "", currentS, likesS, dislikesS, stackS, "", arrS, logS]
-        --soundsS = "Sounds: " ++ showList [0..length (sounds s)-1]
+  where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
+        gridS = grid s
         currentS = "Current: " ++ showList (currentGroup s)
         likesS = "Likes: " ++ showList (map showList (S.toList (likes s)))
         dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showList (stack s))
-        --acceptableS = "Acceptable: " ++ show (acceptable s)
-        arrS = intercalate "\n" (map show (acceptable s))
+        affS = "Affinities: " ++ intercalate "\n" (map show (acceptable s))
         logS = bar ++ "\n" ++ (intercalate "\n" (extend (reverse $ editorLog s))) ++ "\n" ++ bar
           where extend :: [String] -> [String]
                 extend lines = take editorLogLength $ lines ++ (repeat "")
