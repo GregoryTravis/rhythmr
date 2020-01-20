@@ -176,7 +176,7 @@ displayer s = intercalate "\n" lines
         dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showList (stack s))
         --acceptableS = "Acceptable: " ++ show (acceptable s)
-        arrS = showArr (acceptable s)
+        arrS = intercalate "\n" (map show (acceptable s))
         logS = bar ++ "\n" ++ (intercalate "\n" (extend (reverse $ editorLog s))) ++ "\n" ++ bar
           where extend :: [String] -> [String]
                 extend lines = take editorLogLength $ lines ++ (repeat "")
@@ -196,10 +196,6 @@ box reverse i =
   let base = "[" ++ (fmt i) ++ "]"
    in if reverse then rev base else base
   where fmt i = printf "%4d" i
-
-showArr :: [[Int]] -> String
-showArr ises = gridize $ transpose $ map (\is -> (map (box False) is)) ises
-  where gridize xses = intercalate "\n" (map (\xs -> (intercalate " " xs)) xses)
 
 boxShowMember :: [Int] -> Int -> String
 boxShowMember group i = box (elem i group) i
