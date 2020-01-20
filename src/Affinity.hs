@@ -33,19 +33,47 @@ data State =
         , editorLog :: [String]
         , stack :: [[Int]] }
 
+-- Suitable for persisting
+data StateRep = 
+  StateRep { repLikes :: S.Set [Int]
+           , repDislikes :: S.Set [Int] }
+  deriving (Read, Show)
+
+emptyStateRep = StateRep { repLikes = S.empty, repDislikes = S.empty }
+
+toRep :: State -> StateRep
+toRep (State { likes, dislikes }) = (StateRep { repLikes = likes, repDislikes = dislikes })
+
+-- We do them as a group since we only want to load the sounds once for all of them
+fromReps :: Looper -> [StateRep] -> IO [State]
+fromReps looper reps = do
+  sounds <- (loadLoops :: IO [Sound])
+  return $ map (fromRep sounds) reps
+  where fromRep :: [Sound] -> StateRep -> State
+        fromRep sounds (StateRep { repLikes, repDislikes }) =
+          State { sounds, likes = repLikes, dislikes = repDislikes, currentGroup = [], looper,
+                  editorLog = ["Welcome to autobeat"], stack = [] }
+
+--loader :: Loader State [StateRep]
+loader :: State -> [StateRep] -> IO [State]
+loader currentState reps = fromReps (looper currentState) reps
+
+saver :: [State] -> [StateRep]
+saver = map toRep
+
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
   _ == _ = undefined
 
+loadLoops :: IO [Sound]
+loadLoops = do
+  filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
+  mapM readSound filenames
+
 initState :: Looper -> IO State
 initState looper = do
-  filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
-  sounds <- mapM readSound filenames
-  return $ State { sounds = sounds, likes = S.empty, dislikes = S.empty, currentGroup = [], looper = looper,
-                   editorLog = ["Welcome to autobeat"], stack = [] }
-
-khsuc :: State -> IO (State, Bool)
-khsuc s = return (s, False)
+  [s] <- fromReps looper [emptyStateRep]
+  return s
 
 -- TODO maybe function type aliases are not good
 keyboardHandler :: KeyboardHandler State
@@ -78,6 +106,8 @@ keyboardHandler s ' ' = do
   return (SetState s')
 keyboardHandler s 'u' = return Undo
 keyboardHandler s '\DC2' = return Redo
+keyboardHandler s 's' = return $ Save "history.txt"
+keyboardHandler s 'L' = return $ Load "history.txt"
 keyboardHandler s key = return (SetState s')
   where s' = edlog s ("?? " ++ (show key))
 
@@ -212,4 +242,4 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    runEditor (editor s keyboardHandler displayer respondToStateChange)
+                    runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

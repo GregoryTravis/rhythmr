@@ -6,6 +6,8 @@ module TUI
 , KHResult(..)
 , Displayer
 , StateChangeHandler
+, Loader
+, Saver
 , editor
 , runEditor ) where
 
@@ -17,7 +19,9 @@ import System.Posix.Terminal
 import Util
 import qualified Zipper as Z
 
-data KHResult s = SetState s | Quit | Undo | Redo | DoNothing deriving (Eq, Show)
+-- "Save String" LOL
+data KHResult s = SetState s | Quit | Undo | Redo | DoNothing | Load String | Save String
+  deriving (Eq, Show)
 
 setCursorPos x y = setCursorPosition y x
 resetTerm = do
@@ -30,8 +34,16 @@ type Displayer s = s -> String
 type StateChangeHandler s = s -> s -> IO ()
 type KeyboardHandlerWrapper s = KeyboardHandler s -> KeyboardHandler s
 
-editor :: Eq s => s -> KeyboardHandler s -> Displayer s -> StateChangeHandler s -> IO ()
-editor initState keyboardHandler displayer stateChangeHandler = do
+-- s is state, t is the storable representation
+-- Loader result is in IO since you might have to load stuff
+-- Loader takes the current state in case it has a unique resource you need to re-use
+type Saver s t = [s] -> t
+type Loader s t = s -> t -> IO [s]
+
+editor :: (Eq s, Read t, Show t) =>
+            s -> KeyboardHandler s -> Displayer s -> StateChangeHandler s ->
+                 Loader s t -> Saver s t -> IO ()
+editor initState keyboardHandler displayer stateChangeHandler loader saver = do
   let loop history = do
         resetTerm
         -- msp $ "History: " ++ show (Z.zwhere history)
@@ -40,16 +52,33 @@ editor initState keyboardHandler displayer stateChangeHandler = do
         c <- getChar
         --msp $ "char " ++ (show c)
         command <- keyboardHandler s c
-        let history' = case command of SetState s -> Z.push (Z.removeTop history) s
-                                       Undo -> Z.downMaybe history
-                                       Redo -> Z.upMaybe history
-                                       TUI.Quit -> history
+        history' <- case command of SetState s -> return $ Z.push (Z.removeTop history) s
+                                    Undo -> return $ Z.downMaybe history
+                                    Redo -> return $ Z.upMaybe history
+                                    Load filename -> load (Z.cur history) filename loader
+                                    Save filename -> do save filename saver history
+                                                        return history
+                                    TUI.Quit -> return history
         stateChangeHandler (Z.cur history) (Z.cur history')
         if command == TUI.Quit
            then return ()
            else loop history'
    in loop (Z.makeZipper initState)
   msp "editor done"
+
+load :: Read t => s -> String -> Loader s t -> IO (Z.Zipper s)
+load currentState filename loader = do
+  fileContentsString <- readFile filename
+  let rep = read fileContentsString
+  states <- loader currentState rep
+  return $ Z.fromList states
+
+save :: Show t => String -> Saver s t -> Z.Zipper s -> IO ()
+save filename saver history = do
+  let states = Z.toList history
+      rep = saver states
+      fileContentsString = show rep
+  writeFile filename fileContentsString
 
 ----
 

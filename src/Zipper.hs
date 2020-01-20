@@ -9,7 +9,9 @@ module Zipper
 , upMaybe
 , downMaybe
 , removeTop
-, zwhere ) where
+, zwhere
+, toList
+, fromList ) where
 
 -- Zipper top current bottom; top is reversed
 data Zipper a = Zipper [a] a [a]
@@ -45,3 +47,9 @@ removeTop (Zipper _ c bot) = Zipper [] c bot
 
 zwhere :: Zipper a -> (Int, Int)
 zwhere (Zipper t _ b) = (length t, length b)
+
+toList :: Zipper a -> [a]
+toList (Zipper top c bot) = top ++ [c] ++ bot
+
+fromList :: [a] -> Zipper a
+fromList (x:xs) = Zipper [] x xs
