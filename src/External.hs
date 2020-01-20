@@ -2,6 +2,7 @@ module External
 ( readFromProc
 , runProc
 , runViaFiles
+, runViaFilesCmd
 --, jsonCommand
 , csvCommand
 , cachedReadFromProc
@@ -61,6 +62,9 @@ runProc exe args = do
   --msp output
   return ()
 
+runProcArr :: [String] -> IO ()
+runProcArr (exe : args) = runProc exe args
+
 withTmp :: String -> (String -> IO a) -> IO a
 withTmp ext action = do
   withSystemTempFile ("autobeat." ++ ext) callback
@@ -81,6 +85,10 @@ runViaFiles ext writer reader commander x = do
     commander src dest
     y <- reader dest
     return y
+
+runViaFilesCmd :: String -> (String -> a -> IO ()) -> (String -> IO b) -> (String -> String -> [String]) -> (a -> IO b)
+runViaFilesCmd ext writer reader commandBuilder = runViaFiles ext writer reader commander
+  where commander f0 f1 = runProcArr (commandBuilder f0 f1)
 
 cachedJsonCommand exe args = do
   rawOutput <- cachedReadFromProc exe args
