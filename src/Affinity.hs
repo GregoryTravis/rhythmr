@@ -33,6 +33,10 @@ data State =
         , editorLog :: [String]
         , stack :: [[Int]] }
 
+-- This is not used; it is required so that KHResults can be compared
+instance Eq State where
+  _ == _ = undefined
+
 initState :: Looper -> IO State
 initState looper = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
@@ -44,46 +48,55 @@ khsuc :: State -> IO (State, Bool)
 khsuc s = return (s, False)
 
 -- TODO maybe function type aliases are not good
--- type KeyboardHandler s = s -> Char -> IO (s, Bool)
 keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
   let s' = s { currentGroup = group }
   --playCurrent s'
-  return (s', False)
-keyboardHandler s 'y' = return (like s, False)
-keyboardHandler s 'n' = return (dislike s, False)
+  return $ SetState s'
+keyboardHandler s 'y' = return (SetState $ like s)
+keyboardHandler s 'n' = return (SetState $ dislike s)
 keyboardHandler s 'A' = do
-  case acceptable s of [] -> return (s, False)
+  case acceptable s of [] -> return DoNothing
                        (g:gs) -> do
                                    let s' = s { currentGroup = g }
-                                   --playCurrent s'
-                                   return (s', False)
+                                   return (SetState s')
 keyboardHandler s 'S' = do
   playSong s
-  return (s, False)
-keyboardHandler s '\ESC' = return (s, True)
+  return (SetState s)
+keyboardHandler s '\ESC' = return Quit
 keyboardHandler s 'p' = do
   let s' = nextFromStack $ pushCurrentGroup s
   --msp ("eh", currentGroup s, stack s)
   --msp ("eh", currentGroup s', stack s')
-  return (s', False)
+  return (SetState s')
 keyboardHandler s ' ' = do
   s' <- if stack s == []
              then return $ edlog s "Stack empty, yo"
              else return $ nextFromStack s
   --let s' = nextFromStack s
-  return (s', False)
-keyboardHandler s key = return (s', False)
+  return (SetState s')
+keyboardHandler s 'z' = return Undo
+keyboardHandler s 'Z' = return Redo
+keyboardHandler s key = return (SetState s')
   where s' = edlog s ("?? " ++ (show key))
+
+respondToStateChange :: State -> State -> IO ()
+respondToStateChange s s' = do
+  if currentGroup s' /= currentGroup s && currentGroup s' /= []
+      then playCurrent s'
+      else return ()
 
 keyboardHandlerWrapper :: KeyboardHandlerWrapper State
 keyboardHandlerWrapper kh s k = do
-  (s', q) <- kh s k
-  if currentGroup s' /= currentGroup s
-     then playCurrent s'
-     else return ()
-  return (s', q)
+  khr <- kh s k
+  case khr of SetState s' -> respondToStateChange s s'
+              _ -> return ()
+  -- case khr of SetState s' -> if currentGroup s' /= currentGroup s
+  --                               then playCurrent s'
+  --                               else return ()
+  --             _ -> return ()
+  return khr
 
 pushCurrentGroup :: State -> State
 pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
@@ -202,4 +215,4 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    runEditor (editor s (keyboardHandlerWrapper keyboardHandler) displayer)
+                    runEditor (editor s keyboardHandler displayer respondToStateChange)

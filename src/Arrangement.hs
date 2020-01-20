@@ -100,6 +100,7 @@ mapSpans :: (Span -> Span) -> Arrangement -> Arrangement
 mapSpans = mapPlacements . mapPlacementSpan
 
 arrangementLength :: Arrangement -> Int
+arrangementLength (Arrangement []) = 0
 arrangementLength (Arrangement nrps) = maximum (map endOf nrps)
   where endOf (NRPlacement sound start) = start + numFrames sound
         endOf (Placement sound (Span start end)) = end

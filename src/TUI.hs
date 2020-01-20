@@ -3,7 +3,9 @@
 module TUI
 ( KeyboardHandler
 , KeyboardHandlerWrapper
+, KHResult(..)
 , Displayer
+, StateChangeHandler
 , editor
 , runEditor ) where
 
@@ -13,32 +15,42 @@ import System.Posix.IO (stdInput)
 import System.Posix.Terminal
 
 import Util
+import qualified Zipper as Z
 
----- Editor
---clearScreen = putStr "\027[2J"
+data KHResult s = SetState s | Quit | Undo | Redo | DoNothing deriving (Eq, Show)
+
 setCursorPos x y = setCursorPosition y x
 resetTerm = do
   setCursorPos 0 0
   clearScreen
-  --putStr "\ESC[7m"
 
 -- Bool is exit?
-type KeyboardHandler s = s -> Char -> IO (s, Bool)
+type KeyboardHandler s = s -> Char -> IO (KHResult s)
 type Displayer s = s -> String
+type StateChangeHandler s = s -> s -> IO ()
 type KeyboardHandlerWrapper s = KeyboardHandler s -> KeyboardHandler s
 
-editor :: s -> KeyboardHandler s -> Displayer s -> IO ()
-editor initState keyboardHandler displayer = do
+editor :: Eq s => s -> KeyboardHandler s -> Displayer s -> StateChangeHandler s -> IO ()
+editor initState keyboardHandler displayer stateChangeHandler = do
   -- TODO don't need two resetTerms?
   resetTerm
-  let loop s = do
+  let loop history = do
+        -- msp $ "History: " ++ show (Z.zwhere history)
+        let s = Z.cur history
         putStrLn $ displayer s
         c <- getChar
         --msp $ "char " ++ (show c)
-        (s', exitP) <- keyboardHandler s c
-        resetTerm
-        if exitP then return () else loop s'
-   in loop initState
+        command <- keyboardHandler s c
+        let history' = case command of SetState s -> Z.push (Z.removeTop history) s
+                                       Undo -> Z.downMaybe history
+                                       Redo -> Z.upMaybe history
+                                       TUI.Quit -> history
+        stateChangeHandler (Z.cur history) (Z.cur history')
+        if command == TUI.Quit
+           then return ()
+           else do resetTerm
+                   loop history'
+   in loop (Z.makeZipper initState)
   msp "editor done"
 
 ----

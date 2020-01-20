@@ -19,7 +19,7 @@ import qualified Data.Set as S
 import Util
 
 data Graph a = Graph (M.Map a (S.Set a))
-  --deriving Show
+  deriving Eq
 
 instance (Eq a, Ord a, Show a) => Show (Graph a) where
   show g = show $ edges g
