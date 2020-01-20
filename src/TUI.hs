@@ -45,7 +45,7 @@ editor :: (Eq s, Read t, Show t) =>
                  Loader s t -> Saver s t -> IO ()
 editor initState keyboardHandler displayer stateChangeHandler loader saver = do
   let loop history = do
-        resetTerm
+        --resetTerm
         -- msp $ "History: " ++ show (Z.zwhere history)
         let s = Z.cur history
         putStrLn $ displayer s

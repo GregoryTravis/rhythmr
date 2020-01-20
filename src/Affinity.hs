@@ -12,6 +12,7 @@ import Text.Printf (printf)
 
 import Arrangement
 import Constants
+import FX
 import Graph
 import Looper
 import Sound
@@ -145,9 +146,13 @@ edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 playSong :: State -> IO ()
 playSong s = do
-  let acc = acceptable s
-      accSounds = map (map ((sounds s) !!)) acc
-      arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
+  let si = 73
+      sound = (sounds s) !! si
+  sound' <- applyFX (Highpass 4000) sound
+  let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
+  -- let acc = acceptable s
+  --     accSounds = map (map ((sounds s) !!)) acc
+  --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
   songMix <- renderArrangement arr
   setSound (looper s) songMix
   where dub x = seqArrangement [x, x]
