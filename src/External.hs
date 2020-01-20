@@ -1,6 +1,7 @@
 module External
 ( readFromProc
 , runProc
+, runViaFiles
 --, jsonCommand
 , csvCommand
 , cachedReadFromProc
@@ -59,6 +60,27 @@ runProc exe args = do
   output <- readFromProc exe args
   --msp output
   return ()
+
+withTmp :: String -> (String -> IO a) -> IO a
+withTmp ext action = do
+  withSystemTempFile ("autobeat." ++ ext) callback
+  where callback filePath handle = action filePath
+
+-- TODO surely this is a fold
+withTmps :: String -> Int -> ([String] -> IO a) -> IO a
+withTmps ext 0 action = action []
+withTmps ext n action = do
+  withTmp ext (\filename -> withTmps ext (n-1) (\filenames -> action (filename : filenames)))
+
+-- Write the arg to a file, run a command to produce another file from it, and
+-- read the result, cleaning up all intermediate files.
+runViaFiles :: String -> (String -> a -> IO ()) -> (String -> IO b) -> (String -> String -> IO ()) -> (a -> IO b)
+runViaFiles ext writer reader commander x = do
+  withTmps ext 2 $ \[src, dest] -> do
+    writer src x
+    commander src dest
+    y <- reader dest
+    return y
 
 cachedJsonCommand exe args = do
   rawOutput <- cachedReadFromProc exe args

@@ -9,13 +9,7 @@ import Util
 
 resampleSound :: Int -> Sound -> IO Sound
 resampleSound destLengthFrames sound = do
-  tmpSrc <- emptySystemTempFile "src.wav"
-  tmpDest <- emptySystemTempFile "dest.wav"
-  writeSound tmpSrc sound
-  runProc "sox" ["-G", tmpSrc, tmpDest, "speed", show speedRatio]
-  dest <- readSound tmpDest
-  removeFile tmpSrc
-  removeFile tmpDest
-  return dest
-  where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
+  runViaFiles "wav" writeSound readSound resample sound
+  where resample src dest = runProc "sox" ["-G", src, dest, "speed", show speedRatio]
+        speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
         srcLengthFrames = numFrames sound
