@@ -76,8 +76,8 @@ keyboardHandler s ' ' = do
              else return $ nextFromStack s
   --let s' = nextFromStack s
   return (SetState s')
-keyboardHandler s 'z' = return Undo
-keyboardHandler s 'Z' = return Redo
+keyboardHandler s 'u' = return Undo
+keyboardHandler s '\DC2' = return Redo
 keyboardHandler s key = return (SetState s')
   where s' = edlog s ("?? " ++ (show key))
 
