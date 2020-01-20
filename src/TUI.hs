@@ -32,9 +32,8 @@ type KeyboardHandlerWrapper s = KeyboardHandler s -> KeyboardHandler s
 
 editor :: Eq s => s -> KeyboardHandler s -> Displayer s -> StateChangeHandler s -> IO ()
 editor initState keyboardHandler displayer stateChangeHandler = do
-  -- TODO don't need two resetTerms?
-  resetTerm
   let loop history = do
+        resetTerm
         -- msp $ "History: " ++ show (Z.zwhere history)
         let s = Z.cur history
         putStrLn $ displayer s
@@ -48,8 +47,7 @@ editor initState keyboardHandler displayer stateChangeHandler = do
         stateChangeHandler (Z.cur history) (Z.cur history')
         if command == TUI.Quit
            then return ()
-           else do resetTerm
-                   loop history'
+           else loop history'
    in loop (Z.makeZipper initState)
   msp "editor done"
 
