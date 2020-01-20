@@ -106,8 +106,8 @@ keyboardHandler s ' ' = do
   return (SetState s')
 keyboardHandler s 'u' = return Undo
 keyboardHandler s '\DC2' = return Redo
-keyboardHandler s 's' = return $ Save "history.txt"
-keyboardHandler s 'L' = return $ Load "history.txt"
+keyboardHandler s 's' = return $ Save "history.ab"
+keyboardHandler s 'L' = return $ Load "history.ab"
 keyboardHandler s key = return (SetState s')
   where s' = edlog s ("?? " ++ (show key))
 
