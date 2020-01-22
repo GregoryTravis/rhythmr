@@ -44,7 +44,7 @@ cachedReadFromProc exe args = readTheFile $ (diskMemoize "readFromProc" (returns
 
 readFromProc :: String -> [String] -> IO String
 readFromProc exe args = do
-  -- msp $ intercalate " " ([exe] ++ args)
+  msp $ intercalate " " ([exe] ++ args)
   start <- getCurrentTime
   let cp = (proc exe args) { std_out = CreatePipe }
   (stdin, Just stdout, stderr, processHandle) <- createProcess cp
