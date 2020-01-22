@@ -6,7 +6,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int
+data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -24,3 +24,5 @@ applyFX (Lowpass freq) = ssRun ["lowpass", "-2", show freq]
 applyFX Chorus = ssRun ["chorus", "0.7", "0.9", "55", "0.4", "0.25", "2", "-t", "60", "0.32", "0.4", "2.3", "-t", "40", "0.3", "0.3", "1.3", "-s"]
 
 applyFX (Band center width) = ssRun ["band", "-n", show center, show width]
+applyFX NoiseGate = ssRun ["compand", ".1,.2", "-inf,-50.1,-inf,-50,-50", "0", "-90", ".1"]
+applyFX Squelch = ssRun ["compand", ".1,.1", "-40.1,-40,-inf,0,-inf", "35", "-90", ".1"]
