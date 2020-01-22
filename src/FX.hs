@@ -8,7 +8,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange
+data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -32,13 +32,12 @@ applyFX Squelch = ssRun ["compand", ".1,.1", "-40.1,-40,-inf,0,-inf", "35", "-90
 applyFX (Echo n) = ssRun ["echos", "1.0", "1.0", show delay, "0.3"]
   where delay = toMS $ loopLengthSeconds / (fromIntegral n)
         toMS s = floor (1000.0 * s)
--- n per loop
---applyFX (Echo n) = ssRun (["echos", "1.0", "1.0"] ++ delayDecayPairs)
---  where delayDecayPairs = concat (map p2a (zip delays (repeat (show 0.3))))
---        delays = map delay (take (n-1) [1..])
---        delay i = toMS $ (loopLengthSeconds * (fromInteger i)) / (fromIntegral n)
---        toMS s = floor (1000.0 * s)
---        --pShow (a, b) = show a ++ " " ++ show b
---        p2a (a, b) = [show a, show b]
 
 applyFX Flange = ssRun ["flanger"]
+
+applyFX MCompand = ssRun ["mcompand",
+  "0.005,0.1 -47,-40,-34,-34,-17,-33", "100", 
+  "0.003,0.05 -47,-40,-34,-34,-17,-33", "400", 
+  "0.000625,0.0125 -47,-40,-34,-34,-15,-33", "1600", 
+  "0.0001,0.025 -47,-40,-34,-34,-31,-31,-0,-30", "6400", 
+  "0,0.025 -38,-31,-28,-28,-0,-25"]

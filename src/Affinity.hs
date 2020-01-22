@@ -150,7 +150,7 @@ playSong s = do
   let sis = [73, 74] -- should be affinity group or something
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
-                     [Measure 0 (Flange)],
+                     [Measure 0 (MCompand)],
                      [Measure 1 NoFX],
                      [Measure 1 (Highpass 4000)]]
   arr <- renderScore score someSounds
