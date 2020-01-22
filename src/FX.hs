@@ -8,7 +8,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int
+data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -40,3 +40,5 @@ applyFX (Echo n) = ssRun ["echos", "1.0", "1.0", show delay, "0.3"]
 --        toMS s = floor (1000.0 * s)
 --        --pShow (a, b) = show a ++ " " ++ show b
 --        p2a (a, b) = [show a, show b]
+
+applyFX Flange = ssRun ["flanger"]
