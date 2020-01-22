@@ -6,7 +6,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int | Lowpass Int | Chorus
+data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -22,3 +22,5 @@ applyFX (Highpass freq) s = ssRun ["highpass", "-2", show freq] s
 applyFX (Lowpass freq) s = ssRun ["lowpass", "-2", show freq] s
 
 applyFX Chorus s = ssRun ["chorus", "0.7", "0.9", "55", "0.4", "0.25", "2", "-t", "60", "0.32", "0.4", "2.3", "-t", "40", "0.3", "0.3", "1.3", "-s"] s
+
+applyFX (Band center width) s = ssRun ["band", "-n", show center, show width] s
