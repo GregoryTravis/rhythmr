@@ -8,7 +8,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int | Phaser | Pitch Int
+data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int | Phaser | Pitch Int | Reverb
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -49,3 +49,4 @@ applyFX Phaser = ssRun ["phaser", "0.89", "0.85", "1", "0.24", "2", "-t"]
 -- ["phaser", "0.6", "0.66", "3", "0.6", "2", "-t"]
 
 applyFX (Pitch cents) = ssRun ["pitch", show cents]
+applyFX Reverb = ssRun ["reverb"]
