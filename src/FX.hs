@@ -16,9 +16,7 @@ ssRun subcommand sound = runViaFilesCmd "wav" writeSound readSound commander sou
 
 applyFX :: FX -> Sound -> IO Sound
 
-applyFS NoFX s = return s
+applyFX NoFX s = return s
 
 applyFX (Highpass freq) s = ssRun ["highpass", "-2", show freq] s
 applyFX (Lowpass freq) s = ssRun ["lowpass", "-2", show freq] s
-
-applyFX x s = return $ eesp (show ("um", x)) s
