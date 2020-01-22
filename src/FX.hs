@@ -8,7 +8,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand
+data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -41,3 +41,5 @@ applyFX MCompand = ssRun ["mcompand",
   "0.000625,0.0125 -47,-40,-34,-34,-15,-33", "1600", 
   "0.0001,0.025 -47,-40,-34,-34,-31,-31,-0,-30", "6400", 
   "0,0.025 -38,-31,-28,-28,-0,-25"]
+
+applyFX (Overdrive gain colour) = ssRun ["overdrive", show gain, show colour]
