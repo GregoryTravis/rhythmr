@@ -16,11 +16,11 @@ ssRun subcommand sound = runViaFilesCmd "wav" writeSound readSound commander sou
 
 applyFX :: FX -> Sound -> IO Sound
 
-applyFX NoFX s = return s
+applyFX NoFX = return
 
-applyFX (Highpass freq) s = ssRun ["highpass", "-2", show freq] s
-applyFX (Lowpass freq) s = ssRun ["lowpass", "-2", show freq] s
+applyFX (Highpass freq) = ssRun ["highpass", "-2", show freq]
+applyFX (Lowpass freq) = ssRun ["lowpass", "-2", show freq]
 
-applyFX Chorus s = ssRun ["chorus", "0.7", "0.9", "55", "0.4", "0.25", "2", "-t", "60", "0.32", "0.4", "2.3", "-t", "40", "0.3", "0.3", "1.3", "-s"] s
+applyFX Chorus = ssRun ["chorus", "0.7", "0.9", "55", "0.4", "0.25", "2", "-t", "60", "0.32", "0.4", "2.3", "-t", "40", "0.3", "0.3", "1.3", "-s"]
 
-applyFX (Band center width) s = ssRun ["band", "-n", show center, show width] s
+applyFX (Band center width) = ssRun ["band", "-n", show center, show width]
