@@ -6,7 +6,8 @@ import External
 import Sound
 import Util
 
-data FX = Highpass Int
+data FX = NoFX | Highpass Int
+  deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
 ssRun :: [String] -> (Sound -> IO Sound)
@@ -14,4 +15,9 @@ ssRun subcommand sound = runViaFilesCmd "wav" writeSound readSound commander sou
   where commander = \s d -> ["sox", "-G", s, d] ++ subcommand
 
 applyFX :: FX -> Sound -> IO Sound
-applyFX (Highpass freq) = ssRun ["highpass", "-2", show freq]
+
+applyFS NoFX s = return s
+
+applyFX (Highpass freq) s = ssRun ["highpass", "-2", show freq] s
+
+applyFX x s = return $ eesp (show ("um", x)) s

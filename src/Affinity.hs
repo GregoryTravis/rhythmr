@@ -15,6 +15,7 @@ import Constants
 import FX
 import Graph
 import Looper
+import Score
 import Sound
 import TUI
 import Util
@@ -146,10 +147,14 @@ edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 playSong :: State -> IO ()
 playSong s = do
-  let si = 73
-      sound = (sounds s) !! si
-  sound' <- applyFX (Highpass 4000) sound
-  let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
+  let sis = [73, 74] -- should be affinity group or something
+      someSounds = map ((sounds s) !!) sis
+  let score = Score [[Measure 0 NoFX],
+                     [Measure 0 (Highpass 4000)],
+                     [Measure 1 NoFX],
+                     [Measure 1 (Highpass 4000)]]
+  arr <- renderScore score someSounds
+  --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
   -- let acc = acceptable s
   --     accSounds = map (map ((sounds s) !!)) acc
   --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
