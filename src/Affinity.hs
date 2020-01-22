@@ -147,15 +147,13 @@ edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 playSong :: State -> IO ()
 playSong s = do
-  let sis = [73, 74] -- should be affinity group or something
+  let sis = currentGroup s -- [73, 74] -- should be affinity group or something
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
-                     [Measure 0 (Tremolo 10 40)],
-                     [Measure 0 (Reverb 85)],
-                     --[Measure 0 Reverse],
-                     [Measure 0 (FXs [Reverse, Reverb 85, Reverse])],
-                     [Measure 1 NoFX],
-                     [Measure 1 (Highpass 4000)]]
+                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40)],
+                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
+                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
+      revReverb = FXs [Reverse, Reverb 85, Reverse]
   arr <- renderScore score someSounds
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
   -- let acc = acceptable s
