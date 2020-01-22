@@ -9,7 +9,7 @@ import Sound
 import Util
 
 data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int | Phaser | Pitch Int | Reverb Int
-               | Reverse | FXs [FX]
+               | Reverse | FXs [FX] | Tremolo Int Int
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -58,3 +58,5 @@ applyFX (FXs (fx : fxs)) = \s -> do
   s' <- applyFX (FXs fxs) s
   applyFX fx s'
 applyFX (FXs []) = \s -> return s
+
+applyFX (Tremolo speedHz depthPercent) = ssRun ["tremolo", show speedHz, show depthPercent]

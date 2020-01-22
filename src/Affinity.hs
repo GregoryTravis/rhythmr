@@ -150,6 +150,7 @@ playSong s = do
   let sis = [73, 74] -- should be affinity group or something
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
+                     [Measure 0 (Tremolo 10 40)],
                      [Measure 0 (Reverb 85)],
                      --[Measure 0 Reverse],
                      [Measure 0 (FXs [Reverse, Reverb 85, Reverse])],
