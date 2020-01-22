@@ -6,7 +6,7 @@ import External
 import Sound
 import Util
 
-data FX = NoFX | Highpass Int
+data FX = NoFX | Highpass Int | Lowpass Int
   deriving Show
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
@@ -19,5 +19,6 @@ applyFX :: FX -> Sound -> IO Sound
 applyFS NoFX s = return s
 
 applyFX (Highpass freq) s = ssRun ["highpass", "-2", show freq] s
+applyFX (Lowpass freq) s = ssRun ["lowpass", "-2", show freq] s
 
 applyFX x s = return $ eesp (show ("um", x)) s

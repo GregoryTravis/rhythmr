@@ -151,6 +151,7 @@ playSong s = do
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
                      [Measure 0 (Highpass 4000)],
+                     [Measure 0 (Lowpass 4000)],
                      [Measure 1 NoFX],
                      [Measure 1 (Highpass 4000)]]
   arr <- renderScore score someSounds
