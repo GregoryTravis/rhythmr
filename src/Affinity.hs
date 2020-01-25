@@ -163,7 +163,7 @@ playSong s = do
       halv = halve (singleSoundArrangement loopLengthFrames sound)
   doubS <- renderArrangement doub
   let quad = double (singleSoundArrangement loopLengthFrames doubS)
-      arr = seqArrangement [snd, doub, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
+      arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
   -- let acc = acceptable s
   --     accSounds = map (map ((sounds s) !!)) acc
