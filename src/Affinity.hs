@@ -168,12 +168,12 @@ playSong s = do
   doubS <- renderArrangement doub
   -- let quad = double (singleSoundArrangement loopLengthFrames doubS)
   --     arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
-  let arr = rev (eqDice soundArr 4)
+  let arr = rev (eqDice soundArr 16)
   msp soundArr
   msp arr
 
   --let arr' = seqArrangement [soundArr, clickTrackArr, arr]
-  let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr]
+  let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr, parArrangement [soundArr, arr]]
   -- let arr' = arr
 
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
