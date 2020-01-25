@@ -87,6 +87,9 @@ normalize :: Sound -> Sound
 normalize sound = applyToSamples (SV.map (/mx)) sound
   where mx = max 0.005 $ SV.maximum (samples (applyToSamples (SV.map abs) sound))
 
+volume :: Sound -> Float
+volume sound = SV.maximum (samples (applyToSamples (SV.map abs) sound))
+
 rangeSeconds filename start end = do
   info <- getFileInfo filename
   let sr = fromIntegral (samplerate info)

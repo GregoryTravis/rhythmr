@@ -3,10 +3,13 @@ module Dice
 , halve
 , dice
 , eqDice
-, rev ) where
+, rev
+, chopOut ) where
 
 import Arrangement
+import Data.List (permutations)
 import Sound
+import System.Random
 import Util
 
 -- This stuff should really be working with arrangements
@@ -78,3 +81,21 @@ chopInts ds (s, e) = toSpans (map interp ds)
 toSpans :: [a] -> [(a, a)]
 toSpans xs | length xs <= 1 = error "toSpans: too few"
 toSpans xs | otherwise = zip xs (tail xs)
+
+chopOut :: Arrangement -> Double -> IO Arrangement
+chopOut a@(Arrangement ps) d = chopOutN a $ floor (fromIntegral (length ps) * d)
+
+chopOutN :: Arrangement -> Int -> IO Arrangement
+chopOutN (Arrangement ps) n = do
+  permuted <- randomPermutation ps
+  return $ Arrangement $ take n permuted
+
+--randomPermutation :: [a] -> IO [a]
+--randomPermutation xs = randFromList (permutations xs) -- very slow
+randomPermutation [] = return []
+randomPermutation xs = do
+  msp xs
+  i <- getStdRandom (randomR (0, length xs - 1))
+  let (befores, (x:afters)) = splitAt i xs
+  theRest <- randomPermutation (befores ++ afters)
+  return $ x : theRest

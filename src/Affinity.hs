@@ -146,6 +146,15 @@ allPairs [] = []
 edlog :: State -> String -> State
 edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
+arrVolume :: Arrangement -> IO Float
+arrVolume arr = do
+  sound <- renderArrangement arr
+  return (volume sound)
+
+shv arr = do
+  v <- arrVolume arr
+  msp v
+
 playSong :: State -> IO ()
 playSong s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
@@ -165,15 +174,24 @@ playSong s = do
       doub = double (singleSoundArrangement loopLengthFrames sound)
       halv = halve (singleSoundArrangement loopLengthFrames sound)
       soundArr = singleSoundArrangement loopLengthFrames sound
+      sound2 = (someSounds !! 1)
+      soundArr2 = singleSoundArrangement loopLengthFrames sound2
   doubS <- renderArrangement doub
   -- let quad = double (singleSoundArrangement loopLengthFrames doubS)
   --     arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
-  let arr = rev (eqDice soundArr 16)
-  msp soundArr
-  msp arr
+  --let arr = rev (eqDice soundArr 8)
+  arr <- chopOut (eqDice soundArr 16) 0.5
+  --msp soundArr
+  --msp arr
+  msp "HEYO"
+  shv soundArr
+  shv soundArr2
+  shv arr
 
   --let arr' = seqArrangement [soundArr, clickTrackArr, arr]
-  let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr, parArrangement [soundArr, arr]]
+  --let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr, parArrangement [soundArr, soundArr, arr]]
+  let arr' = seqArrangement [clickTrackArr, soundArr, (parArrangement [soundArr, soundArr2]), (parArrangement [soundArr, soundArr2]),
+                                            arr, (parArrangement [arr, soundArr2]), (parArrangement [arr, soundArr2])]
   -- let arr' = arr
 
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
@@ -204,11 +222,6 @@ like :: State -> State
 like s = s { likes = S.insert (currentGroup s) (likes s) }
 dislike :: State -> State
 dislike s = s { dislikes = S.insert (currentGroup s) (dislikes s) }
-
-randFromList :: [a] -> IO a
-randFromList xs = do
-  i <- getStdRandom (randomR (0, length xs - 1))
-  return $ xs !! i
 
 -- This one only picks from the set of loops that aren't part of a like
 -- randomGroup s = do

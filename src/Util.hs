@@ -24,6 +24,7 @@ module Util
 , predSplit
 , chomp
 , replace
+, randFromList
 ) where
 
 import Control.Exception
@@ -36,6 +37,7 @@ import Data.Typeable (typeOf)
 import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, stderr, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
+import System.Random
 import Text.Pretty.Simple (pShowNoColor)
 import Text.Printf
 
@@ -129,3 +131,8 @@ chomp s =
 
 replace a b (x : xs) | a == x = b : (replace a b xs)
 replace a b [] = []
+
+randFromList :: [a] -> IO a
+randFromList xs = do
+  i <- getStdRandom (randomR (0, length xs - 1))
+  return $ xs !! i
