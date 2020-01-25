@@ -24,8 +24,8 @@ import Util
 editorLogLength = 10
 
 addClick :: Maybe String
-addClick = Nothing
---addClick = Just "looper/1-7.wav"
+--addClick = Nothing
+addClick = Just "looper/1-7.wav"
 
 data State =
   State { sounds :: [Sound]
@@ -148,7 +148,10 @@ edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 playSong :: State -> IO ()
 playSong s = do
-  let sis = currentGroup s -- [73, 74] -- should be affinity group or something
+  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
+                                 Nothing -> return []
+  let clickTrackArr = parArrangement (map (singleSoundArrangement loopLengthFrames) clickTrack)
+  let sis = [68] -- currentGroup s -- should be affinity group or something
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
                      [Measure 0 (Reverb 85)],
@@ -161,16 +164,25 @@ playSong s = do
       snd = singleSoundArrangement loopLengthFrames sound
       doub = double (singleSoundArrangement loopLengthFrames sound)
       halv = halve (singleSoundArrangement loopLengthFrames sound)
+      soundArr = singleSoundArrangement loopLengthFrames sound
   doubS <- renderArrangement doub
-  let quad = double (singleSoundArrangement loopLengthFrames doubS)
-      arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
+  -- let quad = double (singleSoundArrangement loopLengthFrames doubS)
+  --     arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
+  let arr = rev (eqDice soundArr 4)
+  msp soundArr
+  msp arr
+  let arr' = seqArrangement [soundArr, clickTrackArr, arr]
+  -- let arr' = arr
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
   -- let acc = acceptable s
   --     accSounds = map (map ((sounds s) !!)) acc
   --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
-  songMix <- renderArrangement arr
+  songMix <- renderArrangement $ parArrangement [arr', clickTrackArr]
   setSound (looper s) songMix
   where dub x = seqArrangement [x, x]
+        --addClickMaybe arr = parArrangement [arr, clickTrackArr]
+        -- addClickMaybe arr = case addClick of (Just s) -> parArrangement [arr, (singleSoundArrangement loopLengthFrames s)]
+        --                                      Nothing -> arr
   
 playCurrent :: State -> IO ()
 playCurrent s = do
@@ -205,7 +217,7 @@ randFromList xs = do
 randomGroup :: State -> IO [Int]
 randomGroup s = do
   let soundIndices = [0..length (sounds s)-1]
-  groupSize <- getStdRandom (randomR (2,4)) :: IO Int
+  groupSize <- getStdRandom (randomR (1,1)) :: IO Int
   indices <- mapM (\_ -> randFromList soundIndices) [0..groupSize-1]
   return indices
 
@@ -229,8 +241,8 @@ displayer s = intercalate "\n" lines
         bigToSmall :: [[a]] -> [[a]]
         bigToSmall = reverse . sortOn length
 
-rev :: String -> String
-rev s = "\ESC[7m" ++ s ++ "\ESC[0m" 
+revAsc :: String -> String
+revAsc s = "\ESC[7m" ++ s ++ "\ESC[0m" 
 
 -- box :: [Int] -> Int -> String
 -- box group i = rv i ("[" ++ (fmt i) ++ "]")
@@ -240,7 +252,7 @@ rev s = "\ESC[7m" ++ s ++ "\ESC[0m"
 box :: Bool -> Int -> String
 box reverse i =
   let base = "[" ++ (fmt i) ++ "]"
-   in if reverse then rev base else base
+   in if reverse then revAsc base else base
   where fmt i = printf "%4d" i
 
 boxShowMember :: [Int] -> Int -> String
