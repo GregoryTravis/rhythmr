@@ -12,6 +12,7 @@ import Text.Printf (printf)
 
 import Arrangement
 import Constants
+import Dice
 import FX
 import Graph
 import Looper
@@ -150,11 +151,19 @@ playSong s = do
   let sis = currentGroup s -- [73, 74] -- should be affinity group or something
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
+                     [Measure 0 (Reverb 85)],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40)],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
       revReverb = FXs [Reverse, Reverb 85, Reverse]
-  arr <- renderScore score someSounds
+  --arr <- renderScore score someSounds
+  let sound = (someSounds !! 0)
+      snd = singleSoundArrangement loopLengthFrames sound
+      doub = double (singleSoundArrangement loopLengthFrames sound)
+      halv = halve (singleSoundArrangement loopLengthFrames sound)
+  doubS <- renderArrangement doub
+  let quad = double (singleSoundArrangement loopLengthFrames doubS)
+      arr = seqArrangement [snd, doub, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
   -- let acc = acceptable s
   --     accSounds = map (map ((sounds s) !!)) acc

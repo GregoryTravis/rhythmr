@@ -20,7 +20,7 @@ executable autobeat
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Util, External, Aubio, Sound, Resample, Song, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Arrangement, Mess, Feh, Terminal, Affinity, Constants, Graph,
-                       Looper, RPC, ClientServer, TUI, Zipper, FX, Score
+                       Looper, RPC, ClientServer, TUI, Zipper, FX, Score, Dice
   default-language:    Haskell2010
   --extra-libraries:     nonblocking.o
   c-sources:           src/nonblocking.c
