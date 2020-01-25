@@ -151,7 +151,7 @@ playSong s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
                                  Nothing -> return []
   let clickTrackArr = parArrangement (map (singleSoundArrangement loopLengthFrames) clickTrack)
-  let sis = [68] -- currentGroup s -- should be affinity group or something
+  let sis = currentGroup s -- should be affinity group or something / 68
       someSounds = map ((sounds s) !!) sis
   let score = Score [[Measure 0 NoFX],
                      [Measure 0 (Reverb 85)],
@@ -171,13 +171,17 @@ playSong s = do
   let arr = rev (eqDice soundArr 4)
   msp soundArr
   msp arr
-  let arr' = seqArrangement [soundArr, clickTrackArr, arr]
+
+  --let arr' = seqArrangement [soundArr, clickTrackArr, arr]
+  let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr]
   -- let arr' = arr
+
   --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
   -- let acc = acceptable s
   --     accSounds = map (map ((sounds s) !!)) acc
   --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
-  songMix <- renderArrangement $ parArrangement [arr', clickTrackArr]
+  --songMix <- renderArrangement $ parArrangement [arr', clickTrackArr]
+  songMix <- renderArrangement arr'
   setSound (looper s) songMix
   where dub x = seqArrangement [x, x]
         --addClickMaybe arr = parArrangement [arr, clickTrackArr]
@@ -217,7 +221,7 @@ randFromList xs = do
 randomGroup :: State -> IO [Int]
 randomGroup s = do
   let soundIndices = [0..length (sounds s)-1]
-  groupSize <- getStdRandom (randomR (1,1)) :: IO Int
+  groupSize <- getStdRandom (randomR (2,4)) :: IO Int
   indices <- mapM (\_ -> randFromList soundIndices) [0..groupSize-1]
   return indices
 
