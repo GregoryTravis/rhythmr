@@ -20,10 +20,13 @@ double = rePlace f
   where f (s, e) = [(s, mid), (mid, e)]
           where mid = (s + e) `div` 2
 
-halve :: Arrangement -> Arrangement
---halve arr f = rePlace arr (\
+reSnip :: Replacer -> Arrangement -> Arrangement
+reSnip f (Arrangement [(Placement sound (Span s e))]) = Arrangement [p]
+  where p = Placement newSound (Span s e)
+        [(newS, newE)] = f (s, e)
+        newSound = snip s e sound
 
-halve (Arrangement [(Placement sound (Span s e))]) = Arrangement [p]
-  where halfSound = snip s halfE sound
-        halfE = s + ((e - s) `div` 2)
-        p = Placement halfSound (Span s e)
+halve :: Arrangement -> Arrangement
+halve = reSnip f
+  where f (s, e) = [(s, halfE)]
+          where halfE = s + ((e - s) `div` 2)
