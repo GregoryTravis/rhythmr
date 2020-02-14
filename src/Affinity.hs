@@ -155,6 +155,12 @@ clump n xs = (take n xs) : (clump n (drop n xs))
 replaceStack :: State -> [[Int]] -> State
 replaceStack s stack_ = s { stack = stack_ }
 
+pushStack :: State -> [Int] -> State
+pushStack s x = s { stack = x : stack s }
+pushStackN :: State -> [[Int]] -> State
+pushStackN s (x : xs) = pushStack (pushStackN s xs) x
+pushStackN s [] = s
+
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
 allPairs [] = []
 
@@ -234,9 +240,14 @@ playCurrent s = do
   setSound (looper s) mix
 
 like :: State -> State
-like s = s { likes = S.insert (currentGroup s) (likes s) }
+like s = nextFromStack $ s { likes = S.insert (currentGroup s) (likes s) }
 dislike :: State -> State
-dislike s = s { dislikes = S.insert (currentGroup s) (dislikes s) }
+dislike s | length (currentGroup s) < 3 = nextFromStack $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
+dislike s | otherwise = nextFromStack $ pushStackN s (allSubs (currentGroup s))
+  where -- A sub is the list with one element removed
+        allSubs :: [Int] -> [[Int]]
+        allSubs (x : xs) = [xs] ++ map (x:) (allSubs xs)
+        allSubs [] = []
 
 -- This one only picks from the set of loops that aren't part of a like
 -- randomGroup s = do
