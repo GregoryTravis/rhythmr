@@ -24,8 +24,8 @@ import Util
 editorLogLength = 10
 
 addClick :: Maybe String
---addClick = Nothing
-addClick = Just "looper/1-7.wav"
+addClick = Nothing
+--addClick = Just "looper/1-7.wav"
 
 data State =
   State { sounds :: [Sound]
@@ -111,6 +111,7 @@ keyboardHandler s 'u' = return Undo
 keyboardHandler s '\DC2' = return Redo
 keyboardHandler s 's' = return $ Save "history.ab"
 keyboardHandler s 'L' = return $ Load "history.ab"
+keyboardHandler s 'C' = let s' = (combineAffinities s) in return $ (SetState s')
 keyboardHandler s key = return (SetState s')
   where s' = edlog s ("?? " ++ (show key))
 
@@ -139,6 +140,20 @@ nextFromStack :: State -> State
 nextFromStack s | (stack s) /= [] = s { currentGroup = g, stack = gs }
                 | otherwise = s
   where (g:gs) = stack s
+
+combineAffinities :: State -> State
+combineAffinities s =
+  case acceptable s of (a : b : _) -> nextFromStack $ replaceStack s (combos a b)
+                       _ -> s
+  where combos :: [Int] -> [Int] -> [[Int]]
+        combos xs ys = [xs' ++ ys' | xs' <- clump 2 xs, ys' <- clump 2 ys]
+
+clump :: Int -> [a] -> [[a]]
+clump n [] = []
+clump n xs = (take n xs) : (clump n (drop n xs))
+
+replaceStack :: State -> [[Int]] -> State
+replaceStack s stack_ = s { stack = stack_ }
 
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
 allPairs [] = []
