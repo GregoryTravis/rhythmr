@@ -17,7 +17,7 @@ data World = World
 
 gfxMain = do
   playIO displayMode bgColor 120 World worldToPicture eventHandler stepIteration
-  where displayMode = InWindow "Nice Window" (800, 800) (10, 10)
+  where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
         bgColor = white
 
 worldToPicture :: World -> IO Picture
