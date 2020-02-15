@@ -13,6 +13,7 @@ import Terminal
 import Download
 import External (contentAddressableWrite)
 import Feh
+import Gui
 import Looper (withPortaudio)
 import Mess
 import RPC
@@ -140,6 +141,7 @@ doStuff [] = doStuff doStuffDefault
 
 main = withPortaudio $ do
   noBuffering
+  gfxMain
   args <- getArgs
   msp $ "++ " ++ (show args)
   doStuff args
