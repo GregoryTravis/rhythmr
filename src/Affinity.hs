@@ -320,7 +320,6 @@ initGfx n = Gfx (zipWith init fs fs')
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  withLooper $ \looper -> do
-                    gfxMain (initGfx 20)
+  withLooper $ \looper -> withGui (initGfx 20) $ \gfxChan -> do
                     s <- initState looper
                     runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

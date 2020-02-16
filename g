@@ -5,6 +5,7 @@
 # Construct a song
 # rm song.wav loop?.wav
 (stack build autobeat && stack exec autobeat) 2>&1 | tee out
+stty sane
 
 # Download mp3s
 # python get-mp3s.py | tee out.json

@@ -1,12 +1,15 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Gui
-( gfxMain
+( withGui
 , Gfx(..)
 , Node(..) ) where
 
-import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.MVar
+import Control.Concurrent (forkIO, threadDelay, killThread)
+--import Control.Concurrent.MVar
+import Control.Concurrent.STM.TChan
+import Control.Exception (finally)
+import Control.Monad.STM (atomically)
 import Data.Time.Clock (NominalDiffTime, diffUTCTime)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime, SystemTime)
 --import GHC.Float (float2Float)
@@ -25,7 +28,7 @@ data Node = Node { pos :: V2 Float
 data Gfx = Gfx { nodes :: [Node] }
   deriving Show
 
-velocity = 20.0
+velocity = 40.0
 
 updateNode :: Float -> Float -> Node -> Node
 updateNode t dt n@(Node { pos, dest }) = n { pos = newPos }
@@ -49,9 +52,9 @@ cumulativePlayIO dm c rate w wtp eh si =  playIO dm c rate (Cumulator (0.0, w)) 
           w' <- eh e w
           return $ Cumulator (t, w')
 
-gfxMain :: Gfx -> IO ()
-gfxMain gfx = do
-  cumulativePlayIO displayMode bgColor 120 gfx worldToPicture eventHandler stepIteration
+gfxMain :: Gfx -> TChan Gfx -> IO ()
+gfxMain gfx gfxChan = do
+  cumulativePlayIO displayMode bgColor 10 gfx worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
         bgColor = white
         --stepIteration' f = stepIteration (float2Float f)
@@ -71,3 +74,10 @@ eventHandler e w = do
   where
     quitOnEsc (EventKey (SpecialKey KeyEsc) Down _ _) = exitSuccess
     quitOnEsc _                                       = return ()
+
+withGui :: Gfx -> (TChan Gfx -> IO ()) -> IO ()
+withGui gfx callback = do
+  gfxChan <- atomically newTChan
+  let action = callback gfxChan
+  threadId <- forkIO (gfxMain gfx gfxChan)
+  action `finally` (killThread threadId)
