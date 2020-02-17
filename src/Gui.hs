@@ -18,17 +18,22 @@ import System.Exit (exitSuccess)
 import System.Random
 
 import State
+import TUI
 import Util
 
 data Ding = Ding (V2 Float) (V2 Float)
   deriving Show
 
 data GuiState = GuiState { getState :: State
-                         , getDings :: [Ding] }
-  --deriving Show
+                         , getDings :: [Ding]
+                         , getKeyboardHandler :: KeyboardHandler State
+                         , getStateChangeHandler :: StateChangeHandler State }
 
-initGuiState :: State -> GuiState
-initGuiState s = GuiState { getState = s, getDings = initDings s }
+initGuiState :: State -> KeyboardHandler State -> StateChangeHandler State -> GuiState
+initGuiState s kh sch = GuiState { getState = s
+                                 , getDings = initDings s
+                                 , getKeyboardHandler = kh
+                                 , getStateChangeHandler = sch }
 
 initDings :: State -> [Ding]
 initDings s = take n dings
@@ -60,18 +65,26 @@ cumulativePlayIO dm c rate w wtp eh si =  playIO dm c rate (Cumulator (0.0, w)) 
           w' <- eh e w
           return $ Cumulator (t, w')
 
-gfxMain :: State -> IO ()
-gfxMain s = do
-  cumulativePlayIO displayMode bgColor 100 (initGuiState s) worldToPicture eventHandler stepIteration
+gfxMain :: State -> KeyboardHandler State -> StateChangeHandler State -> IO ()
+gfxMain s kh sch = do
+  cumulativePlayIO displayMode bgColor 100 (initGuiState s kh sch) worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
         bgColor = white
 
 --"Event EventKey (SpecialKey KeyEsc) Down (Modifiers {shift = Up, ctrl = Up, alt = Up}) (383.0,20.0)"
 eventHandler :: Event -> GuiState -> IO GuiState
-eventHandler e w = do
-  msp $ "Event " ++ (show e)
-  quitOnEsc e
-  return w
+eventHandler e gs@(GuiState { getState = s, getKeyboardHandler = kh }) = do
+  --msp $ "Event " ++ (show e)
+  gs' <- handle e
+  getStateChangeHandler gs (getState gs) (getState gs')
+  return gs'
   where
-    quitOnEsc (EventKey (SpecialKey KeyEsc) Down _ _) = exitSuccess
-    quitOnEsc _                                       = return ()
+    handle (EventKey (SpecialKey KeyEsc) Down _ _) = do
+      exitSuccess
+      return gs
+    handle (EventKey (Char c) Down _ _) = do
+      khResult <- kh s c
+      case khResult of SetState s -> return $ gs { getState = s }
+                       x -> do msp ("?? " ++ (show x))
+                               return gs
+    handle _                                       = return gs

@@ -54,7 +54,7 @@ loop :: Looper -> IO ()
 loop looper = loop' looper 0
 loop' :: Looper -> Int -> IO ()
 loop' l@(Looper sv) currentIndex = do
-  --msp currentIndex
+  msp currentIndex
   Sound { samples = buffer } <- readMVar sv
   let grain = SV.take granularity (SV.drop currentIndex buffer)
       grainLength = SV.length grain

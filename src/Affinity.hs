@@ -76,6 +76,7 @@ keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
   let s' = s { currentGroup = group }
+  msp "YOSH"
   --playCurrent s'
   return $ SetState s'
 keyboardHandler s 'y' = return (SetState $ like s)
@@ -305,5 +306,5 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    gfxMain s
+                    gfxMain s keyboardHandler respondToStateChange
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
