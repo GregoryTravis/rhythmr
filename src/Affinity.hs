@@ -7,6 +7,7 @@ module Affinity
 
 import Control.Concurrent
 import Data.List (intercalate, transpose, sortOn)
+import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Linear
 import System.Directory (listDirectory)
@@ -261,6 +262,19 @@ randomGroup s = do
 acceptable :: State -> [[Int]]
 acceptable = (map S.toList) . components . fromComponents . S.toList . likes
 
+gridSizeFor :: Int -> Int
+gridSizeFor n = ceiling $ sqrt $ fromIntegral n
+
+affinityPositions :: State -> M.Map Int (V2 Float)
+affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
+  where pos i = V2 (fromIntegral i * 5) 0
+
+updateGfx :: GuiState -> GuiState
+updateGfx gs = gs { getDings = newDings }
+  where newDings = map (\p -> Ding p p) $ map (\k -> M.findWithDefault def k positions) [0..length (sounds (getState gs)) - 1]
+        def = V2 0 0
+        positions = affinityPositions (getState gs)
+
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
   where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
@@ -306,5 +320,5 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    gfxMain s keyboardHandler respondToStateChange
+                    gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

@@ -1,7 +1,9 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Gui
-( gfxMain ) where
+( gfxMain
+, GuiState(..)
+, Ding(..) ) where
 
 import Control.Concurrent (forkIO, threadDelay, killThread)
 --import Control.Concurrent.MVar
@@ -27,13 +29,15 @@ data Ding = Ding (V2 Float) (V2 Float)
 data GuiState = GuiState { getState :: State
                          , getDings :: [Ding]
                          , getKeyboardHandler :: KeyboardHandler State
-                         , getStateChangeHandler :: StateChangeHandler State }
+                         , getStateChangeHandler :: StateChangeHandler State
+                         , getUpdateGfx :: GuiState -> GuiState }
 
-initGuiState :: State -> KeyboardHandler State -> StateChangeHandler State -> GuiState
-initGuiState s kh sch = GuiState { getState = s
-                                 , getDings = initDings s
-                                 , getKeyboardHandler = kh
-                                 , getStateChangeHandler = sch }
+initGuiState :: State -> KeyboardHandler State -> StateChangeHandler State -> (GuiState -> GuiState) -> GuiState
+initGuiState s kh sch ug = GuiState { getState = s
+                                    , getDings = initDings s
+                                    , getKeyboardHandler = kh
+                                    , getStateChangeHandler = sch
+                                    , getUpdateGfx = ug }
 
 initDings :: State -> [Ding]
 initDings s = take n dings
@@ -65,9 +69,9 @@ cumulativePlayIO dm c rate w wtp eh si =  playIO dm c rate (Cumulator (0.0, w)) 
           w' <- eh e w
           return $ Cumulator (t, w')
 
-gfxMain :: State -> KeyboardHandler State -> StateChangeHandler State -> IO ()
-gfxMain s kh sch = do
-  cumulativePlayIO displayMode bgColor 100 (initGuiState s kh sch) worldToPicture eventHandler stepIteration
+gfxMain :: State -> KeyboardHandler State -> StateChangeHandler State -> (GuiState -> GuiState) -> IO ()
+gfxMain s kh sch ug = do
+  cumulativePlayIO displayMode bgColor 100 (initGuiState s kh sch ug) worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
         bgColor = white
 
@@ -76,8 +80,8 @@ eventHandler :: Event -> GuiState -> IO GuiState
 eventHandler e gs@(GuiState { getState = s, getKeyboardHandler = kh }) = do
   --msp $ "Event " ++ (show e)
   gs' <- handle e
-  getStateChangeHandler gs (getState gs) (getState gs')
-  return gs'
+  getStateChangeHandler gs' (getState gs) (getState gs')
+  return $ (getUpdateGfx gs') gs'
   where
     handle (EventKey (SpecialKey KeyEsc) Down _ _) = do
       exitSuccess
