@@ -9,6 +9,7 @@ import Control.Concurrent
 import Data.List (intercalate, transpose, sortOn)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
+import Graphics.Gloss
 import Linear
 import System.Directory (listDirectory)
 import System.Random
@@ -264,6 +265,9 @@ acceptable = (map S.toList) . components . fromComponents . S.toList . likes
 
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
+
+unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
+unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
 
 affinityPositions :: State -> M.Map Int (V2 Float)
 affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))

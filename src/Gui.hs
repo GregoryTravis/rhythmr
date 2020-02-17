@@ -1,9 +1,11 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Gui
-( gfxMain
-, GuiState(..)
-, Ding(..) ) where
+  ( gfxMain
+  , windowWidth
+  , windowHeight
+  , GuiState(..)
+  , Ding(..) ) where
 
 import Control.Concurrent (forkIO, threadDelay, killThread)
 --import Control.Concurrent.MVar
@@ -22,6 +24,9 @@ import System.Random
 import State
 import TUI
 import Util
+
+windowWidth = 800
+windowHeight = 800
 
 data Ding = Ding (V2 Float) (V2 Float)
   deriving Show
@@ -72,7 +77,7 @@ cumulativePlayIO dm c rate w wtp eh si =  playIO dm c rate (Cumulator (0.0, w)) 
 gfxMain :: State -> KeyboardHandler State -> StateChangeHandler State -> (GuiState -> GuiState) -> IO ()
 gfxMain s kh sch ug = do
   cumulativePlayIO displayMode bgColor 100 (initGuiState s kh sch ug) worldToPicture eventHandler stepIteration
-  where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
+  where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
         bgColor = white
 
 --"Event EventKey (SpecialKey KeyEsc) Down (Modifiers {shift = Up, ctrl = Up, alt = Up}) (383.0,20.0)"
