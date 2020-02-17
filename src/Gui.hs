@@ -1,9 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Gui
-( withGui
-, Gfx(..)
-, Node(..) ) where
+( gfxMain ) where
 
 import Control.Concurrent (forkIO, threadDelay, killThread)
 --import Control.Concurrent.MVar
@@ -19,26 +17,33 @@ import Linear
 import System.Exit (exitSuccess)
 import System.Random
 
+import State
 import Util
 
-data Node = Node { pos :: V2 Float
-                 , dest :: V2 Float }
+data Ding = Ding (V2 Float) (V2 Float)
   deriving Show
 
-data Gfx = Gfx { nodes :: [Node] }
-  deriving Show
+data GuiState = GuiState { getState :: State
+                         , getDings :: [Ding] }
+  --deriving Show
 
-velocity = 800.0
+initGuiState :: State -> GuiState
+initGuiState s = GuiState { getState = s, getDings = initDings s }
 
-updateNode :: Float -> Float -> Node -> Node
-updateNode t dt n@(Node { pos, dest }) = n { pos = newPos }
-  where newPos = pos + (velocity * dt *^ signorm (dest' - pos))
-        movey = V2 (cos t') (sin t')
-        dest' = V2 20 20 + (movey ^* 1000)
-        t' = 5 * t
+initDings :: State -> [Ding]
+initDings s = take n dings
+  where dings = repeat (Ding (V2 0 0) (V2 0 0))
+        n = length (sounds s)
 
-stepIteration :: Float -> Float -> Gfx -> IO Gfx
-stepIteration t dt (Gfx { nodes }) = return $ Gfx (map (updateNode t dt) nodes)
+worldToPicture :: GuiState -> IO Picture
+worldToPicture gs = return $ Pictures (map render (getDings gs))
+  where render (Ding (V2 x y) _) = Translate x y $ Circle 20
+
+--renderNode :: Node -> Picture
+--renderNode (Node { pos = V2 x y }) = translate x y $ lineLoop (rectanglePath 30 50)
+
+stepIteration :: Float -> Float -> GuiState -> IO GuiState
+stepIteration t dt gs = return gs
 
 data Cumulator a = Cumulator (Float, a)
 cumulative :: (Float -> Float -> a -> IO a) -> (Float -> Cumulator a -> IO (Cumulator a))
@@ -55,21 +60,14 @@ cumulativePlayIO dm c rate w wtp eh si =  playIO dm c rate (Cumulator (0.0, w)) 
           w' <- eh e w
           return $ Cumulator (t, w')
 
-gfxMain :: Gfx -> TChan Gfx -> IO ()
-gfxMain gfx gfxChan = do
-  cumulativePlayIO displayMode bgColor 100 gfx worldToPicture eventHandler stepIteration
+gfxMain :: State -> IO ()
+gfxMain s = do
+  cumulativePlayIO displayMode bgColor 100 (initGuiState s) worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
         bgColor = white
-        --stepIteration' f = stepIteration (float2Float f)
-
-worldToPicture :: Gfx -> IO Picture
-worldToPicture (Gfx nodes) = return $ Pictures (map renderNode nodes)
-
-renderNode :: Node -> Picture
-renderNode (Node { pos = V2 x y }) = translate x y $ lineLoop (rectanglePath 30 50)
 
 --"Event EventKey (SpecialKey KeyEsc) Down (Modifiers {shift = Up, ctrl = Up, alt = Up}) (383.0,20.0)"
-eventHandler :: Event -> Gfx -> IO Gfx
+eventHandler :: Event -> GuiState -> IO GuiState
 eventHandler e w = do
   msp $ "Event " ++ (show e)
   quitOnEsc e
@@ -77,10 +75,3 @@ eventHandler e w = do
   where
     quitOnEsc (EventKey (SpecialKey KeyEsc) Down _ _) = exitSuccess
     quitOnEsc _                                       = return ()
-
-withGui :: Gfx -> (TChan Gfx -> IO ()) -> IO ()
-withGui gfx callback = do
-  gfxChan <- atomically newTChan
-  let action = callback gfxChan
-  threadId <- forkIO (gfxMain gfx gfxChan)
-  action `finally` (killThread threadId)

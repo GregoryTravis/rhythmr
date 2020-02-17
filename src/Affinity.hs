@@ -1,7 +1,9 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 
-module Affinity (affinityMain) where
+module Affinity
+( affinityMain
+, State(..) ) where
 
 import Control.Concurrent
 import Data.List (intercalate, transpose, sortOn)
@@ -20,6 +22,7 @@ import Graph
 import Looper
 import Score
 import Sound
+import State
 import TUI
 import Util
 
@@ -28,15 +31,6 @@ editorLogLength = 10
 addClick :: Maybe String
 addClick = Nothing
 --addClick = Just "looper/1-7.wav"
-
-data State =
-  State { sounds :: [Sound]
-        , likes :: S.Set [Int]
-        , dislikes :: S.Set [Int]
-        , currentGroup :: [Int]
-        , looper :: Looper
-        , editorLog :: [String]
-        , stack :: [[Int]] }
 
 -- Suitable for persisting
 data StateRep = 
@@ -67,9 +61,6 @@ saver :: [State] -> [StateRep]
 saver = map toRep
 
 -- This is not used; it is required so that KHResults can be compared
-instance Eq State where
-  _ == _ = undefined
-
 loadLoops :: IO [Sound]
 loadLoops = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
@@ -310,17 +301,9 @@ grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 
         splitUp n [] = []
         splitUp n xs = take n xs : splitUp n (drop n xs)
 
-initGfx :: Int -> Gfx
-initGfx n = Gfx (zipWith init fs fs')
-  where init f f' = Node { pos = toPt f, dest = toPt f' }
-        fs = map (/ fromIntegral n) (map fromIntegral [0..n-1])
-        fs' = take n (drop (n `div` 2) (cycle fs))
-        toPt f = (V2 80.0 80.0) + (220 *^ V2 (cos a) (sin a))
-          where a = f * 2 * pi
-
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  withLooper $ \looper -> withGui (initGfx 2000) $ \gfxChan -> do
-                    threadDelay $ 20 * 1000000
-                    --s <- initState looper
+  withLooper $ \looper -> do
+                    s <- initState looper
+                    gfxMain s
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
