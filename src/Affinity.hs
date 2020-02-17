@@ -315,11 +315,12 @@ initGfx n = Gfx (zipWith init fs fs')
   where init f f' = Node { pos = toPt f, dest = toPt f' }
         fs = map (/ fromIntegral n) (map fromIntegral [0..n-1])
         fs' = take n (drop (n `div` 2) (cycle fs))
-        toPt f = (V2 80.0 80.0) + (40 *^ V2 (cos a) (sin a))
+        toPt f = (V2 80.0 80.0) + (220 *^ V2 (cos a) (sin a))
           where a = f * 2 * pi
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  withLooper $ \looper -> withGui (initGfx 20) $ \gfxChan -> do
-                    s <- initState looper
-                    runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
+  withLooper $ \looper -> withGui (initGfx 2000) $ \gfxChan -> do
+                    threadDelay $ 20 * 1000000
+                    --s <- initState looper
+                    --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

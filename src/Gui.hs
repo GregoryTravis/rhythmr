@@ -28,11 +28,14 @@ data Node = Node { pos :: V2 Float
 data Gfx = Gfx { nodes :: [Node] }
   deriving Show
 
-velocity = 40.0
+velocity = 800.0
 
 updateNode :: Float -> Float -> Node -> Node
 updateNode t dt n@(Node { pos, dest }) = n { pos = newPos }
-  where newPos = pos + (velocity * dt *^ signorm (dest - pos))
+  where newPos = pos + (velocity * dt *^ signorm (dest' - pos))
+        movey = V2 (cos t') (sin t')
+        dest' = V2 20 20 + (movey ^* 1000)
+        t' = 5 * t
 
 stepIteration :: Float -> Float -> Gfx -> IO Gfx
 stepIteration t dt (Gfx { nodes }) = return $ Gfx (map (updateNode t dt) nodes)
@@ -54,7 +57,7 @@ cumulativePlayIO dm c rate w wtp eh si =  playIO dm c rate (Cumulator (0.0, w)) 
 
 gfxMain :: Gfx -> TChan Gfx -> IO ()
 gfxMain gfx gfxChan = do
-  cumulativePlayIO displayMode bgColor 10 gfx worldToPicture eventHandler stepIteration
+  cumulativePlayIO displayMode bgColor 100 gfx worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (800, 800) (810, 10)
         bgColor = white
         --stepIteration' f = stepIteration (float2Float f)
