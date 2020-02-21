@@ -78,7 +78,7 @@ keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
   let s' = s { currentGroup = group }
-  msp "YOSH"
+  --msp "YOSH"
   --playCurrent s'
   return $ SetState s'
 keyboardHandler s 'y' = return (SetState $ like s)
@@ -113,6 +113,7 @@ keyboardHandler s key = return (SetState s')
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
+  putStrLn $ displayer s'
   if currentGroup s' /= currentGroup s && currentGroup s' /= []
       then playCurrent s'
       else return ()
@@ -296,20 +297,21 @@ ringOfCirclesInUnitSquare n = circles
                 offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
         tr (V2 x y) p = Translate x y p
         circleRadius = 0.15
-        margin = 0.3
+        margin = 0.6
 
 affinityPositions :: State -> M.Map Int (V2 Float)
 -- affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
 --   where pos i = V2 (fromIntegral i * 5) 0
-affinityPositions s = case esp $ acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
+affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
   where rah :: (V2 Float -> V2 Float) -> [Int] -> [(Int, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
 updateGfx :: GuiState -> GuiState
 updateGfx gs = gs { getDings = newDings }
-  where newDings = map (\p -> Ding p p) $ map (\k -> M.findWithDefault def k positions) [0..length (sounds (getState gs)) - 1]
+  where newDings = zipWith (\x d -> Ding x d) xs $ map (\k -> M.findWithDefault def k positions) [0..length (sounds (getState gs)) - 1]
         def = V2 0 0
-        positions = esp $ affinityPositions (getState gs)
+        positions = affinityPositions (getState gs)
+        xs = map (\(Ding x d) -> x) (getDings gs)
 
 displayer :: Displayer State
 displayer s = intercalate "\n" lines

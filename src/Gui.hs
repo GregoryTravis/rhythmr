@@ -57,7 +57,17 @@ worldToPicture gs = return $ Pictures (map render (getDings gs))
 --renderNode (Node { pos = V2 x y }) = translate x y $ lineLoop (rectanglePath 30 50)
 
 stepIteration :: Float -> Float -> GuiState -> IO GuiState
-stepIteration t dt gs = return gs
+stepIteration t dt gs = return $ gs { getDings = newDings }
+  where newDings = map update (getDings gs)
+        update :: Ding -> Ding
+        update (Ding x d) = Ding (x + clip (d-x)) d
+          where clip v | norm v > vel = vel *^ signorm v
+                clip v | otherwise = v
+                vel = 10.0
+        -- update (Ding x d) = Ding newX d
+        --   where newX = x + dx
+        --         dx = (signorm (d-x)) ^* howMuch
+        --         howMuch = min (norm (d-x)) 1.0
 
 data Cumulator a = Cumulator (Float, a)
 cumulative :: (Float -> Float -> a -> IO a) -> (Float -> Cumulator a -> IO (Cumulator a))
