@@ -51,7 +51,7 @@ initDings s = take n dings
 
 worldToPicture :: GuiState -> IO Picture
 worldToPicture gs = return $ Pictures (map render (getDings gs))
-  where render (Ding (V2 x y) _) = Translate x y $ Circle 20
+  where render (Ding (V2 x y) _) = Translate x y $ Circle 10
 
 --renderNode :: Node -> Picture
 --renderNode (Node { pos = V2 x y }) = translate x y $ lineLoop (rectanglePath 30 50)

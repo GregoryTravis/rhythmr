@@ -291,12 +291,12 @@ gridTransformsForN n =
 ringOfCirclesInUnitSquare :: Int -> [V2 Float -> V2 Float]
 ringOfCirclesInUnitSquare n = circles
   where circles = map circle [0..n-1]
-        circle i = translater offset
+        circle i = scaler (V2 0.5 0.5) . translater (V2 1 1) . translater offset
           where ang = 2 * pi * (fromIntegral i / fromIntegral n)
                 offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
         tr (V2 x y) p = Translate x y p
         circleRadius = 0.15
-        margin = 0.1
+        margin = 0.3
 
 affinityPositions :: State -> M.Map Int (V2 Float)
 -- affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
