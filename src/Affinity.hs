@@ -269,6 +269,29 @@ gridSizeFor n = ceiling $ sqrt $ fromIntegral n
 unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
 unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
 
+gridTransformsForN :: Int -> [Picture -> Picture]
+gridTransformsForN n =
+  let gridSize = gridSizeFor n
+      ijs = [(i, j) | i <- [0..gridSize-1], j <- [0..gridSize-1]]
+      gbx = V2 gridStep 0
+      gby = V2 0 gridStep
+      gridStep :: Float
+      gridStep = 1.0 / (fromIntegral gridSize)
+      translateFor (i, j) = (fromIntegral i *^ gbx) + (fromIntegral j *^ gby)
+      scale = V2 gridStep gridStep
+      transformFor ij = unitSquareTo (translateFor ij) scale
+   in take n (map transformFor ijs)
+
+ringOfCirclesInUnitSquare :: Int -> Picture
+ringOfCirclesInUnitSquare n = Pictures circles
+  where circles = map circle [0..n-1]
+        circle i = tr offset $ Circle circleRadius
+          where ang = 2 * pi * (fromIntegral i / fromIntegral n)
+                offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
+        tr (V2 x y) p = Translate x y p
+        circleRadius = 0.15
+        margin = 0.1
+
 affinityPositions :: State -> M.Map Int (V2 Float)
 affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
   where pos i = V2 (fromIntegral i * 5) 0
