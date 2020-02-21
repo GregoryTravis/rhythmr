@@ -297,7 +297,7 @@ ringOfCirclesInUnitSquare n = circles
                 offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
         tr (V2 x y) p = Translate x y p
         circleRadius = 0.15
-        margin = 0.6
+        margin = 0.65
 
 affinityPositions :: State -> M.Map Int (V2 Float)
 -- affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
