@@ -269,7 +269,13 @@ gridSizeFor n = ceiling $ sqrt $ fromIntegral n
 unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
 unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
 
-gridTransformsForN :: Int -> [Picture -> Picture]
+scaler :: V2 Float -> (V2 Float -> V2 Float)
+scaler (V2 x y) (V2 x' y') = V2 (x*x') (y*y')
+
+translater :: V2 Float -> (V2 Float -> V2 Float)
+translater (V2 x y) (V2 x' y') = V2 (x+x') (y+y')
+
+gridTransformsForN :: Int -> [V2 Float -> V2 Float]
 gridTransformsForN n =
   let gridSize = gridSizeFor n
       ijs = [(i, j) | i <- [0..gridSize-1], j <- [0..gridSize-1]]
@@ -279,13 +285,13 @@ gridTransformsForN n =
       gridStep = 1.0 / (fromIntegral gridSize)
       translateFor (i, j) = (fromIntegral i *^ gbx) + (fromIntegral j *^ gby)
       scale = V2 gridStep gridStep
-      transformFor ij = unitSquareTo (translateFor ij) scale
+      transformFor ij = (translater (translateFor ij)) . (scaler scale)
    in take n (map transformFor ijs)
 
-ringOfCirclesInUnitSquare :: Int -> Picture
-ringOfCirclesInUnitSquare n = Pictures circles
+ringOfCirclesInUnitSquare :: Int -> [V2 Float -> V2 Float]
+ringOfCirclesInUnitSquare n = circles
   where circles = map circle [0..n-1]
-        circle i = tr offset $ Circle circleRadius
+        circle i = translater offset
           where ang = 2 * pi * (fromIntegral i / fromIntegral n)
                 offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
         tr (V2 x y) p = Translate x y p
@@ -293,14 +299,17 @@ ringOfCirclesInUnitSquare n = Pictures circles
         margin = 0.1
 
 affinityPositions :: State -> M.Map Int (V2 Float)
-affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
-  where pos i = V2 (fromIntegral i * 5) 0
+-- affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
+--   where pos i = V2 (fromIntegral i * 5) 0
+affinityPositions s = case esp $ acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
+  where rah :: (V2 Float -> V2 Float) -> [Int] -> [(Int, V2 Float)]
+        rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
 updateGfx :: GuiState -> GuiState
 updateGfx gs = gs { getDings = newDings }
   where newDings = map (\p -> Ding p p) $ map (\k -> M.findWithDefault def k positions) [0..length (sounds (getState gs)) - 1]
         def = V2 0 0
-        positions = affinityPositions (getState gs)
+        positions = esp $ affinityPositions (getState gs)
 
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
