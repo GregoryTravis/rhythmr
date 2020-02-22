@@ -17,7 +17,6 @@ import Looper (withPortaudio)
 import Mess
 import RPC
 import Search
-import Song
 import Sound
 import Spleeter
 import TUI
@@ -112,22 +111,9 @@ fehmain = do
   let s1 = render s0
   writeSound "hehe.wav" s1
 
-generateSome = do
-  --ids <- search "drum tracks instrumental" 30
-  filenames <- downloadMain "percussion isolated" 20
-  let seeds = take 1 $ drop 3 $ take 10 [2885, 8834..]
-  msp ("seeds", seeds)
-  time "render" $ mapM (renderSong theArrayArrangement filenames) seeds
-
-song :: Int -> IO ()
-song seed = do
-  loopFilenames <- fmap (map ("loops/"++)) $ listDirectory "loops"
-  song <- renderSong theArrayArrangement loopFilenames seed
-  writeSound ("song-" ++ (show seed) ++ ".wav") song
-
 doStuffDefault = ["aff", "2345"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
-doStuff ["song", seed] = song (read seed)
+--doStuff ["song", seed] = song (read seed)
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["rpc"] = rpc
 doStuff ["displayServer"] = displayServer
@@ -136,7 +122,6 @@ doStuff ["displaySend"] = withTerminal $ \d -> do
   displaySend d (Circ 70)
   return ()
 doStuff [] = doStuff doStuffDefault
-  --generateSome
 
 main = withPortaudio $ do
   noBuffering
