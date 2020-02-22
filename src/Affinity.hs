@@ -12,7 +12,6 @@ import qualified Data.Set as S
 import Graphics.Gloss
 import Linear
 import System.Directory (listDirectory)
-import System.Random
 
 import Ascii
 import Arrangement
@@ -20,15 +19,13 @@ import Constants
 import Dice
 import FX
 import Gui
-import Graph
+--import Graph
 import Looper
 import Score
 import Sound
 import State
 import TUI
 import Util
-
-editorLogLength = 10
 
 addClick :: Maybe String
 addClick = Nothing
@@ -130,41 +127,6 @@ keyboardHandlerWrapper kh s k = do
   --             _ -> return ()
   return khr
 
-pushCurrentGroup :: State -> State
-pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
-  where p2l (x, y) = [x, y]
-
-nextFromStack :: State -> State
-nextFromStack s | (stack s) /= [] = s { currentGroup = g, stack = gs }
-                | otherwise = s
-  where (g:gs) = stack s
-
-combineAffinities :: State -> State
-combineAffinities s =
-  case acceptable s of (a : b : _) -> nextFromStack $ replaceStack s (combos a b)
-                       _ -> s
-  where combos :: [Int] -> [Int] -> [[Int]]
-        combos xs ys = [xs' ++ ys' | xs' <- clump 2 xs, ys' <- clump 2 ys]
-
-clump :: Int -> [a] -> [[a]]
-clump n [] = []
-clump n xs = (take n xs) : (clump n (drop n xs))
-
-replaceStack :: State -> [[Int]] -> State
-replaceStack s stack_ = s { stack = stack_ }
-
-pushStack :: State -> [Int] -> State
-pushStack s x = s { stack = x : stack s }
-pushStackN :: State -> [[Int]] -> State
-pushStackN s (x : xs) = pushStack (pushStackN s xs) x
-pushStackN s [] = s
-
-allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
-allPairs [] = []
-
-edlog :: State -> String -> State
-edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
-
 arrVolume :: Arrangement -> IO Float
 arrVolume arr = do
   sound <- renderArrangement arr
@@ -237,16 +199,6 @@ playCurrent s = do
   --msp "setting sound"
   setSound (looper s) mix
 
-like :: State -> State
-like s = nextFromStack $ s { likes = S.insert (currentGroup s) (likes s) }
-dislike :: State -> State
-dislike s | length (currentGroup s) < 3 = nextFromStack $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
-dislike s | otherwise = nextFromStack $ pushStackN s (allSubs (currentGroup s))
-  where -- A sub is the list with one element removed
-        allSubs :: [Int] -> [[Int]]
-        allSubs (x : xs) = [xs] ++ map (x:) (allSubs xs)
-        allSubs [] = []
-
 -- This one only picks from the set of loops that aren't part of a like
 -- randomGroup s = do
 --   let inUse = nodes (likes s)
@@ -255,21 +207,11 @@ dislike s | otherwise = nextFromStack $ pushStackN s (allSubs (currentGroup s))
 --   indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
 --   return indices
 
-randomGroup :: State -> IO [Int]
-randomGroup s = do
-  let soundIndices = [0..length (sounds s)-1]
-  groupSize <- getStdRandom (randomR (2,4)) :: IO Int
-  indices <- mapM (\_ -> randFromList soundIndices) [0..groupSize-1]
-  return indices
-
-acceptable :: State -> [[Int]]
-acceptable = (map S.toList) . components . fromComponents . S.toList . likes
-
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
 
-unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
-unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
+-- unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
+-- unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
 
 scaler :: V2 Float -> (V2 Float -> V2 Float)
 scaler (V2 x y) (V2 x' y') = V2 (x*x') (y*y')
@@ -323,9 +265,7 @@ displayer s = intercalate "\n" lines
         dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showList (stack s))
         affS = "Affinities:\n" ++ intercalate "\n" (map show (bigToSmall $ acceptable s))
-        logS = bar ++ "\n" ++ (intercalate "\n" (extend (reverse $ editorLog s))) ++ "\n" ++ bar
-          where extend :: [String] -> [String]
-                extend lines = take editorLogLength $ lines ++ (repeat "")
+        logS = bar ++ "\n" ++ (intercalate "\n" (renderEdLog s)) ++ "\n" ++ bar
         showList xs = intercalate " " (map show xs)
         bar = "======================"
         bigToSmall :: [[a]] -> [[a]]

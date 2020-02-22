@@ -25,6 +25,8 @@ module Util
 , chomp
 , replace
 , randFromList
+, clump
+, allPairs
 ) where
 
 import Control.Exception
@@ -136,3 +138,10 @@ randFromList :: [a] -> IO a
 randFromList xs = do
   i <- getStdRandom (randomR (0, length xs - 1))
   return $ xs !! i
+
+clump :: Int -> [a] -> [[a]]
+clump n [] = []
+clump n xs = (take n xs) : (clump n (drop n xs))
+
+allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
+allPairs [] = []
