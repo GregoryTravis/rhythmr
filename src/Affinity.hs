@@ -113,6 +113,7 @@ keyboardHandler s key = return (SetState s')
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
+  resetTerm
   putStrLn $ displayer s'
   if currentGroup s' /= currentGroup s && currentGroup s' /= []
       then playCurrent s'

@@ -9,6 +9,7 @@ module TUI
 , Loader
 , Saver
 , editor
+, resetTerm
 , runEditor ) where
 
 import Control.Exception (finally)
