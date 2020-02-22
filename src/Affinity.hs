@@ -333,12 +333,6 @@ displayer s = intercalate "\n" lines
 
 grid :: State -> String
 grid (State { sounds, currentGroup }) = gridder (length sounds) (flip elem currentGroup)
-gridder :: Int -> (Int -> Bool) -> String
-gridder n isRev = intercalate "\n" $ map format $ splitUp 10 $ map (boxShowMember isRev) [0..n-1]
-  where format xs = intercalate " " xs
-        splitUp :: Int -> [a] -> [[a]]
-        splitUp n [] = []
-        splitUp n xs = take n xs : splitUp n (drop n xs)
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
