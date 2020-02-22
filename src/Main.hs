@@ -17,7 +17,6 @@ import Util
 
 doStuffDefault = ["aff", "2345"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
---doStuff ["song", seed] = song (read seed)
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff [] = doStuff doStuffDefault
 
