@@ -1,97 +1,21 @@
 module Main where
 
 --import Data.List.Utils (replace)
-import System.Directory
+--import System.Directory
 import System.Environment (getArgs)
-import System.FilePath.Posix (takeBaseName)
 
 import Affinity
 import Analysis
 import Arrangement
-import Aubio
-import Terminal
-import Download
-import External (contentAddressableWrite)
+import Bars
 import Feh
 import Looper (withPortaudio)
 import Mess
 import RPC
-import Search
 import Sound
-import Spleeter
+import Terminal
 import TUI
 import Util
-
-theArrayArrangement =
-  [ [0]
-  , [0, 1]
-  , [0, 2]
-  , [0, 3] -- m 6
-  , [0, 1, 2, 3]
-  , [0, 1, 2, 3]
-  , [4]
-  , [4, 5] -- m 14
-  , [4, 5, 0]
-  , [4, 5, 2]
-  , [2, 3, 4, 6] -- m
-  , [0, 1, 2, 3, 4, 5, 6] -- m
-  , [0, 1, 2, 3, 4, 5, 6] ] -- m
-
-showit vs = mapM putStrLn (map s vs)
-  where s ((t0, t1), dx) = (show t0) ++ " " ++ (show dx)
-
-downloadMain searchString count = do
-  ids <- search searchString count
-  msp "ids"
-  msp ids
-  filenames <- mapM download ids
-  mapM save filenames
-  where save filename = do
-          msp ("copy", filename, dest filename)
-          createDirectoryIfMissing True dir
-          copyFile filename (dest filename)
-          return $ dest filename
-        dir = "tracks/" ++ searchStringDir
-        dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
-        searchStringDir = replace ' ' '-' searchString
-
-bars :: String -> Int -> IO ()
-bars searchString numTracks = do
-  filenames <- downloadMain searchString 8
-  --filenames <- downloadMain "grace jones" 2
-  mapM_ extractLoops filenames
-
-extractLoops filename = do
-  msp filename
-  bars <- fmap (take 8 . drop 10) $ barBeat filename
-  original <- readSound filename
-  let originalLoops = splitIntoLoops original bars
-  originalFilenames <- writeSounds originalLoops
-  msp originalFilenames
-  spleetered <- spleeter original
-  let spleeteredLoops = splitIntoLoops spleetered bars
-  spleeteredFilenames <- writeSounds spleeteredLoops
-  msp spleeteredFilenames
-  where writer :: Sound -> String -> IO ()
-        writer sound filename = writeSound filename sound
-        writeSounds :: [Sound] -> IO [String]
-        writeSounds sounds = mapM (contentAddressableWrite "loop" "loops" "wav" . writer) sounds
-
---contentAddressableWrite :: String -> String -> (String -> IO ()) -> IO String
-
-  -- let frameSize = 100
-  -- msp $ map (uncurry (compareRms frameSize)) (zip loops spleeteredLoops)
-  -- msp $ map (uncurry (rmsSimilarity frameSize)) (zip loops spleeteredLoops)
-
-----withContentHashNamedFile :: String -> (String -> IO ()) -> (String -> IO a) -> IO a
---contentAddressableWrite :: Sound -> String
---contentAddressableWrite sound = withContentHashNamedFile writer returner
---  where writer filename = writeSound filename sound
---        returner filename = return filename
-
-splitIntoLoops :: Sound -> [Int] -> [Sound]
-splitIntoLoops sound bars =
-  map (\(s, e) -> snip s e sound) (zip bars (drop 1 bars))
 
 _main = do
   s0 <- readSound "loop-0-20732.wav"
