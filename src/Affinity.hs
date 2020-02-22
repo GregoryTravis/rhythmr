@@ -127,15 +127,6 @@ keyboardHandlerWrapper kh s k = do
   --             _ -> return ()
   return khr
 
-arrVolume :: Arrangement -> IO Float
-arrVolume arr = do
-  sound <- renderArrangement arr
-  return (volume sound)
-
-shv arr = do
-  v <- arrVolume arr
-  msp v
-
 playSong :: State -> IO ()
 playSong s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
@@ -165,9 +156,6 @@ playSong s = do
   --msp soundArr
   --msp arr
   msp "HEYO"
-  shv soundArr
-  shv soundArr2
-  shv arr
 
   --let arr' = seqArrangement [soundArr, clickTrackArr, arr]
   --let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr, parArrangement [soundArr, soundArr, arr]]
@@ -243,8 +231,6 @@ ringOfCirclesInUnitSquare n = circles
         margin = 0.65
 
 affinityPositions :: State -> M.Map Int (V2 Float)
--- affinityPositions s = case esp $ acceptable s of xss -> M.fromList (zip (concat xss) (map pos [0..]))
---   where pos i = V2 (fromIntegral i * 5) 0
 affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
   where rah :: (V2 Float -> V2 Float) -> [Int] -> [(Int, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
@@ -270,9 +256,8 @@ displayer s = intercalate "\n" lines
         bar = "======================"
         bigToSmall :: [[a]] -> [[a]]
         bigToSmall = reverse . sortOn length
-
-grid :: State -> String
-grid (State { sounds, currentGroup }) = gridder (length sounds) (flip elem currentGroup)
+        grid :: State -> String
+        grid (State { sounds, currentGroup }) = gridder (length sounds) (flip elem currentGroup)
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
