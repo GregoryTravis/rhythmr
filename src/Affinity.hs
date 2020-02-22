@@ -59,7 +59,6 @@ loader currentState reps = fromReps (looper currentState) reps
 saver :: [State] -> [StateRep]
 saver = map toRep
 
--- This is not used; it is required so that KHResults can be compared
 loadLoops :: IO [Sound]
 loadLoops = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"

@@ -32,6 +32,7 @@ data State =
         , editorLog :: [String]
         , stack :: [[Int]] }
 
+-- This is not used; it is required so that KHResults can be compared
 instance Eq State where
   _ == _ = undefined
 
