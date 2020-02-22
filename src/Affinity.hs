@@ -13,8 +13,8 @@ import Graphics.Gloss
 import Linear
 import System.Directory (listDirectory)
 import System.Random
-import Text.Printf (printf)
 
+import Ascii
 import Arrangement
 import Constants
 import Dice
@@ -331,25 +331,10 @@ displayer s = intercalate "\n" lines
         bigToSmall :: [[a]] -> [[a]]
         bigToSmall = reverse . sortOn length
 
-revAsc :: String -> String
-revAsc s = "\ESC[7m" ++ s ++ "\ESC[0m" 
-
--- box :: [Int] -> Int -> String
--- box group i = rv i ("[" ++ (fmt i) ++ "]")
---   where fmt i = printf "%4d" i
---         rv :: Int -> String -> String
---         rv i s = if elem i group then rev s else s
-box :: Bool -> Int -> String
-box reverse i =
-  let base = "[" ++ (fmt i) ++ "]"
-   in if reverse then revAsc base else base
-  where fmt i = printf "%4d" i
-
-boxShowMember :: [Int] -> Int -> String
-boxShowMember group i = box (elem i group) i
-
 grid :: State -> String
-grid (State { sounds, currentGroup }) = intercalate "\n" $ map format $ splitUp 10 $ map (boxShowMember currentGroup) [0..length sounds - 1]
+grid (State { sounds, currentGroup }) = gridder (length sounds) (flip elem currentGroup)
+gridder :: Int -> (Int -> Bool) -> String
+gridder n isRev = intercalate "\n" $ map format $ splitUp 10 $ map (boxShowMember isRev) [0..n-1]
   where format xs = intercalate " " xs
         splitUp :: Int -> [a] -> [[a]]
         splitUp n [] = []
