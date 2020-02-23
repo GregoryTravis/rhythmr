@@ -26,20 +26,20 @@ import Util
 windowWidth = 800
 windowHeight = 800
 
-data GS s v = GS s v
+data GuiState s v = GuiState s v
 
 guiMain :: s -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (Char -> s -> IO s) -> IO ()
 guiMain s statesToViz renderViz advanceViz keyboardHandler =
-  let initWorld = GS s (statesToViz s s)
-      worldToPicture (GS s v) = return $ renderViz v
+  let initWorld = GuiState s (statesToViz s s)
+      worldToPicture (GuiState s v) = return $ renderViz v
       eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) gs = do
         exitSuccess
         return gs
-      eventHandler (EventKey (Char c) Down _ _) (GS s v) = do
+      eventHandler (EventKey (Char c) Down _ _) (GuiState s v) = do
         s' <- keyboardHandler c s
-        return $ GS s' (statesToViz s s')
+        return $ GuiState s' (statesToViz s s')
       eventHandler e gs = return gs
-      stepIteration dt (GS s v) = return $ GS s (advanceViz dt v)
+      stepIteration dt (GuiState s v) = return $ GuiState s (advanceViz dt v)
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
         bgColor = white
