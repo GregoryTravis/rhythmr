@@ -11,6 +11,7 @@ import System.Exit (exitSuccess)
 import Gui
 import State
 import TUI
+import Util
 
 data Ding = Ding (V2 Float) (V2 Float)
   deriving Show
@@ -74,13 +75,13 @@ stateToPositions s =
           def = V2 0 0
 
 updateViz :: Float -> Viz -> Viz
-updateViz _ (Viz dings) = Viz newDings
+updateViz dt (Viz dings) = Viz newDings
   where newDings = map update dings
         update :: Ding -> Ding
         update (Ding x d) = Ding (x + clip (d-x)) d
           where clip v | norm v > vel = vel *^ signorm v
                 clip v | otherwise = v
-                vel = 10.0
+                vel = 1000.0 * dt
 
 renderViz' :: Viz -> Picture
 renderViz' (Viz dings) = Pictures (map render dings)
