@@ -8,7 +8,7 @@ import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Exit (exitSuccess)
 
-import Gui hiding (Ding)
+import Gui
 import State
 import TUI
 
@@ -93,25 +93,3 @@ vizMain s kh = guiMain s statesToViz' renderViz' updateViz (adapt kh)
           result <- okh s c
           case result of SetState s' -> return s'
                          _           -> return s
-
-type KeyboardHandler s = s -> Char -> IO (KHResult s)
-
----- new Gui.hs
-
-data GS s v = GS s v
-
-guiMain :: State -> (State -> State -> Viz) -> (Viz -> Picture) -> (Float -> Viz -> Viz) -> (Char -> State -> IO State) -> IO ()
-guiMain s statesToViz renderViz advanceViz keyboardHandler =
-  let initWorld = GS s (statesToViz s s)
-      worldToPicture (GS s v) = return $ renderViz v
-      eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) gs = do
-        exitSuccess
-        return gs
-      eventHandler (EventKey (Char c) Down _ _) (GS s v) = do
-        s' <- keyboardHandler c s
-        return $ GS s' (statesToViz s s')
-      eventHandler e gs = return gs
-      stepIteration dt (GS s v) = return $ GS s (advanceViz dt v)
-   in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
-  where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
-        bgColor = white
