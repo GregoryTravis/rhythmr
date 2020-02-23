@@ -26,6 +26,7 @@ import Sound
 import State
 import TUI
 import Util
+import Viz
 
 addClick :: Maybe String
 addClick = Nothing
@@ -194,53 +195,6 @@ playCurrent s = do
 --   indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
 --   return indices
 
-gridSizeFor :: Int -> Int
-gridSizeFor n = ceiling $ sqrt $ fromIntegral n
-
--- unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
--- unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
-
-scaler :: V2 Float -> (V2 Float -> V2 Float)
-scaler (V2 x y) (V2 x' y') = V2 (x*x') (y*y')
-
-translater :: V2 Float -> (V2 Float -> V2 Float)
-translater (V2 x y) (V2 x' y') = V2 (x+x') (y+y')
-
-gridTransformsForN :: Int -> [V2 Float -> V2 Float]
-gridTransformsForN n =
-  let gridSize = gridSizeFor n
-      ijs = [(i, j) | i <- [0..gridSize-1], j <- [0..gridSize-1]]
-      gbx = V2 gridStep 0
-      gby = V2 0 gridStep
-      gridStep :: Float
-      gridStep = 1.0 / (fromIntegral gridSize)
-      translateFor (i, j) = (fromIntegral i *^ gbx) + (fromIntegral j *^ gby)
-      scale = V2 gridStep gridStep
-      transformFor ij = (translater (translateFor ij)) . (scaler scale)
-   in take n (map transformFor ijs)
-
-ringOfCirclesInUnitSquare :: Int -> [V2 Float -> V2 Float]
-ringOfCirclesInUnitSquare n = circles
-  where circles = map circle [0..n-1]
-        circle i = scaler (V2 0.5 0.5) . translater (V2 1 1) . translater offset
-          where ang = 2 * pi * (fromIntegral i / fromIntegral n)
-                offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
-        tr (V2 x y) p = Translate x y p
-        circleRadius = 0.15
-        margin = 0.65
-
-affinityPositions :: State -> M.Map Int (V2 Float)
-affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
-  where rah :: (V2 Float -> V2 Float) -> [Int] -> [(Int, V2 Float)]
-        rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
-
-updateGfx :: GuiState -> GuiState
-updateGfx gs = gs { getDings = newDings }
-  where newDings = zipWith (\x d -> Ding x d) xs $ map (\k -> M.findWithDefault def k positions) [0..length (sounds (getState gs)) - 1]
-        def = V2 0 0
-        positions = affinityPositions (getState gs)
-        xs = map (\(Ding x d) -> x) (getDings gs)
-
 displayer :: Displayer State
 displayer s = intercalate "\n" lines
   where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
@@ -258,9 +212,17 @@ displayer s = intercalate "\n" lines
         grid :: State -> String
         grid (State { sounds, currentGroup }) = gridder (length sounds) (flip elem currentGroup)
 
+
+-- type KeyboardHandler s = s -> Char -> IO (KHResult s)
+-- wrappedKeyboardHandler :: (State -> Char -> IO (KHResult State)) -> (State -> Char -> IO (KHResult State))
+-- wrappedKeyboardHandler kh s c = do
+--   result <- kh s c
+--   case result of SetState s' -> do respondToStateChange
+
 affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    gfxMain s keyboardHandler respondToStateChange updateGfx
+                    vizMain s (keyboardHandlerWrapper keyboardHandler)
+                    --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
