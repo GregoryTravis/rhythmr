@@ -8,6 +8,7 @@ import Affinity
 import Analysis
 import Arrangement
 import Bars
+import Diag
 import Feh
 import Looper (withPortaudio)
 import Mess
@@ -19,6 +20,8 @@ doStuffDefault = ["aff", "2345"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff [] = doStuff doStuffDefault
+
+--main = diagMain
 
 main = withPortaudio $ do
   noBuffering

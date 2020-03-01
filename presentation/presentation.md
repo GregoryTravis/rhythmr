@@ -58,17 +58,17 @@
 
 ---
 
-# “”
+# How to represent a beat?
    * Fade out all but four
 
 ---
 
-# “”
+# How to represent a beat?
    * 2^200 = [big number]
 
 ---
 
-# “”
+# How to represent a beat?
    * All possible subsets of 8
    * Even with just 8, there are a lot of possibilities
    * There’s no structure in this layout
@@ -81,12 +81,12 @@
 
 ---
 
-# “”
+# How about a graph?
    * Graph with positive and negative edges (red and green?)
 
 ---
 
-# “”
+# How about a graph?
    * Graph with weights
    * Still O(n^2)
 
@@ -150,17 +150,17 @@
 
 ---
 
-# “”
+# Lattice
    * Lattice of 3
 
 ---
 
-# “”
+# Lattice
    * Lattice of 4
 
 ---
 
-# “”
+# Lattice
    * Lattice of large number
    * This isn’t super-enlightening
 
@@ -182,19 +182,19 @@
 
 ---
 
-# “”
+# Lattice
    * Highlight a 3 and it’s 2 subset, with groups off to the right
    * Moving up the lattice from a good beat should also be good
 
 ---
 
-# “”
+# Lattice
    * Same but the other way
    * Moving down the lattice from a bad beat should also be bad
 
 ---
 
-# “”
+# Lattice
    * This can eliminate beats to check -- pruning the tree, if you will
    * Show a pruned sublattice
 
