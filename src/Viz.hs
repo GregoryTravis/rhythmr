@@ -1,5 +1,7 @@
 module Viz
-  ( vizMain
+  ( statesToViz'
+  , renderViz'
+  , updateViz
   ) where
 
 import qualified Data.Map.Strict as M
@@ -86,11 +88,3 @@ updateViz dt (Viz dings) = Viz newDings
 renderViz' :: Viz -> Picture
 renderViz' (Viz dings) = Pictures (map render dings)
   where render (Ding (V2 x y) _) = Translate x y $ Circle 10
-
-vizMain :: State -> (State -> Char -> IO (KHResult State)) -> IO ()
-vizMain s kh = guiMain s statesToViz' renderViz' updateViz (adapt kh)
-  where adapt :: (State -> Char -> IO (KHResult State)) -> (Char -> State -> IO State)
-        adapt okh c s = do
-          result <- okh s c
-          case result of SetState s' -> return s'
-                         _           -> return s

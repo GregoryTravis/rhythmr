@@ -26,7 +26,7 @@ executable autobeat
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Util, External, Aubio, Sound, Resample, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Arrangement, Mess, Feh, Affinity, Constants, Graph,
-                       Looper, TUI, Zipper, FX, Score, Dice, Gui, FPS, State, Ascii, Bars, Viz
+                       Looper, TUI, Zipper, FX, Score, Dice, Gui, FPS, State, Ascii, Bars, Viz, Diag
   --ghc-options:         -threaded -rtsopts "-with-rtsopts=-N"
 
   ghc-options:

@@ -70,42 +70,46 @@ initState looper = do
   [s] <- fromReps looper [emptyStateRep]
   return s
 
+setState s = return (Just s, DoNothing)
+retCommand c = return (Nothing, c)
+
 -- TODO maybe function type aliases are not good
-keyboardHandler :: KeyboardHandler State
+keyboardHandler :: (State -> Char -> IO (Maybe State, GuiCommand))
+--keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
   let s' = s { currentGroup = group }
   --msp "YOSH"
   --playCurrent s'
-  return $ SetState s'
-keyboardHandler s 'y' = return (SetState $ like s)
-keyboardHandler s 'n' = return (SetState $ dislike s)
+  setState s'
+keyboardHandler s 'y' = setState $ like s
+keyboardHandler s 'n' = setState $ dislike s
 keyboardHandler s 'A' = do
-  case acceptable s of [] -> return DoNothing
+  case acceptable s of [] -> setState s
                        (g:gs) -> do
                                    let s' = s { currentGroup = g }
-                                   return (SetState s')
+                                   setState s'
 keyboardHandler s 'S' = do
   playSong s
-  return (SetState s)
-keyboardHandler s '\ESC' = return Quit
+  setState s
+keyboardHandler s '\ESC' = retCommand Quit
 keyboardHandler s 'p' = do
   let s' = nextFromStack $ pushCurrentGroup s
   --msp ("eh", currentGroup s, stack s)
   --msp ("eh", currentGroup s', stack s')
-  return (SetState s')
+  setState s'
 keyboardHandler s ' ' = do
   s' <- if stack s == []
              then return $ edlog s "Stack empty, yo"
              else return $ nextFromStack s
   --let s' = nextFromStack s
-  return (SetState s')
-keyboardHandler s 'u' = return Undo
-keyboardHandler s '\DC2' = return Redo
-keyboardHandler s 's' = return $ Save "history.ab"
-keyboardHandler s 'L' = return $ Load "history.ab"
-keyboardHandler s 'C' = let s' = (combineAffinities s) in return $ (SetState s')
-keyboardHandler s key = return (SetState s')
+  setState s'
+keyboardHandler s 'u' = retCommand Undo
+keyboardHandler s '\DC2' = retCommand Redo
+keyboardHandler s 's' = retCommand $ Save "history.ab"
+keyboardHandler s 'L' = retCommand $ Load "history.ab"
+keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
+keyboardHandler s key = setState s'
   where s' = edlog s ("?? " ++ (show key))
 
 respondToStateChange :: State -> State -> IO ()
@@ -116,16 +120,13 @@ respondToStateChange s s' = do
       then playCurrent s'
       else return ()
 
-keyboardHandlerWrapper :: KeyboardHandlerWrapper State
+keyboardHandlerWrapper :: (State -> Char -> IO (Maybe State, GuiCommand)) -> (State -> Char -> IO (Maybe State, GuiCommand))
+--keyboardHandler :: (Char -> State -> IO (State, GuiCommand))
 keyboardHandlerWrapper kh s k = do
-  khr <- kh s k
-  case khr of SetState s' -> respondToStateChange s s'
-              _ -> return ()
-  -- case khr of SetState s' -> if currentGroup s' /= currentGroup s
-  --                               then playCurrent s'
-  --                               else return ()
-  --             _ -> return ()
-  return khr
+  result@(maybeS', command) <- kh s k
+  case maybeS' of Just s' -> respondToStateChange s s'
+                  Nothing -> return ()
+  return result
 
 playSong :: State -> IO ()
 playSong s = do
@@ -223,6 +224,6 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    vizMain s (keyboardHandlerWrapper keyboardHandler)
+                    guiMain s statesToViz' renderViz' updateViz (keyboardHandlerWrapper keyboardHandler)
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
