@@ -20,14 +20,14 @@ import Linear
 import System.Exit (exitSuccess)
 import System.Random
 
+import qualified History as H
 import State
---import TUI
 import Util
 
 windowWidth = 800
 windowHeight = 800
 
-data GuiState s v = GuiState s v
+data GuiState s v = GuiState (H.History s) v
 
 -- lol "Save String"
 data GuiCommand = Save String | Load String | Undo | Redo | Quit | DoNothing
@@ -35,18 +35,18 @@ data GuiCommand = Save String | Load String | Undo | Redo | Quit | DoNothing
 
 guiMain :: s -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (s -> Char -> IO (Maybe s, GuiCommand)) -> IO ()
 guiMain s statesToViz renderViz advanceViz keyboardHandler =
-  let initWorld = GuiState s (statesToViz s s)
-      worldToPicture (GuiState s v) = return $ renderViz v
+  let initWorld = GuiState (H.init s) (statesToViz s s)
+      worldToPicture (GuiState _ v) = return $ renderViz v
       eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) gs = do
         exitSuccess
         return gs
-      eventHandler (EventKey (Char c) Down _ _) gs@(GuiState s v) = do
-        (mabyeS', command) <- keyboardHandler s c
+      eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h v) = do
+        (mabyeS', command) <- keyboardHandler (H.cur h) c
         msp command
-        case mabyeS' of (Just s') -> return $ GuiState s' (statesToViz s s')
+        case mabyeS' of (Just s') -> return $ GuiState (H.update h s') (statesToViz s s')
                         Nothing -> return gs
       eventHandler e gs = return gs
-      stepIteration dt (GuiState s v) = return $ GuiState s (advanceViz dt v)
+      stepIteration dt (GuiState h v) = return $ GuiState h (advanceViz dt v)
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
         bgColor = white
