@@ -13,7 +13,7 @@ import Util
 import qualified Zipper as Z
 
 data History s = History (Z.Zipper s)
-  deriving (Read, Show)
+  deriving (Eq, Read, Show)
 
 init :: s -> History s
 init = History . Z.makeZipper

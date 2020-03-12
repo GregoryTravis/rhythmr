@@ -21,6 +21,7 @@ import System.Exit (exitSuccess)
 import System.Random
 
 import qualified History as H
+import SaveLoad
 import State
 import Util
 
@@ -30,23 +31,34 @@ windowHeight = 800
 data GuiState s v = GuiState (H.History s) v
 
 -- lol "Save String"
-data GuiCommand = Save String | Load String | Undo | Redo | Quit | DoNothing
+data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | DoNothing
   deriving Show
 
-guiMain :: s -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (s -> Char -> IO (Maybe s, GuiCommand)) -> IO ()
-guiMain s statesToViz renderViz advanceViz keyboardHandler =
+guiMain :: (Eq s, Show s, Read t, Show t) => s -> Saver s t -> Loader s t -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (s -> Char -> IO (GuiCommand s)) -> IO ()
+guiMain s saver loader statesToViz renderViz advanceViz keyboardHandler =
   let initWorld = GuiState (H.init s) (statesToViz s s)
       worldToPicture (GuiState _ v) = return $ renderViz v
       eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) gs = do
         exitSuccess
         return gs
       eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h v) = do
-        (mabyeS', command) <- keyboardHandler (H.cur h) c
+        command <- keyboardHandler (H.cur h) c
         msp command
-        case mabyeS' of (Just s') -> return $ GuiState (H.update h s') (statesToViz s s')
-                        Nothing -> return gs
+        h' <- execute command h saver loader
+        if h == h'
+           then return gs
+           else return $ GuiState h' (statesToViz (H.cur h) (H.cur h'))
       eventHandler e gs = return gs
       stepIteration dt (GuiState h v) = return $ GuiState h (advanceViz dt v)
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
         bgColor = white
+
+execute :: (Read t, Show t) => GuiCommand s -> H.History s -> Saver s t -> Loader s t -> IO (H.History s)
+execute command h saver loader =
+  case command of NewState s -> return $ H.update h s
+                  Save filename -> do save filename saver h
+                                      return h
+                  Load filename -> load (H.cur h) filename loader
+                  Undo -> return $ H.undo h
+                  Redo -> return $ H.redo h

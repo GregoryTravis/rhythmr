@@ -34,10 +34,11 @@ data State =
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
-  _ == _ = undefined
+  a == b = (likes a) == (likes b) && (dislikes a) == (dislikes b) && (currentGroup a == currentGroup b) && (editorLog a) == (editorLog b) && (stack a) == (stack b)
+  -- _ == _ = undefined
 
 instance Show State where
-  show = undefined
+  show _ = "[State]"
 
 randomGroup :: State -> IO [Int]
 randomGroup s = do

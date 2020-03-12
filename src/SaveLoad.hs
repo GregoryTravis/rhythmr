@@ -2,7 +2,9 @@
 
 module SaveLoad
 ( Loader
-, Saver ) where
+, Saver
+, load
+, save ) where
 
 -- import Control.Exception (finally)
 -- import System.Console.ANSI

@@ -16,7 +16,7 @@ module Zipper
 
 -- Zipper top current bottom; top is reversed
 data Zipper a = Zipper [a] a [a]
-  deriving (Read, Show)
+  deriving (Eq, Read, Show)
 
 --empty = Zipper [] []
 makeZipper :: a -> Zipper a

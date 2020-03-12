@@ -75,11 +75,13 @@ initState looper = do
   return $ State { sounds, looper, likes = S.empty, dislikes = S.empty,
                    currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
 
-setState s = return (Just s, DoNothing)
-retCommand c = return (Nothing, c)
+-- setState s = return (Just s, DoNothing)
+-- retCommand c = return (Nothing, c)
+setState s = return $ NewState s
+retCommand c = return c
 
 -- TODO maybe function type aliases are not good
-keyboardHandler :: (State -> Char -> IO (Maybe State, GuiCommand))
+keyboardHandler :: (State -> Char -> IO (GuiCommand State))
 --keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
@@ -125,13 +127,15 @@ respondToStateChange s s' = do
       then playCurrent s'
       else return ()
 
-keyboardHandlerWrapper :: (State -> Char -> IO (Maybe State, GuiCommand)) -> (State -> Char -> IO (Maybe State, GuiCommand))
+keyboardHandlerWrapper :: (State -> Char -> IO (GuiCommand State)) -> (State -> Char -> IO (GuiCommand State))
 --keyboardHandler :: (Char -> State -> IO (State, GuiCommand))
 keyboardHandlerWrapper kh s k = do
-  result@(maybeS', command) <- kh s k
-  case maybeS' of Just s' -> respondToStateChange s s'
-                  Nothing -> return ()
-  return result
+  command <- kh s k
+  case command of NewState s' -> if s /= s'
+                                    then respondToStateChange s s'
+                                    else return ()
+                  _ -> return ()
+  return command
 
 playSong :: State -> IO ()
 playSong s = do
@@ -229,6 +233,6 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    guiMain s statesToViz' renderViz' updateViz (keyboardHandlerWrapper keyboardHandler)
+                    guiMain s saver loader statesToViz' renderViz' updateViz (keyboardHandlerWrapper keyboardHandler)
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
