@@ -21,10 +21,11 @@ import FX
 import Gui
 --import Graph
 import Looper
+import SaveLoad
 import Score
 import Sound
 import State
-import TUI
+import TUI (Displayer, resetTerm)
 import Util
 import Viz
 
@@ -40,25 +41,28 @@ data StateRep =
 
 emptyStateRep = StateRep { repLikes = S.empty, repDislikes = S.empty }
 
-toRep :: State -> StateRep
-toRep (State { likes, dislikes }) = (StateRep { repLikes = likes, repDislikes = dislikes })
+-- -- We do them as a group since we only want to load the sounds once for all of them
+-- fromReps :: Looper -> [StateRep] -> IO [State]
+-- fromReps looper reps = do
+--   sounds <- (loadLoops :: IO [Sound])
+--   return $ map (fromRep sounds) reps
+--   where fromRep :: [Sound] -> StateRep -> State
+--         fromRep sounds (StateRep { repLikes, repDislikes }) =
+--           State { sounds, likes = repLikes, dislikes = repDislikes, currentGroup = [], looper,
+--                   editorLog = ["Welcome to autobeat"], stack = [] }
 
--- We do them as a group since we only want to load the sounds once for all of them
-fromReps :: Looper -> [StateRep] -> IO [State]
-fromReps looper reps = do
-  sounds <- (loadLoops :: IO [Sound])
-  return $ map (fromRep sounds) reps
-  where fromRep :: [Sound] -> StateRep -> State
-        fromRep sounds (StateRep { repLikes, repDislikes }) =
-          State { sounds, likes = repLikes, dislikes = repDislikes, currentGroup = [], looper,
-                  editorLog = ["Welcome to autobeat"], stack = [] }
+----loader :: Loader State [StateRep]
+--loader :: State -> [StateRep] -> IO [State]
+--loader currentState reps = fromReps (looper currentState) reps
+loader :: Loader State StateRep
+loader state (StateRep { repLikes, repDislikes }) =
+  state { likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [] }
 
---loader :: Loader State [StateRep]
-loader :: State -> [StateRep] -> IO [State]
-loader currentState reps = fromReps (looper currentState) reps
+-- saver :: [State] -> [StateRep]
+-- saver = map toRep
 
-saver :: [State] -> [StateRep]
-saver = map toRep
+saver :: State -> StateRep
+saver (State { likes, dislikes }) = (StateRep { repLikes = likes, repDislikes = dislikes })
 
 loadLoops :: IO [Sound]
 loadLoops = do
@@ -67,8 +71,9 @@ loadLoops = do
 
 initState :: Looper -> IO State
 initState looper = do
-  [s] <- fromReps looper [emptyStateRep]
-  return s
+  sounds <- (loadLoops :: IO [Sound])
+  return $ State { sounds, looper, likes = S.empty, dislikes = S.empty,
+                   currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
 
 setState s = return (Just s, DoNothing)
 retCommand c = return (Nothing, c)

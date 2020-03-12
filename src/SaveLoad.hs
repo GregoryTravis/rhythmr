@@ -1,6 +1,6 @@
 --{-# LANGUAGE BlockArguments #-}
 
-module TUI
+module SaveLoad
 ( Loader
 , Saver ) where
 
@@ -9,25 +9,26 @@ module TUI
 -- import System.Posix.IO (stdInput)
 -- import System.Posix.Terminal
 
+import qualified History as H
 import Util
-import qualified Zipper as Z
 
 -- s is state, t is the storable representation
 -- Loader result is in IO since you might have to load stuff
 -- Loader takes the current state in case it has a unique resource you need to re-use
-type Saver s t = [s] -> t
-type Loader s t = s -> t -> IO [s]
+type Saver s t = s -> t
+type Loader s t = s -> t -> s
 
-load :: Read t => s -> String -> Loader s t -> IO (Z.Zipper s)
+load :: Read t => s -> String -> Loader s t -> IO (H.History s)
 load currentState filename loader = do
   fileContentsString <- readFile filename
-  let rep = read fileContentsString
-  states <- loader currentState rep
-  return $ Z.fromList states
+  return $ H.map (loader currentState) (read fileContentsString)
+  -- let repZipper :: Z.Zipper t
+  --     repZipper = read fileContentsString
+  --     stateZipper :: Z.Zipper s
+  --     stateZipper = Z.zmap (loader currentState) repZipper
+  -- return $ H.History stateZipper
 
-save :: Show t => String -> Saver s t -> Z.Zipper s -> IO ()
+save :: Show t => String -> Saver s t -> H.History s -> IO ()
 save filename saver history = do
-  let states = Z.toList history
-      rep = saver states
-      fileContentsString = show rep
+  let fileContentsString = show (H.map saver history)
   writeFile filename fileContentsString
