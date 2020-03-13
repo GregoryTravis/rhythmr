@@ -11,12 +11,14 @@ module Zipper
 , removeTop
 , zwhere
 , toList
-, fromList
-, zmap ) where
+, fromList ) where
 
 -- Zipper top current bottom; top is reversed
 data Zipper a = Zipper [a] a [a]
   deriving (Eq, Read, Show)
+
+instance Functor Zipper where
+  fmap f (Zipper top cur bot) = Zipper (f <$> top)(f cur)  (f <$> bot) 
 
 --empty = Zipper [] []
 makeZipper :: a -> Zipper a
@@ -55,6 +57,3 @@ toList (Zipper top c bot) = top ++ [c] ++ bot
 
 fromList :: [a] -> Zipper a
 fromList (x:xs) = Zipper [] x xs
-
-zmap :: (a -> b) -> Zipper a -> Zipper b
-zmap f (Zipper top cur bot) = Zipper (map f top) (f cur) (map f bot)

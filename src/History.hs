@@ -37,4 +37,4 @@ cur :: History s -> s
 cur (History z) = Z.cur z
 
 map :: (a -> b) -> History a -> History b
-map f (History z) = History (Z.zmap f z)
+map f (History z) = History (f <$> z)
