@@ -1,6 +1,6 @@
 module History
 ( History
-, History.init
+, start
 , fromList
 , toList
 , update
@@ -17,8 +17,8 @@ data History s = History (Z.Zipper s)
 instance Functor History where
   fmap f (History z) = History (f <$> z)
 
-init :: s -> History s
-init = History . Z.makeZipper
+start :: s -> History s
+start = History . Z.makeZipper
 
 fromList :: [s] -> History s
 fromList = History . Z.fromList
