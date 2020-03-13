@@ -38,12 +38,10 @@ guiMain :: (Eq s, Show s, Read t, Show t) => s -> Saver s t -> Loader s t -> (s 
 guiMain s saver loader statesToViz renderViz advanceViz keyboardHandler respondToStateChange =
   let initWorld = GuiState (H.init s) (statesToViz s s)
       worldToPicture (GuiState _ v) = return $ renderViz v
-      eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) gs = do
-        exitSuccess
-        return gs
+      eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
       eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h v) = do
         command <- keyboardHandler (H.cur h) c
-        msp command
+        --msp command
         h' <- execute command h saver loader
         if h == h'
            then return gs
@@ -63,3 +61,4 @@ execute command h saver loader =
                   Load filename -> load (H.cur h) filename loader
                   Undo -> return $ H.undo h
                   Redo -> return $ H.redo h
+                  Quit -> exitSuccess
