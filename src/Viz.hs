@@ -12,7 +12,6 @@ import System.Exit (exitSuccess)
 
 import Gui
 import State
-import TUI
 import Util
 
 data Ding = Ding (V2 Float) (V2 Float)

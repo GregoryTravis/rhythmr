@@ -13,7 +13,6 @@ import Feh
 import Looper (withPortaudio)
 import Mess
 import Sound
-import TUI
 import Util
 
 doStuffDefault = ["aff", "2345"]
