@@ -127,15 +127,15 @@ respondToStateChange s s' = do
       then playCurrent s'
       else return ()
 
-keyboardHandlerWrapper :: (State -> Char -> IO (GuiCommand State)) -> (State -> Char -> IO (GuiCommand State))
---keyboardHandler :: (Char -> State -> IO (State, GuiCommand))
-keyboardHandlerWrapper kh s k = do
-  command <- kh s k
-  case command of NewState s' -> if s /= s'
-                                    then respondToStateChange s s'
-                                    else return ()
-                  _ -> return ()
-  return command
+--keyboardHandlerWrapper :: (State -> Char -> IO (GuiCommand State)) -> (State -> Char -> IO (GuiCommand State))
+----keyboardHandler :: (Char -> State -> IO (State, GuiCommand))
+--keyboardHandlerWrapper kh s k = do
+--  command <- kh s k
+--  case command of NewState s' -> if s /= s'
+--                                    then respondToStateChange s s'
+--                                    else return ()
+--                  _ -> return ()
+--  return command
 
 playSong :: State -> IO ()
 playSong s = do
@@ -233,6 +233,6 @@ affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
                     s <- initState looper
-                    guiMain s saver loader statesToViz' renderViz' updateViz (keyboardHandlerWrapper keyboardHandler)
+                    guiMain s saver loader statesToViz' renderViz' updateViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

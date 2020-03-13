@@ -34,8 +34,8 @@ data GuiState s v = GuiState (H.History s) v
 data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t) => s -> Saver s t -> Loader s t -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (s -> Char -> IO (GuiCommand s)) -> IO ()
-guiMain s saver loader statesToViz renderViz advanceViz keyboardHandler =
+guiMain :: (Eq s, Show s, Read t, Show t) => s -> Saver s t -> Loader s t -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
+guiMain s saver loader statesToViz renderViz advanceViz keyboardHandler respondToStateChange =
   let initWorld = GuiState (H.init s) (statesToViz s s)
       worldToPicture (GuiState _ v) = return $ renderViz v
       eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) gs = do
@@ -47,7 +47,8 @@ guiMain s saver loader statesToViz renderViz advanceViz keyboardHandler =
         h' <- execute command h saver loader
         if h == h'
            then return gs
-           else return $ GuiState h' (statesToViz (H.cur h) (H.cur h'))
+           else do respondToStateChange (H.cur h) (H.cur h')
+                   return $ GuiState h' (statesToViz (H.cur h) (H.cur h'))
       eventHandler e gs = return gs
       stepIteration dt (GuiState h v) = return $ GuiState h (advanceViz dt v)
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
