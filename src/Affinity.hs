@@ -11,6 +11,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Graphics.Gloss
 import Linear
+import System.Console.ANSI (clearScreen, setCursorPosition)
 import System.Directory (listDirectory)
 
 import Ascii
@@ -25,7 +26,6 @@ import SaveLoad
 import Score
 import Sound
 import State
-import TUI (Displayer, resetTerm)
 import Util
 import Viz
 
@@ -205,7 +205,12 @@ playCurrent s = do
 --   indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
 --   return indices
 
-displayer :: Displayer State
+setCursorPos x y = setCursorPosition y x
+resetTerm = do
+  setCursorPos 0 0
+  clearScreen
+
+displayer :: State -> String
 displayer s = intercalate "\n" lines
   where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
         gridS = grid s
