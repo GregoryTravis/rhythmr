@@ -6,14 +6,16 @@ module History
 , update
 , undo
 , redo
-, cur
-, History.map ) where
+, cur ) where
 
 import Util
 import qualified Zipper as Z
 
 data History s = History (Z.Zipper s)
   deriving (Eq, Read, Show)
+
+instance Functor History where
+  fmap f (History z) = History (f <$> z)
 
 init :: s -> History s
 init = History . Z.makeZipper
@@ -35,6 +37,3 @@ redo (History z) = History $ Z.upMaybe z
 
 cur :: History s -> s
 cur (History z) = Z.cur z
-
-map :: (a -> b) -> History a -> History b
-map f (History z) = History (f <$> z)

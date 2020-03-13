@@ -23,7 +23,7 @@ type Loader s t = s -> t -> s
 load :: Read t => s -> String -> Loader s t -> IO (H.History s)
 load currentState filename loader = do
   fileContentsString <- readFile filename
-  return $ H.map (loader currentState) (read fileContentsString)
+  return $ loader currentState <$> read fileContentsString
   -- let repZipper :: Z.Zipper t
   --     repZipper = read fileContentsString
   --     stateZipper :: Z.Zipper s
@@ -32,5 +32,5 @@ load currentState filename loader = do
 
 save :: Show t => String -> Saver s t -> H.History s -> IO ()
 save filename saver history = do
-  let fileContentsString = show (H.map saver history)
+  let fileContentsString = show (saver <$> history)
   writeFile filename fileContentsString
