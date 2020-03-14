@@ -134,8 +134,18 @@ newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
       loopsToKeep = concat (S.toList likes ++ S.toList dislikes)
-  newLoops <- loadRandomLoops (poolSize - length loopsToKeep)
+  newLoops <- completeList loopsToKeep loadRandomLoops poolSize
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
+
+-- Complete a list by adding enough elements to reach the given total. Since
+-- removing duplicates might cause the total to be too low, we keep requesting
+-- until we have enough.
+completeList :: Eq a => [a] -> (Int -> IO [a]) -> Int -> IO [a]
+completeList soFar getElements total | length soFar == total = return soFar
+completeList soFar getElements total | otherwise = do
+  newElems <- getElements (total - length soFar)
+  completeList (nub $ soFar ++ newElems) getElements total
+
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
