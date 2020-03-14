@@ -7,8 +7,7 @@ module History
 , undo
 , redo
 , cur
-, runEm
-) where
+, runEm ) where
 
 --import Data.Traversable
 
@@ -48,6 +47,4 @@ cur (History z) = Z.cur z
 
 -- I feel somehow that this already exists
 runEm :: History (IO a) -> IO (History a)
-runEm (History z) = do
-  z' <- Z.runEm z
-  return $ History z'
+runEm (History z) = History <$> Z.runEm z

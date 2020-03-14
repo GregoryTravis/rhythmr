@@ -1,7 +1,6 @@
 module Zipper
 ( Zipper
 , makeZipper
---, set
 , push
 , cur
 , up

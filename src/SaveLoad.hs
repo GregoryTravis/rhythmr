@@ -23,19 +23,7 @@ type Loader s t = s -> t -> IO s
 load :: Read t => s -> String -> Loader s t -> IO (History s)
 load currentState filename loader = do
   fileContentsString <- readFile filename
-  let --ug :: History t
-      ug = read fileContentsString
-      --um :: History (IO s)
-      um = loader currentState <$> ug -- read fileContentsString
-      --er :: IO (History s)
-      er = runEm um
-  er
---return $ loader currentState <$> read fileContentsString
-  -- let repZipper :: Z.Zipper t
-  --     repZipper = read fileContentsString
-  --     stateZipper :: Z.Zipper s
-  --     stateZipper = Z.zmap (loader currentState) repZipper
-  -- return $ History stateZipper
+  runEm $ loader currentState <$> read fileContentsString
 
 save :: Show t => String -> Saver s t -> History s -> IO ()
 save filename saver history = do
