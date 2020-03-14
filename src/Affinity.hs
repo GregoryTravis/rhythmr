@@ -79,9 +79,8 @@ loadLoops = do
 
 initState :: (String -> IO Sound) -> Looper -> IO State
 initState soundLoader looper = do
-  loops <- loadLoops
-  return $ State { soundLoader, looper, loops, likes = S.empty, dislikes = S.empty,
-                   currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
+  newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
+                    currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
