@@ -205,11 +205,11 @@ displayer :: State -> String
 displayer s = intercalate "\n" lines
   where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
         gridS = grid s
-        currentS = "Current: " ++ showList (currentGroup s)
-        likesS = "Likes: " ++ showList (map showList (S.toList (likes s)))
-        dislikesS = "Dislikes: " ++ showList (map showList (S.toList (dislikes s)))
-        stackS = "Stack: " ++ showList (map showList (stack s))
-        affS = "Affinities:\n" ++ intercalate "\n" (map show (bigToSmall $ acceptable s))
+        currentS = "Current: " ++ showLoops (currentGroup s)
+        likesS = "Likes: " ++ showList (map showLoops (S.toList (likes s)))
+        dislikesS = "Dislikes: " ++ showList (map showLoops (S.toList (dislikes s)))
+        stackS = "Stack: " ++ showList (map showLoops (stack s))
+        affS = "Affinities:\n" ++ intercalate "\n" (map show ((map . map) inxOf (bigToSmall $ acceptable s)))
         logS = bar ++ "\n" ++ (intercalate "\n" (renderEdLog s)) ++ "\n" ++ bar
         showList xs = intercalate " " (map show xs)
         bar = "======================"
@@ -218,6 +218,10 @@ displayer s = intercalate "\n" lines
         grid :: State -> String
         --grid (State { loops, currentGroup }) = gridder (length loops) (flip elem currentGroup . fromJust . flip elemIndex (loops s))
         grid (State { loops, currentGroup }) = gridder (length loops) (\i -> elem (loops !! i) currentGroup)
+        inxOf :: Loop -> Int
+        inxOf loop = fromJust $ elemIndex loop (loops s)
+        showLoops :: [Loop] -> String
+        showLoops loops = showList $ map inxOf loops
 
 
 -- type KeyboardHandler s = s -> Char -> IO (KHResult s)
