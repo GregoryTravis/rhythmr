@@ -77,14 +77,9 @@ fromList (x:xs) = Zipper [] x xs
 -- Tried to use Traversable, but why is it a subclass of Foldable? Baffled
 runEm :: Zipper (IO a) -> IO (Zipper a)
 runEm (Zipper top cur bot) = do
-  top' <- runList top
-  cur' <- cur
-  bot' <- runList bot
-  return (Zipper top' cur' bot')
+  Zipper <$> runList top <*> cur <*> runList bot
 
 runList :: [IO a] -> IO [a]
 runList (io : ios) = do
-  x <- io
-  xs <- runList ios
-  return (x:xs)
+  (:) <$> io <*> runList ios
 runList [] = return []
