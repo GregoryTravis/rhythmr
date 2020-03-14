@@ -139,7 +139,7 @@ newPool s@(State { likes, dislikes }) = do
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
-  --resetTerm
+  resetTerm
   putStrLn $ displayer s'
   if currentGroup s' /= currentGroup s && currentGroup s' /= []
       then playCurrent s'
@@ -222,7 +222,7 @@ resetTerm = do
 
 displayer :: State -> String
 displayer s = intercalate "\n" lines
-  where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS, loopsS]
+  where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
         gridS = grid s
         currentS = "Current: " ++ showLoops (currentGroup s)
         likesS = "Likes: " ++ showList (map showLoops (S.toList (likes s)))
