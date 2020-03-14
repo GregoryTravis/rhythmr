@@ -6,7 +6,11 @@ module History
 , update
 , undo
 , redo
-, cur ) where
+, cur
+, runEm
+) where
+
+--import Data.Traversable
 
 import Util
 import qualified Zipper as Z
@@ -16,6 +20,10 @@ data History s = History (Z.Zipper s)
 
 instance Functor History where
   fmap f (History z) = History (f <$> z)
+
+--instance Traversable History where
+--  traverse f (History z) = History (traverse f z)
+----traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
 
 start :: s -> History s
 start = History . Z.makeZipper
@@ -37,3 +45,9 @@ redo (History z) = History $ Z.upMaybe z
 
 cur :: History s -> s
 cur (History z) = Z.cur z
+
+-- I feel somehow that this already exists
+runEm :: History (IO a) -> IO (History a)
+runEm (History z) = do
+  z' <- Z.runEm z
+  return $ History z'

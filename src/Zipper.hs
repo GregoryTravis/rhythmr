@@ -11,14 +11,31 @@ module Zipper
 , removeTop
 , zwhere
 , toList
-, fromList ) where
+, fromList
+, runEm ) where
+
+-- import Data.Foldable
+-- import Data.Traversable
 
 -- Zipper top current bottom; top is reversed
 data Zipper a = Zipper [a] a [a]
   deriving (Eq, Read, Show)
 
 instance Functor Zipper where
-  fmap f (Zipper top cur bot) = Zipper (f <$> top)(f cur)  (f <$> bot) 
+  fmap f (Zipper top cur bot) = Zipper (f <$> top) (f cur) (f <$> bot) 
+
+--instance Foldable Zipper where
+--  foldMap = foldMapDefault
+--  --foldr (Zipper top cur bot) = folr
+----foldr :: (a -> b -> b) -> b -> t a -> b
+
+--instance Traversable Zipper where
+--  traverse f (Zipper top cur bot) = do
+--    top' <- traverse f top
+--    cur' <- f cur
+--    bot' <- traverse f bot
+--    return (Zipper top' cur' bot')
+----traverse :: Applicative f => (a -> f b) -> t a -> f (t b)
 
 --empty = Zipper [] []
 makeZipper :: a -> Zipper a
@@ -57,3 +74,18 @@ toList (Zipper top c bot) = top ++ [c] ++ bot
 
 fromList :: [a] -> Zipper a
 fromList (x:xs) = Zipper [] x xs
+
+-- Tried to use Traversable, but why is it a subclass of Foldable? Baffled
+runEm :: Zipper (IO a) -> IO (Zipper a)
+runEm (Zipper top cur bot) = do
+  top' <- runList top
+  cur' <- cur
+  bot' <- runList bot
+  return (Zipper top' cur' bot')
+
+runList :: [IO a] -> IO [a]
+runList (io : ios) = do
+  x <- io
+  xs <- runList ios
+  return (x:xs)
+runList [] = return []

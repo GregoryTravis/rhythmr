@@ -1,11 +1,14 @@
 module Memoize
 ( DiskAction(..)
 , diskMemoize
-, returnsString) where
+, returnsString
+, memoizeIO ) where
 
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString.Char8 as C8
+import Data.IORef
+import qualified Data.Map.Strict as MS
 import Data.ByteString.UTF8 as BSU (fromString)
 import System.Directory
 import System.IO.Temp
@@ -26,9 +29,9 @@ diskMemoize functionName (TakesFile f) args = do
       filename = memoDir ++ "/" ++ functionName ++ "-" ++ hash
   exists <- doesFileExist filename
   -- factor out return filename
-  if exists then do msp $ "cache hit " ++ key
+  if exists then do -- msp $ "cache hit " ++ key
                     return filename
-            else do msp $ "cache miss " ++ key
+            else do -- msp $ "cache miss " ++ key
                     tmp <- emptySystemTempFile "src.wav"
                     f tmp args
                     renameFile tmp filename
@@ -47,6 +50,19 @@ returnsString f = TakesFile tf
           b <- f a
           --msp $ ("write it", filename, (show b))
           writeFile filename b
+
+memoizeIO :: Ord a => (a -> IO b) -> IO (a -> IO b)
+memoizeIO f = do
+  ioref <- newIORef MS.empty
+  let memoizedF a = do
+        cache <- readIORef ioref
+        case MS.lookup a cache of Just b -> msp "cache hit"
+                                  Nothing -> msp "cache miss"
+        case MS.lookup a cache of Just b -> return b
+                                  Nothing -> do b <- f a
+                                                writeIORef ioref $ MS.insert a b cache
+                                                return b
+  return memoizedF
 
 md5 :: Show a => a -> String
 md5 x = C8.unpack $ B16.encode $ MD5.finalize $ MD5.update MD5.init (BSU.fromString $ show x)

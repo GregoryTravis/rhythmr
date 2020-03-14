@@ -22,6 +22,7 @@ import FX
 import Gui
 --import Graph
 import Looper
+import Memoize (memoizeIO)
 import SaveLoad
 import Score
 import Sound
@@ -54,9 +55,10 @@ emptyStateRep = StateRep { repLikes = S.empty, repDislikes = S.empty }
 ----loader :: Loader State [StateRep]
 --loader :: State -> [StateRep] -> IO [State]
 --loader currentState reps = fromReps (looper currentState) reps
-loader :: Loader State StateRep
-loader state (StateRep { repLikes, repDislikes }) =
-  state { likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [] }
+makeLoader :: (String -> IO Sound) -> Loader State StateRep
+makeLoader soundReader state (StateRep { repLikes, repDislikes }) = do
+  sounds <- loadLoops soundReader
+  return $ state { sounds, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [] }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -64,14 +66,14 @@ loader state (StateRep { repLikes, repDislikes }) =
 saver :: State -> StateRep
 saver (State { likes, dislikes }) = (StateRep { repLikes = likes, repDislikes = dislikes })
 
-loadLoops :: IO [Sound]
-loadLoops = do
+loadLoops :: (String -> IO Sound) -> IO [Sound]
+loadLoops soundReader = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
-  mapM readSound filenames
+  mapM soundReader filenames
 
-initState :: Looper -> IO State
-initState looper = do
-  sounds <- (loadLoops :: IO [Sound])
+initState :: (String -> IO Sound) -> Looper -> IO State
+initState soundReader looper = do
+  sounds <- loadLoops soundReader
   return $ State { sounds, looper, likes = S.empty, dislikes = S.empty,
                    currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
 
@@ -236,8 +238,10 @@ displayer s = intercalate "\n" lines
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
+  soundReader <- memoizeIO readSound
+  let loader = makeLoader soundReader
   withLooper $ \looper -> do
-                    s <- initState looper
+                    s <- initState soundReader looper
                     guiMain s saver loader statesToViz' renderViz' updateViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
