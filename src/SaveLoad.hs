@@ -18,12 +18,12 @@ import Util
 -- Loader result is in IO since you might have to load stuff
 -- Loader takes the current state in case it has a unique resource you need to re-use
 type Saver s t = s -> t
-type Loader s t = s -> t -> IO s
+type Loader s t = t -> IO s
 
-load :: Read t => s -> String -> Loader s t -> IO (History s)
-load currentState filename loader = do
+load :: Read t => String -> Loader s t -> IO (History s)
+load filename loader = do
   fileContentsString <- readFile filename
-  runEm $ loader currentState <$> read fileContentsString
+  runEm $ loader <$> read fileContentsString
 
 save :: Show t => String -> Saver s t -> History s -> IO ()
 save filename saver history = do

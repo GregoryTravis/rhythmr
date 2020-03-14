@@ -55,10 +55,10 @@ emptyStateRep = StateRep { repLikes = S.empty, repDislikes = S.empty }
 ----loader :: Loader State [StateRep]
 --loader :: State -> [StateRep] -> IO [State]
 --loader currentState reps = fromReps (looper currentState) reps
-makeLoader :: (String -> IO Sound) -> Loader State StateRep
-makeLoader soundReader state (StateRep { repLikes, repDislikes }) = do
+makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
+makeLoader soundReader looper (StateRep { repLikes, repDislikes }) = do
   sounds <- loadLoops soundReader
-  return $ state { sounds, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [] }
+  return $ State { sounds, looper, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [], editorLog = ["Welcome to autobeat"] }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -238,9 +238,9 @@ displayer s = intercalate "\n" lines
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
-  soundReader <- memoizeIO readSound
-  let loader = makeLoader soundReader
   withLooper $ \looper -> do
+                    soundReader <- memoizeIO readSound
+                    let loader = makeLoader soundReader looper
                     s <- initState soundReader looper
                     guiMain s saver loader statesToViz' renderViz' updateViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx

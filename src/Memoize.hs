@@ -29,9 +29,9 @@ diskMemoize functionName (TakesFile f) args = do
       filename = memoDir ++ "/" ++ functionName ++ "-" ++ hash
   exists <- doesFileExist filename
   -- factor out return filename
-  if exists then do -- msp $ "cache hit " ++ key
+  if exists then do msp $ "cache hit " ++ key
                     return filename
-            else do -- msp $ "cache miss " ++ key
+            else do msp $ "cache miss " ++ key
                     tmp <- emptySystemTempFile "src.wav"
                     f tmp args
                     renameFile tmp filename
@@ -56,8 +56,8 @@ memoizeIO f = do
   ioref <- newIORef MS.empty
   let memoizedF a = do
         cache <- readIORef ioref
-        case MS.lookup a cache of Just b -> msp "cache hit"
-                                  Nothing -> msp "cache miss"
+        -- case MS.lookup a cache of Just b -> msp "cache hit"
+        --                           Nothing -> msp "cache miss"
         case MS.lookup a cache of Just b -> return b
                                   Nothing -> do b <- f a
                                                 writeIORef ioref $ MS.insert a b cache

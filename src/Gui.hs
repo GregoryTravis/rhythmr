@@ -58,7 +58,7 @@ execute command h saver loader =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h
                                       return h
-                  Load filename -> load (cur h) filename loader
+                  Load filename -> load filename loader
                   Undo -> return $ undo h
                   Redo -> return $ redo h
                   Quit -> exitSuccess
