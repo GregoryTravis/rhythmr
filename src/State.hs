@@ -45,7 +45,7 @@ instance Show State where
 
 randomGroup :: State -> IO [Loop]
 randomGroup s = do
-  groupSize <- getStdRandom (randomR (2,2{-,4-})) :: IO Int
+  groupSize <- getStdRandom (randomR (2,4)) :: IO Int
   replicateM groupSize (randFromList (loops s))
 
 acceptable :: State -> [[Loop]]

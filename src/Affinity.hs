@@ -32,7 +32,7 @@ import State
 import Util
 import Viz
 
-poolSize = 16 -- 128
+poolSize = 64
 
 addClick :: Maybe String
 addClick = Nothing
@@ -133,9 +133,9 @@ keyboardHandler s key = setState s'
 newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
-      loopsToKeep = nub $ concat (S.toList likes ++ S.toList dislikes)
+      loopsToKeep = concat (S.toList likes ++ S.toList dislikes)
   newLoops <- loadRandomLoops (poolSize - length loopsToKeep)
-  return $ s { loops = loopsToKeep ++ newLoops, currentGroup = [], stack = [] }
+  return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
