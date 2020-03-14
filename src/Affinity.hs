@@ -6,7 +6,8 @@ module Affinity
 , State(..) ) where
 
 import Control.Concurrent
-import Data.List (intercalate, transpose, sortOn, elemIndex)
+import Control.Monad (replicateM)
+import Data.List (intercalate, transpose, sortOn, elemIndex, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
@@ -30,6 +31,8 @@ import Sound
 import State
 import Util
 import Viz
+
+poolSize = 16 -- 128
 
 addClick :: Maybe String
 addClick = Nothing
@@ -63,9 +66,15 @@ loadLoopSounds ::(String -> IO Sound) -> [Loop] -> IO [Sound]
 loadLoopSounds soundLoader loops = mapM soundLoader (map fn loops)
   where fn (Loop filename) = filename
 
+loadRandomLoops :: Int -> IO [Loop]
+loadRandomLoops n = do
+  allFilenames <- fmap (map ("loops/" ++)) $ listDirectory "loops"
+  filenames <- replicateM n (randFromList allFilenames)
+  return $ map Loop filenames
+
 loadLoops :: IO [Loop]
 loadLoops = do
-  filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
+  filenames <- fmap (map ("loops/" ++)) $ fmap (take poolSize) $ listDirectory "loops"
   return $ map Loop filenames
 
 initState :: (String -> IO Sound) -> Looper -> IO State
@@ -88,6 +97,8 @@ keyboardHandler s 'r' = do
   --msp "YOSH"
   --playCurrent s'
   setState s'
+keyboardHandler s 'E' = do s' <- newPool s
+                           setState s'
 keyboardHandler s 'y' = setState $ like s
 keyboardHandler s 'n' = setState $ dislike s
 keyboardHandler s 'A' = do
@@ -118,9 +129,18 @@ keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s key = setState s'
   where s' = edlog s ("?? " ++ (show key))
 
+-- Replace the pool with a new random selection -- except keep the ones that
+-- have already been liked/disliked
+newPool :: State -> IO State
+newPool s@(State { likes, dislikes }) = do
+  let loopsToKeep :: [Loop]
+      loopsToKeep = nub $ concat (S.toList likes ++ S.toList dislikes)
+  newLoops <- loadRandomLoops (poolSize - length loopsToKeep)
+  return $ s { loops = loopsToKeep ++ newLoops, currentGroup = [], stack = [] }
+
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
-  resetTerm
+  --resetTerm
   putStrLn $ displayer s'
   if currentGroup s' /= currentGroup s && currentGroup s' /= []
       then playCurrent s'
@@ -203,7 +223,7 @@ resetTerm = do
 
 displayer :: State -> String
 displayer s = intercalate "\n" lines
-  where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
+  where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS, loopsS]
         gridS = grid s
         currentS = "Current: " ++ showLoops (currentGroup s)
         likesS = "Likes: " ++ showList (map showLoops (S.toList (likes s)))
@@ -211,6 +231,7 @@ displayer s = intercalate "\n" lines
         stackS = "Stack: " ++ showList (map showLoops (stack s))
         affS = "Affinities:\n" ++ intercalate "\n" (map show ((map . map) inxOf (bigToSmall $ acceptable s)))
         logS = bar ++ "\n" ++ (intercalate "\n" (renderEdLog s)) ++ "\n" ++ bar
+        loopsS = intercalate "\n" (map loopFilename (loops s))
         showList xs = intercalate " " (map show xs)
         bar = "======================"
         bigToSmall :: [[a]] -> [[a]]
