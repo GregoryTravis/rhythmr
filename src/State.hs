@@ -13,10 +13,12 @@ module State
   , renderEdLog
   ) where
 
+import Control.Monad (replicateM)
 import qualified Data.Set as S
 import Graph
 import System.Random
 
+import Loop
 import Looper
 import Sound
 import Util
@@ -24,13 +26,14 @@ import Util
 editorLogLength = 10
 
 data State =
-  State { sounds :: [Sound]
-        , likes :: S.Set [Int]
-        , dislikes :: S.Set [Int]
-        , currentGroup :: [Int]
+  State { loops :: [Loop]
+        , likes :: S.Set [Loop]
+        , dislikes :: S.Set [Loop]
+        , currentGroup :: [Loop]
         , looper :: Looper
+        , soundLoader :: String -> IO Sound
         , editorLog :: [String]
-        , stack :: [[Int]] }
+        , stack :: [[Loop]] }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
@@ -40,14 +43,12 @@ instance Eq State where
 instance Show State where
   show _ = "[State]"
 
-randomGroup :: State -> IO [Int]
+randomGroup :: State -> IO [Loop]
 randomGroup s = do
-  let soundIndices = [0..length (sounds s)-1]
   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
-  indices <- mapM (\_ -> randFromList soundIndices) [0..groupSize-1]
-  return indices
+  replicateM groupSize (randFromList (loops s))
 
-acceptable :: State -> [[Int]]
+acceptable :: State -> [[Loop]]
 acceptable = (map S.toList) . components . fromComponents . S.toList . likes
 
 like :: State -> State
@@ -56,7 +57,7 @@ dislike :: State -> State
 dislike s | length (currentGroup s) < 3 = nextFromStack $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
 dislike s | otherwise = nextFromStack $ pushStackN s (allSubs (currentGroup s))
   where -- A sub is the list with one element removed
-        allSubs :: [Int] -> [[Int]]
+        allSubs :: [Loop] -> [[Loop]]
         allSubs (x : xs) = [xs] ++ map (x:) (allSubs xs)
         allSubs [] = []
 
@@ -73,17 +74,17 @@ combineAffinities :: State -> State
 combineAffinities s =
   case acceptable s of (a : b : _) -> nextFromStack $ replaceStack s (combos a b)
                        _ -> s
-  where combos :: [Int] -> [Int] -> [[Int]]
+  where combos :: [Loop] -> [Loop] -> [[Loop]]
         combos xs ys = [xs' ++ ys' | xs' <- clump 2 xs, ys' <- clump 2 ys]
 
-pushStack :: State -> [Int] -> State
+pushStack :: State -> [Loop] -> State
 pushStack s x = s { stack = x : stack s }
 
-pushStackN :: State -> [[Int]] -> State
+pushStackN :: State -> [[Loop]] -> State
 pushStackN s (x : xs) = pushStack (pushStackN s xs) x
 pushStackN s [] = s
 
-replaceStack :: State -> [[Int]] -> State
+replaceStack :: State -> [[Loop]] -> State
 replaceStack s stack_ = s { stack = stack_ }
 
 edlog :: State -> String -> State

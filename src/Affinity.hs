@@ -6,8 +6,9 @@ module Affinity
 , State(..) ) where
 
 import Control.Concurrent
-import Data.List (intercalate, transpose, sortOn)
+import Data.List (intercalate, transpose, sortOn, elemIndex)
 import qualified Data.Map.Strict as M
+import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Graphics.Gloss
 import Linear
@@ -20,7 +21,7 @@ import Constants
 import Dice
 import FX
 import Gui
---import Graph
+import Loop
 import Looper
 import Memoize (memoizeIO)
 import SaveLoad
@@ -36,45 +37,41 @@ addClick = Nothing
 
 -- Suitable for persisting
 data StateRep = 
-  StateRep { repLikes :: S.Set [Int]
-           , repDislikes :: S.Set [Int] }
+  StateRep { repLoops :: [Loop]
+           , repLikes :: S.Set [Loop]
+           , repDislikes :: S.Set [Loop] }
   deriving (Read, Show)
 
-emptyStateRep = StateRep { repLikes = S.empty, repDislikes = S.empty }
+emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty }
 
--- -- We do them as a group since we only want to load the sounds once for all of them
--- fromReps :: Looper -> [StateRep] -> IO [State]
--- fromReps looper reps = do
---   sounds <- (loadLoops :: IO [Sound])
---   return $ map (fromRep sounds) reps
---   where fromRep :: [Sound] -> StateRep -> State
---         fromRep sounds (StateRep { repLikes, repDislikes }) =
---           State { sounds, likes = repLikes, dislikes = repDislikes, currentGroup = [], looper,
---                   editorLog = ["Welcome to autobeat"], stack = [] }
-
-----loader :: Loader State [StateRep]
---loader :: State -> [StateRep] -> IO [State]
---loader currentState reps = fromReps (looper currentState) reps
 makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
-makeLoader soundReader looper (StateRep { repLikes, repDislikes }) = do
-  sounds <- loadLoops soundReader
-  return $ State { sounds, looper, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [], editorLog = ["Welcome to autobeat"] }
+makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
+  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [], editorLog = ["Welcome to autobeat"] }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
 
 saver :: State -> StateRep
-saver (State { likes, dislikes }) = (StateRep { repLikes = likes, repDislikes = dislikes })
+saver (State { loops, likes, dislikes }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes })
 
-loadLoops :: (String -> IO Sound) -> IO [Sound]
-loadLoops soundReader = do
+-- loadLoops :: (String -> IO Sound) -> IO [Sound]
+-- loadLoops soundReader = do
+--   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
+--   mapM soundReader filenames
+
+loadLoopSounds ::(String -> IO Sound) -> [Loop] -> IO [Sound] 
+loadLoopSounds soundLoader loops = mapM soundLoader (map fn loops)
+  where fn (Loop filename) = filename
+
+loadLoops :: IO [Loop]
+loadLoops = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
-  mapM soundReader filenames
+  return $ map Loop filenames
 
 initState :: (String -> IO Sound) -> Looper -> IO State
-initState soundReader looper = do
-  sounds <- loadLoops soundReader
-  return $ State { sounds, looper, likes = S.empty, dislikes = S.empty,
+initState soundLoader looper = do
+  loops <- loadLoops
+  return $ State { soundLoader, looper, loops, likes = S.empty, dislikes = S.empty,
                    currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
 
 -- setState s = return (Just s, DoNothing)
@@ -129,23 +126,14 @@ respondToStateChange s s' = do
       then playCurrent s'
       else return ()
 
---keyboardHandlerWrapper :: (State -> Char -> IO (GuiCommand State)) -> (State -> Char -> IO (GuiCommand State))
-----keyboardHandler :: (Char -> State -> IO (State, GuiCommand))
---keyboardHandlerWrapper kh s k = do
---  command <- kh s k
---  case command of NewState s' -> if s /= s'
---                                    then respondToStateChange s s'
---                                    else return ()
---                  _ -> return ()
---  return command
-
 playSong :: State -> IO ()
 playSong s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
                                  Nothing -> return []
   let clickTrackArr = parArrangement (map (singleSoundArrangement loopLengthFrames) clickTrack)
-  let sis = currentGroup s -- should be affinity group or something / 68
-      someSounds = map ((sounds s) !!) sis
+  -- let sis = currentGroup s -- should be affinity group or something / 68
+  --     someSounds = map ((sounds s) !!) sis
+  someSounds <- loadLoopSounds (soundLoader s) (currentGroup s)
   let score = Score [[Measure 0 NoFX],
                      [Measure 0 (Reverb 85)],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40)],
@@ -191,8 +179,9 @@ playCurrent :: State -> IO ()
 playCurrent s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
                                  Nothing -> return []
-  let ss :: [Sound]
-      ss = map ((sounds s) !!) (currentGroup s)
+  ss <- loadLoopSounds (soundLoader s) (currentGroup s)
+  let -- ss :: [Sound]
+      -- ss = map ((sounds s) !!) (currentGroup s)
       arr :: Arrangement
       arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (clickTrack ++ ss))
   mix <- renderArrangement arr
@@ -227,7 +216,8 @@ displayer s = intercalate "\n" lines
         bigToSmall :: [[a]] -> [[a]]
         bigToSmall = reverse . sortOn length
         grid :: State -> String
-        grid (State { sounds, currentGroup }) = gridder (length sounds) (flip elem currentGroup)
+        --grid (State { loops, currentGroup }) = gridder (length loops) (flip elem currentGroup . fromJust . flip elemIndex (loops s))
+        grid (State { loops, currentGroup }) = gridder (length loops) (\i -> elem (loops !! i) currentGroup)
 
 
 -- type KeyboardHandler s = s -> Char -> IO (KHResult s)
@@ -239,9 +229,9 @@ displayer s = intercalate "\n" lines
 affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
-                    soundReader <- memoizeIO readSound
-                    let loader = makeLoader soundReader looper
-                    s <- initState soundReader looper
+                    soundLoader <- memoizeIO readSound
+                    let loader = makeLoader soundLoader looper
+                    s <- initState soundLoader looper
                     guiMain s saver loader statesToViz' renderViz' updateViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

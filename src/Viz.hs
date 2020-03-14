@@ -11,6 +11,7 @@ import Linear
 import System.Exit (exitSuccess)
 
 import Gui
+import Loop
 import State
 import Util
 
@@ -54,9 +55,9 @@ ringOfCirclesInUnitSquare n = circles
         circleRadius = 0.15
         margin = 0.65
 
-affinityPositions :: State -> M.Map Int (V2 Float)
+affinityPositions :: State -> M.Map Loop (V2 Float)
 affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
-  where rah :: (V2 Float -> V2 Float) -> [Int] -> [(Int, V2 Float)]
+  where rah :: (V2 Float -> V2 Float) -> [Loop] -> [(Loop, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
 -- updateGfx :: GuiState -> GuiState
@@ -71,7 +72,7 @@ statesToViz' s s' = Viz $ zipWith Ding (stateToPositions s) (stateToPositions s'
 
 stateToPositions :: State -> [V2 Float]
 stateToPositions s =
-  map (\k -> M.findWithDefault def k positions) [0..length (sounds s) - 1]
+  map (\k -> M.findWithDefault def k positions) (loops s) -- [0..length (loops s) - 1]
     where positions = affinityPositions s
           def = V2 0 0
 
