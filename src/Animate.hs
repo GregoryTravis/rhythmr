@@ -5,6 +5,7 @@ module Animate
 , emptyAValMap
 , setAVal
 , readAVal
+, getAllAVals
 ) where
 
 import qualified Data.Map.Strict as M
@@ -24,6 +25,11 @@ import qualified Debug.Trace as TR
 -- a is the value to animate
 -- No wait, we'd need one for each type
 --data Animator k a = Animator (M.Map k (AVal a))
+
+data AValMap k a = AValMap (M.Map k (AVal a)) (Interpolator a)
+
+instance (Show k, Show a) => Show (AValMap k a) where
+  show (AValMap m _) = "<<" ++ show m ++ ">>"
 
 data AVal a = Const a | Blend Float Float (AVal a) (AVal a) (Interpolator a)
 
@@ -55,7 +61,7 @@ updateAVal t aval a interp = Blend s e aval (constAVal a) interp
 constAVal :: a -> AVal a
 constAVal a = Const a
 
-readSingleAVal a t | TR.trace (show (a, t)) False = undefined
+--readSingleAVal a t | TR.trace (show (a, t)) False = undefined
 readSingleAVal a t = readSingleAVal' a t
 
 readSingleAVal' :: AVal a -> Float -> (a, AVal a)
@@ -66,11 +72,6 @@ readSingleAVal' (Blend s e old new interp) t | s <= t && t < e = (a, newAVal)
         (na, new') = readSingleAVal' new t
         a = applyInterpolator interp t s e oa na
         newAVal = Blend s e old' new' interp
-
-data AValMap k a = AValMap (M.Map k (AVal a)) (Interpolator a)
-
-instance (Show k, Show a) => Show (AValMap k a) where
-  show (AValMap m _) = "<<" ++ show m ++ ">>"
 
 emptyAValMap :: Interpolator a -> AValMap k a
 emptyAValMap interp = AValMap (M.empty) interp
@@ -87,6 +88,17 @@ readAVal t k (AValMap m interp) = (a, AValMap m' interp)
   where (a, aVal') = readSingleAVal aVal t
         m' = M.insert k aVal' m
         aVal = m M.! k
+
+readAVals :: (Show a, Ord k) => Float -> [k] -> AValMap k a -> ([a], AValMap k a)
+readAVals t (k:ks) avm = ((a:as), avm'')
+  where (a, avm') = readAVal t k avm
+        (as, avm'') = readAVals t ks avm'
+readAVals t [] avm = ([], avm)
+
+getAllAVals :: (Show a, Ord k) => AValMap k a -> Float -> ([(k, a)], AValMap k a)
+getAllAVals avm@(AValMap m interp) t = (zip ks as, avm')
+  where ks = M.keys m
+        (as, avm') = readAVals t ks avm
 
 -- addAVal :: Ord k => AValMap k a -> k -> a -> AValMap a
 -- addAVal k a (AValMap m interp) = AValMap m' interp

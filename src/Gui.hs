@@ -28,27 +28,29 @@ import Util
 windowWidth = 800
 windowHeight = 800
 
-data GuiState s v = GuiState (History s) v
+data GuiState s v = GuiState (History s) Float v
 
 -- lol "Save String"
 data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t) => s -> Saver s t -> Loader s t -> (s -> s -> v) -> (v -> Picture) -> (Float -> v -> v) -> (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
-guiMain s saver loader statesToViz renderViz advanceViz keyboardHandler respondToStateChange =
-  let initWorld = GuiState (start s) (statesToViz s s)
-      worldToPicture (GuiState _ v) = return $ renderViz v
+guiMain :: (Eq s, Show s, Read t, Show t) => s -> v -> Saver s t -> Loader s t -> (v -> s -> Float -> v) -> (Float -> v -> (Picture, v)) -> (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
+guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange =
+  let initWorld = GuiState (start s) 0 (stateToViz initViz s 0)
+      worldToPicture (GuiState _ t v) = return p
+        where (p, _) = renderViz t v
       eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
-      eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h v) = do
+      eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
         command <- keyboardHandler (cur h) c
         --msp command
         h' <- execute command h saver loader
         if h == h'
            then return gs
            else do respondToStateChange (cur h) (cur h')
-                   return $ GuiState h' (statesToViz (cur h) (cur h'))
+                   return $ GuiState h' t (stateToViz v (cur h') t)
       eventHandler e gs = return gs
-      stepIteration dt (GuiState h v) = return $ GuiState h (advanceViz dt v)
+      stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v'
+        where (_, v') = renderViz (t + dt) v
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
         bgColor = white

@@ -1,7 +1,7 @@
 module Viz
-  ( statesToViz'
+  ( stateToViz'
+  , initViz
   , renderViz'
-  , updateViz
   ) where
 
 import qualified Data.Map.Strict as M
@@ -16,10 +16,9 @@ import Loop
 import State
 import Util
 
-data Ding = Ding (V2 Float) (V2 Float)
-  deriving Show
+type ID = String
 
-data Viz = Viz [Ding]
+data Viz = Viz (AValMap String (V2 Float))
 
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
@@ -61,31 +60,35 @@ affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith r
   where rah :: (V2 Float -> V2 Float) -> [Loop] -> [(Loop, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
--- updateGfx :: GuiState -> GuiState
--- updateGfx gs = gs { getDings = newDings }
---   where newDings = zipWith (\x d -> Ding x d) xs $ map (\k -> M.findWithDefault def k positions) [0..length (sounds (getState gs)) - 1]
---         def = V2 0 0
---         positions = affinityPositions (getState gs)
---         xs = map (\(Ding x d) -> x) (getDings gs)
+initViz :: Viz
+initViz = Viz (emptyAValMap (Interpolator interpV))
 
-statesToViz' :: State -> State -> Viz
-statesToViz' s s' = Viz $ zipWith Ding (stateToPositions s) (stateToPositions s')
+interpV :: Float -> Float -> Float -> V2 Float -> V2 Float -> V2 Float
+interpV t s e (V2 x y) (V2 x' y') = V2 x'' y''
+  where x'' = interp t s e x x'
+        y'' = interp t s e y y'
 
-stateToPositions :: State -> [V2 Float]
+interp :: Float -> Float -> Float -> Float -> Float -> Float
+--interp t s e a a' = eesp (t, s, e, a, a') $ a + (k * (a' - a))
+interp t s e a a' = a + (k * (a' - a))
+  where k = (t - s) / (e - s)
+
+stateToViz' :: Viz -> State -> Float -> Viz
+stateToViz' (Viz aValMap) s t = Viz aValMap'
+  where aValMap' = foldr set aValMap (stateToPositions s)
+        set (id, pos) avm = setAVal t id pos avm
+--setAVal :: Ord k => Float -> k -> a -> AValMap k a -> AValMap k a
+--foldr :: (a -> b -> b) -> b -> t a -> b
+--setAVal :: Ord k => Float -> k -> a -> AValMap k a -> AValMap k a
+
+stateToPositions :: State -> [(String, V2 Float)]
 stateToPositions s =
-  map (\k -> M.findWithDefault def k positions) (loops s) -- [0..length (loops s) - 1]
+  zip loopNames $ map (\k -> M.findWithDefault def k positions) (loops s) -- [0..length (loops s) - 1]
     where positions = affinityPositions s
           def = V2 0 0
+          loopNames = map (\(Loop loopName) -> loopName) (loops s)
 
-updateViz :: Float -> Viz -> Viz
-updateViz dt (Viz dings) = Viz newDings
-  where newDings = map update dings
-        update :: Ding -> Ding
-        update (Ding x d) = Ding (x + clip (d-x)) d
-          where clip v | norm v > vel = vel *^ signorm v
-                clip v | otherwise = v
-                vel = 1000.0 * dt
-
-renderViz' :: Viz -> Picture
-renderViz' (Viz dings) = Pictures (map render dings)
-  where render (Ding (V2 x y) _) = Translate x y $ Circle 10
+renderViz' :: Float -> Viz -> (Picture, Viz)
+renderViz' t (Viz avm) = (Pictures (map render vals), (Viz avm'))
+  where render (_, (V2 x y)) = Translate x y $ Circle 10
+        (vals, avm') = getAllAVals avm t
