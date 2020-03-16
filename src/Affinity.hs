@@ -16,6 +16,7 @@ import Linear
 import System.Console.ANSI (clearScreen, setCursorPosition)
 import System.Directory (listDirectory)
 
+import Animate
 import Ascii
 import Arrangement
 import Constants
@@ -262,6 +263,21 @@ displayer s = intercalate "\n" lines
 
 affinityMain :: Int -> IO ()
 affinityMain seed = do
+  let --interp :: Interpolator Float
+      interp t s e a a' = eesp (t, s, e, a, a') $ a + (k * (a' - a))
+        where k = (t - s) / (e - s)
+      avm = emptyAValMap (Interpolator interp) :: AValMap String Float
+      avm' = setAVal 0 "hi" 3.0 avm
+      avm'' = setAVal 1 "hi" 4.0 avm'
+      (a, avm''') = readAVal 1.5 "hi" avm''
+      (a', avm'''') = readAVal 2.5 "hi" avm''
+  msp avm
+  msp avm'
+  msp avm''
+  msp avm'''
+  msp avm''''
+  msp a
+  msp a'
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readSound
                     let loader = makeLoader soundLoader looper

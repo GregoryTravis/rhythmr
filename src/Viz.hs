@@ -10,6 +10,7 @@ import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Exit (exitSuccess)
 
+import Animate
 import Gui
 import Loop
 import State
