@@ -93,7 +93,7 @@ stateToPositions s =
           def = V2 0 0
           loopNames = map (\(Loop loopName) -> loopName) (loops s)
 
-renderViz' :: Float -> Viz -> (Picture, Viz)
-renderViz' t (Viz avm) = (Pictures (map render vals), (Viz avm'))
+renderViz' :: Float -> Viz -> Picture
+renderViz' t (Viz avm) = Pictures (map render vals)
   where render (_, (V2 x y)) = Translate x y $ Circle 10
-        (vals, avm') = getAllAVals avm t
+        (vals, _) = getAllAVals avm t

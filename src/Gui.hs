@@ -34,11 +34,10 @@ data GuiState s v = GuiState (History s) Float v
 data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t) => s -> v -> Saver s t -> Loader s t -> (v -> s -> Float -> v) -> (Float -> v -> (Picture, v)) -> (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
+guiMain :: (Eq s, Show s, Read t, Show t) => s -> v -> Saver s t -> Loader s t -> (v -> s -> Float -> v) -> (Float -> v -> Picture) -> (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
 guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange =
   let initWorld = GuiState (start s) 0 (stateToViz initViz s 0)
-      worldToPicture (GuiState _ t v) = return p
-        where (p, _) = renderViz t v
+      worldToPicture (GuiState _ t v) = return (renderViz t v)
       eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
       eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
         command <- keyboardHandler (cur h) c
@@ -49,8 +48,7 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
            else do respondToStateChange (cur h) (cur h')
                    return $ GuiState h' t (stateToViz v (cur h') t)
       eventHandler e gs = return gs
-      stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v'
-        where (_, v') = renderViz (t + dt) v
+      stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
         bgColor = white
