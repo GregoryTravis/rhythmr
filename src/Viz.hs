@@ -82,9 +82,6 @@ stateToViz' :: Viz -> State -> Float -> Viz
 stateToViz' (Viz aValMap) s t = Viz aValMap'
   where aValMap' = gcAValMap t $ foldr set aValMap (stateToPositions s)
         set (id, pos) avm = setAVal t id pos avm
---setAVal :: Ord k => Float -> k -> a -> AValMap k a -> AValMap k a
---foldr :: (a -> b -> b) -> b -> t a -> b
---setAVal :: Ord k => Float -> k -> a -> AValMap k a -> AValMap k a
 
 stateToPositions :: State -> [(String, V2 Float)]
 stateToPositions s =
@@ -96,4 +93,4 @@ stateToPositions s =
 renderViz' :: Float -> Viz -> Picture
 renderViz' t (Viz avm) = Pictures (map render vals)
   where render (_, (V2 x y)) = Translate x y $ Circle 10
-        (vals, _) = getAllAVals avm t
+        vals = getAllAVals avm t

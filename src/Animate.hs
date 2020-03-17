@@ -54,11 +54,6 @@ aValSize :: AVal a -> Int
 aValSize (Const _) = 1
 aValSize (Blend _ _ old new _) = (aValSize old) + (aValSize new)
 
---data Func a = Func (t -> (a, Bool))
-
--- updateAVal :: AVal a -> Int -> Maybe a -> a -> AVal a
--- updateAVal aval t Nothing new = constAVal new
--- updateAVal aval t (Just old) new = Blend s e 
 updateAVal :: (Show a, Eq a) => Float -> AVal a -> a -> Interpolator a -> AVal a
 updateAVal t aval a interp = if theSame then aval else blended
   where s = t
@@ -83,14 +78,12 @@ gcAValMap t (AValMap m interp) = AValMap m' interp
 --readSingleAVal a t | TR.trace (show (a, t)) False = undefined
 readSingleAVal a t = readSingleAVal' a t
 
-readSingleAVal' :: Show a => AVal a -> Float -> (a, AVal a)
-readSingleAVal' (Const a) _ = (a, (Const a))
-readSingleAVal' (Blend s e old new interp) t | False && e <= t = eesp ("gc", old, new) $ readSingleAVal' new t
-readSingleAVal' (Blend s e old new interp) t | True || s <= t && t < e = (a, newAVal)
-  where (oa, old') = readSingleAVal' old t
-        (na, new') = readSingleAVal' new t
+readSingleAVal' :: Show a => AVal a -> Float -> a
+readSingleAVal' (Const a) _ = a
+readSingleAVal' (Blend s e old new interp) t = a -- | s <= t && t < e = a
+  where oa = readSingleAVal' old t
+        na = readSingleAVal' new t
         a = applyInterpolator interp t s e oa na
-        newAVal = Blend s e old' new' interp
 
 emptyAValMap :: Interpolator a -> AValMap k a
 emptyAValMap interp = AValMap (M.empty) interp
@@ -102,38 +95,15 @@ setAVal t k a (AValMap m interp) = AValMap m' interp
         aVal = case (M.lookup k m) of Nothing -> constAVal a
                                       Just oldAVal -> updateAVal t oldAVal a interp
 
-readAVal :: (Show a, Ord k) => Float -> k -> AValMap k a -> (a, AValMap k a)
-readAVal t k (AValMap m interp) = (a, AValMap m' interp)
-  where (a, aVal') = readSingleAVal aVal t
-        m' = M.insert k aVal' m
-        aVal = m M.! k
+readAVal :: (Show a, Ord k) => Float -> k -> AValMap k a -> a
+readAVal t k (AValMap m interp) = readSingleAVal (m M.! k) t
 
-readAVals :: (Show a, Ord k) => Float -> [k] -> AValMap k a -> ([a], AValMap k a)
-readAVals t (k:ks) avm = ((a:as), avm'')
-  where (a, avm') = readAVal t k avm
-        (as, avm'') = readAVals t ks avm'
-readAVals t [] avm = ([], avm)
+readAVals :: (Show a, Ord k) => Float -> [k] -> AValMap k a -> [a]
+readAVals t ks avm = map (\k -> readAVal t k avm) ks
+--readAVals t (k:ks) avm = (readAVal t k avm) : (readAVals t ks avm')
+--readAVals t [] avm = ([], avm)
 
-getAllAVals :: (Show a, Ord k) => AValMap k a -> Float -> ([(k, a)], AValMap k a)
-getAllAVals avm@(AValMap m interp) t = eesp (map aValSize (M.elems m)) (zip ks as, avm')
+getAllAVals :: (Show a, Ord k) => AValMap k a -> Float -> [(k, a)]
+getAllAVals avm@(AValMap m interp) t = eesp (map aValSize (M.elems m)) (zip ks as)
   where ks = M.keys m
-        (as, avm') = readAVals t ks avm
-
--- addAVal :: Ord k => AValMap k a -> k -> a -> AValMap a
--- addAVal k a (AValMap m interp) = AValMap m' interp
---   where m' = M.insert k aVal m
---         aVal = constAVal a interp
-
--- updateAVal :: Ord k => Float -> k -> a -> AValMap a -> AValMap a
--- updateAVal t k a (AValMap m interp) = AValMap m' interp
---   where m' = M.insert k AVal m
---         aVal = updateAVal t 
-
--- data Elem = Elem id p pos
-
--- animDuration = 1.0
-
--- buildInterpolator :: [Elem id p pos] -> [Elem id p pos] -> (Float -> [Elem id p pos]) 
--- buildInterpolator oldElemList newElemList = animate
---   where oldElems = totap oldElemList
---         newElems = toMap newElemList
+        as = readAVals t ks avm
