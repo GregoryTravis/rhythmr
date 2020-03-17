@@ -150,7 +150,7 @@ completeList soFar getElements total | otherwise = do
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
-  resetTerm
+  --resetTerm
   putStrLn $ displayer s'
   if currentGroup s' /= currentGroup s && currentGroup s' /= []
       then playCurrent s'

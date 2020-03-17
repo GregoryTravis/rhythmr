@@ -11,6 +11,8 @@ module Animate
 import qualified Data.Map.Strict as M
 import qualified Debug.Trace as TR
 
+import Util
+
 -- A state (not mentioned here) produces a set of (id, picture element, position).
 -- For two successive states, we construct a function to interpolate between them
 -- and can produce interpolated tuples (id, picture element, pos). If a new state
@@ -45,18 +47,21 @@ applyInterpolator (Interpolator f) = f
 -- getInterpolator (Const _) = interp
 -- getInterpolator (Blend _ _ _ _ interp) = interp
 
-duration = 1.0
+duration = 0.5
 
 --data Func a = Func (t -> (a, Bool))
 
 -- updateAVal :: AVal a -> Int -> Maybe a -> a -> AVal a
 -- updateAVal aval t Nothing new = constAVal new
 -- updateAVal aval t (Just old) new = Blend s e 
-updateAVal :: Float -> AVal a -> a -> Interpolator a -> AVal a
-updateAVal t aval a interp = Blend s e aval (constAVal a) interp
+updateAVal :: (Show a, Eq a) => Float -> AVal a -> a -> Interpolator a -> AVal a
+updateAVal t aval a interp = if theSame then aval else blended
   where s = t
         e = t + duration
-        --(a, aval') <- readSingleAVal aval t
+        theSame = case aval of (Const oa) -> oa == a
+                               _ -> False
+        --(oa, _) = readSingleAVal aval t
+        blended = Blend s e aval (constAVal a) interp
 
 constAVal :: a -> AVal a
 constAVal a = Const a
@@ -64,9 +69,9 @@ constAVal a = Const a
 --readSingleAVal a t | TR.trace (show (a, t)) False = undefined
 readSingleAVal a t = readSingleAVal' a t
 
-readSingleAVal' :: AVal a -> Float -> (a, AVal a)
+readSingleAVal' :: Show a => AVal a -> Float -> (a, AVal a)
 readSingleAVal' (Const a) _ = (a, (Const a))
-readSingleAVal' (Blend s e old new interp) t | e <= t = readSingleAVal' new t
+readSingleAVal' (Blend s e old new interp) t | e <= t = eesp ("gc", old, new) $ readSingleAVal' new t
 readSingleAVal' (Blend s e old new interp) t | s <= t && t < e = (a, newAVal)
   where (oa, old') = readSingleAVal' old t
         (na, new') = readSingleAVal' new t
@@ -76,7 +81,7 @@ readSingleAVal' (Blend s e old new interp) t | s <= t && t < e = (a, newAVal)
 emptyAValMap :: Interpolator a -> AValMap k a
 emptyAValMap interp = AValMap (M.empty) interp
 
-setAVal :: Ord k => Float -> k -> a -> AValMap k a -> AValMap k a
+setAVal :: (Show a, Eq a, Ord k) => Float -> k -> a -> AValMap k a -> AValMap k a
 setAVal t k a (AValMap m interp) = AValMap m' interp
   where m' = M.insert k aVal m
         --aVal :: AVal aa
