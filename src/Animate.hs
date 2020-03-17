@@ -6,6 +6,7 @@ module Animate
 , setAVal
 , readAVal
 , getAllAVals
+, gcAValMap
 ) where
 
 import qualified Data.Map.Strict as M
@@ -49,6 +50,10 @@ applyInterpolator (Interpolator f) = f
 
 duration = 0.5
 
+aValSize :: AVal a -> Int
+aValSize (Const _) = 1
+aValSize (Blend _ _ old new _) = (aValSize old) + (aValSize new)
+
 --data Func a = Func (t -> (a, Bool))
 
 -- updateAVal :: AVal a -> Int -> Maybe a -> a -> AVal a
@@ -66,13 +71,22 @@ updateAVal t aval a interp = if theSame then aval else blended
 constAVal :: a -> AVal a
 constAVal a = Const a
 
+gcAVal :: Show a => Float -> AVal a -> AVal a
+gcAVal t a@(Blend s e old new interp) | e <= t = eesp ("gc", old, new) $ gcAVal t new
+gcAVal t a@(Blend s e old new interp) | otherwise = Blend s e (gcAVal t old) (gcAVal t new) interp
+gcAVal t a@(Const _) = a
+
+gcAValMap :: Show a => Float -> AValMap k a -> AValMap k a
+gcAValMap t (AValMap m interp) = AValMap m' interp
+  where m' = M.map (gcAVal t) m
+
 --readSingleAVal a t | TR.trace (show (a, t)) False = undefined
 readSingleAVal a t = readSingleAVal' a t
 
 readSingleAVal' :: Show a => AVal a -> Float -> (a, AVal a)
 readSingleAVal' (Const a) _ = (a, (Const a))
-readSingleAVal' (Blend s e old new interp) t | e <= t = eesp ("gc", old, new) $ readSingleAVal' new t
-readSingleAVal' (Blend s e old new interp) t | s <= t && t < e = (a, newAVal)
+readSingleAVal' (Blend s e old new interp) t | False && e <= t = eesp ("gc", old, new) $ readSingleAVal' new t
+readSingleAVal' (Blend s e old new interp) t | True || s <= t && t < e = (a, newAVal)
   where (oa, old') = readSingleAVal' old t
         (na, new') = readSingleAVal' new t
         a = applyInterpolator interp t s e oa na
@@ -101,7 +115,7 @@ readAVals t (k:ks) avm = ((a:as), avm'')
 readAVals t [] avm = ([], avm)
 
 getAllAVals :: (Show a, Ord k) => AValMap k a -> Float -> ([(k, a)], AValMap k a)
-getAllAVals avm@(AValMap m interp) t = (zip ks as, avm')
+getAllAVals avm@(AValMap m interp) t = eesp (map aValSize (M.elems m)) (zip ks as, avm')
   where ks = M.keys m
         (as, avm') = readAVals t ks avm
 

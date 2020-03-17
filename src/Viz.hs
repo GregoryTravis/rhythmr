@@ -71,11 +71,16 @@ interpV t s e (V2 x y) (V2 x' y') = V2 x'' y''
 interp :: Float -> Float -> Float -> Float -> Float -> Float
 --interp t s e a a' = eesp (t, s, e, a, a') $ a + (k * (a' - a))
 interp t s e a a' = a + (k * (a' - a))
-  where k = (t - s) / (e - s)
+  where k = clip 0.0 1.0 ((t - s) / (e - s))
+
+clip :: (Ord a, Num a) => a -> a -> a -> a
+clip lo hi x | x < lo = lo
+clip lo hi x | x > hi = hi
+clip lo hi x | otherwise = x
 
 stateToViz' :: Viz -> State -> Float -> Viz
 stateToViz' (Viz aValMap) s t = Viz aValMap'
-  where aValMap' = foldr set aValMap (stateToPositions s)
+  where aValMap' = gcAValMap t $ foldr set aValMap (stateToPositions s)
         set (id, pos) avm = setAVal t id pos avm
 --setAVal :: Ord k => Float -> k -> a -> AValMap k a -> AValMap k a
 --foldr :: (a -> b -> b) -> b -> t a -> b
