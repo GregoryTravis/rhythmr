@@ -104,6 +104,6 @@ readAVals t ks avm = map (\k -> readAVal t k avm) ks
 --readAVals t [] avm = ([], avm)
 
 getAllAVals :: (Show a, Ord k) => AValMap k a -> Float -> [(k, a)]
-getAllAVals avm@(AValMap m interp) t = eesp (map aValSize (M.elems m)) (zip ks as)
+getAllAVals avm@(AValMap m interp) t = {-eesp (map aValSize (M.elems m))-} (zip ks as)
   where ks = M.keys m
         as = readAVals t ks avm
