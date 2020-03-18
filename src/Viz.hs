@@ -101,16 +101,10 @@ gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
   let i = fromJust $ loop `L.elemIndex` loops
       xflip (V2 x y) = V2 (-x) y
-      window = (fmap fromIntegral (V2 windowWidth windowHeight)) / 2.0 - (V2 margin margin) * 2
-      margin = fromIntegral $ (min windowWidth windowHeight) `div` 15
-   in xflip $ window * toGridXYF i (length loops) + (V2 margin margin)
-      -- x = fromIntegral wid * (fromIntegral xi / fromIntegral gridSize) + fromIntegral margin
-      -- y = fromIntegral ht  * (fromIntegral yi / fromIntegral gridSize) + fromIntegral margin
-      -- wid = windowWidth `div` 2 - 2 * margin
-      -- ht = windowHeight `div` 2 - 2 * margin
-      -- margin = (min windowWidth windowHeight) `div` 15
-      --
-   -- in V2 (-x) y
+      window = V2 windowWidth windowHeight
+      subWindow = (fmap fromIntegral window) / 2.0 - margin * 2
+      margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
+   in xflip $ subWindow * toGridXYF i (length loops) + margin
 
 stateToPositions :: State -> [(String, V2 Float)]
 stateToPositions s =
