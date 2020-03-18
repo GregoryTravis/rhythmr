@@ -1,10 +1,14 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Viz
   ( stateToViz'
   , initViz
   , renderViz'
   ) where
 
+import qualified Data.List as L
 import qualified Data.Map.Strict as M
+import Data.Maybe (fromJust)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Linear
@@ -83,12 +87,26 @@ stateToViz' (Viz aValMap) s t = Viz aValMap'
   where aValMap' = gcAValMap t $ foldr set aValMap (stateToPositions s)
         set (id, pos) avm = setAVal t id pos avm
 
+gridPosition :: Loop -> State -> V2 Float
+gridPosition loop (State { loops }) =
+  let i = fromJust $ loop `L.elemIndex` loops
+      gridSize = gridSizeFor (length loops)
+      xi = i `mod` gridSize
+      yi = i `div` gridSize
+      x = fromIntegral wid * (fromIntegral xi / fromIntegral gridSize) + fromIntegral margin
+      y = fromIntegral ht  * (fromIntegral yi / fromIntegral gridSize) + fromIntegral margin
+      wid = windowWidth `div` 2 - 2 * margin
+      ht = windowHeight `div` 2 - 2 * margin
+      margin = (min windowWidth windowHeight) `div` 15
+   in V2 (-x) y
+
 stateToPositions :: State -> [(String, V2 Float)]
 stateToPositions s =
-  zip loopNames $ map (\k -> M.findWithDefault def k positions) (loops s) -- [0..length (loops s) - 1]
-    where positions = affinityPositions s
-          def = V2 0 0
-          loopNames = map (\(Loop loopName) -> loopName) (loops s)
+  zip loopNames $ map lookup (loops s)
+    where positions = esp $ affinityPositions s
+          loopNames = map loopFilename (loops s)
+          lookup loop = M.findWithDefault (gridPos loop) loop positions
+          gridPos loop = gridPosition loop s
 
 renderViz' :: Float -> Viz -> Picture
 renderViz' t (Viz avm) = Pictures (map render vals)
