@@ -27,6 +27,16 @@ data Viz = Viz (AValMap String (V2 Float))
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
 
+-- What are the coordinates of i in a sqaure-ish grid of n values?
+toGridXY :: Int -> Int -> V2 Int
+toGridXY i n = V2 x y
+  where gridSize = gridSizeFor n
+        x = i `mod` gridSize
+        y = i `div` gridSize
+
+toGridXYF i n = (fmap fromIntegral (toGridXY i n)) / (fmap fromIntegral (V2 gridSize gridSize))
+  where gridSize = gridSizeFor n
+
 -- unitSquareTo :: V2 Float -> V2 Float -> (Picture -> Picture)
 -- unitSquareTo (V2 llx lly) (V2 w h) picture = Translate llx lly $ Scale w h picture
 
@@ -90,15 +100,17 @@ stateToViz' (Viz aValMap) s t = Viz aValMap'
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
   let i = fromJust $ loop `L.elemIndex` loops
-      gridSize = gridSizeFor (length loops)
-      xi = i `mod` gridSize
-      yi = i `div` gridSize
-      x = fromIntegral wid * (fromIntegral xi / fromIntegral gridSize) + fromIntegral margin
-      y = fromIntegral ht  * (fromIntegral yi / fromIntegral gridSize) + fromIntegral margin
-      wid = windowWidth `div` 2 - 2 * margin
-      ht = windowHeight `div` 2 - 2 * margin
-      margin = (min windowWidth windowHeight) `div` 15
-   in V2 (-x) y
+      xflip (V2 x y) = V2 (-x) y
+      window = (fmap fromIntegral (V2 windowWidth windowHeight)) / 2.0 - (V2 margin margin) * 2
+      margin = fromIntegral $ (min windowWidth windowHeight) `div` 15
+   in xflip $ window * toGridXYF i (length loops) + (V2 margin margin)
+      -- x = fromIntegral wid * (fromIntegral xi / fromIntegral gridSize) + fromIntegral margin
+      -- y = fromIntegral ht  * (fromIntegral yi / fromIntegral gridSize) + fromIntegral margin
+      -- wid = windowWidth `div` 2 - 2 * margin
+      -- ht = windowHeight `div` 2 - 2 * margin
+      -- margin = (min windowWidth windowHeight) `div` 15
+      --
+   -- in V2 (-x) y
 
 stateToPositions :: State -> [(String, V2 Float)]
 stateToPositions s =
