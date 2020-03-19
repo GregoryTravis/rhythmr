@@ -1,4 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Viz
   ( stateToViz'
@@ -10,6 +11,7 @@ import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import Graphics.Gloss
+import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Exit (exitSuccess)
@@ -92,10 +94,91 @@ clip lo hi x | x < lo = lo
 clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
 
+-- data Wiz f a = Wiz (f a) (f a)
+--   deriving Show
+-- data Bef a = Bef a
+--   deriving Show
+-- -- data Id a = Id a
+-- --   deriving Show
+
+-- grah :: ((f a) -> (g a)) -> Wiz f a -> Wiz g a
+-- grah f (Wiz x y) = Wiz (f x) (f y)
+
+----
+
+-- One LoopT for each Loop, but multiple SeqPosT and SeqSizeT for each Loop
+-- data Tag = LoopT Loop | SeqPosT Loop Int | SeqSizeT
+--   deriving Ord
+
+-- Conceit here is that LoopT is what we currently have, and it has a position and Color,
+-- while SeqT has a position, color, and size.  Furthermore, LoopT is distinguished by Loop,
+-- while SeqT is distinguished by Loop and an Int
+-- Each one of these you could simply apply; but instead we want magic interpolation
+-- data Pic = LoopT Loop (V2 Float) Color |
+
+-- (Loop, "loop") -> V2 Float
+-- (Loop, "seqpos") -> V2 Float
+-- (Loop, "seqsize") -> V2 Float
+-- -- or (Loop, "seq") -> (V2 Float, Float)
+
+--
+-- Ok clearly we should store the AVals right in our structure, so we can have different types.
+-- Then we have update :: S AVal -> S Id -> S AVal, where the arg to S is a container (functor?)
+
+-- Some potential for inconsistency here, Pic and it's Tag could differ
+
+data Tag = LoopT Loop | SeqT Loop Int
+  --deriving Show
+data Pic c = LoopP Tag (c (V2 Float)) (c Color)
+           | SeqP Tag (c (V2 Float)) (c Float) (c Color)
+           | Nuh Tag (c Int)
+  --deriving Show
+
+data Id a = Id a
+  --deriving Show
+
+-- pef :: Show (c _) => Pic c
+-- pef = undefined
+
+--mapOverVals :: forall a c c' . (c a -> c' a) -> Pic c -> Pic c'
+--mapOverVals :: (c a -> c' a) -> Pic c -> Pic c'
+mapOverVals :: (forall a . c a -> c' a) -> Pic c -> Pic c'
+mapOverVals f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
+mapOverVals f (LoopP tag pos color) = LoopP tag (f pos) (f color)
+mapOverVals f (Nuh tag i) = Nuh tag (f i)
+-- This fails because f might have any single particular value for it's a, but we are here applying it to Int
+-- No, actually, RankNTypes fixes this, I just had the forall in the wrong place
+
+initty :: Id a -> AVal a
+initty (Id a) = constAVal a
+
+welp =
+  let log :: Pic Id
+      log = SeqP (SeqT (Loop "asdf") 4) (Id (V2 3.4 4.5)) (Id 6.7) (Id red)
+      lig :: Pic AVal
+      lig = mapOverVals initty log
+      leg :: V2 Float
+
+      leg = case lig of SeqP _ aval _ _ -> readSingleAVal aval undefined
+
+      -- This is more right, but it's not allowed because I can't figure out
+      -- how to say that the argument to c (above) is a Show
+      -- leg' = mapOverVals (\aval -> Id $ readSingleAVal aval undefined) lig
+      -- leg = case leg' of SeqP _ (Id a) _ _ -> a
+   in leg
+
+      -- arp :: Wiz Id Int
+      -- arp = Wiz (Id 3) (Id 4)
+      -- gep (Id a) = (Bef a)
+      -- leg :: Wiz Bef Int
+      -- leg = grah gep arp
+
 stateToViz' :: Viz -> State -> Float -> Viz
 stateToViz' (Viz aValMap) s t = Viz aValMap'
-  where aValMap' = gcAValMap t $ foldr set aValMap (stateToPositions s)
+  where aValMap' = eesp leg $ gcAValMap t $ foldr set aValMap (stateToPositions s)
         set (id, pos) avm = setAVal t id pos avm
+        --leg = 23
+        leg = welp
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =

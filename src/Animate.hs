@@ -5,8 +5,10 @@ module Animate
 , emptyAValMap
 , setAVal
 , readAVal
+, readSingleAVal
 , getAllAVals
 , gcAValMap
+, constAVal
 ) where
 
 import qualified Data.Map.Strict as M
