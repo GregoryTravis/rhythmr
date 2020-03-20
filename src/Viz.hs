@@ -142,7 +142,7 @@ data Id a = Id a
 
 --mapOverVals :: forall a c c' . (c a -> c' a) -> Pic c -> Pic c'
 --mapOverVals :: (c a -> c' a) -> Pic c -> Pic c'
-mapOverVals :: (forall a . c a -> c' a) -> Pic c -> Pic c'
+mapOverVals :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
 mapOverVals f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapOverVals f (LoopP tag pos color) = LoopP tag (f pos) (f color)
 mapOverVals f (Nuh tag i) = Nuh tag (f i)
@@ -159,12 +159,14 @@ welp =
       lig = mapOverVals initty log
       leg :: V2 Float
 
-      leg = case lig of SeqP _ aval _ _ -> readSingleAVal aval undefined
-
+      -- This was the workaround
+      -- leg = case lig of SeqP _ aval _ _ -> readSingleAVal aval undefined
       -- This is more right, but it's not allowed because I can't figure out
       -- how to say that the argument to c (above) is a Show
-      -- leg' = mapOverVals (\aval -> Id $ readSingleAVal aval undefined) lig
-      -- leg = case leg' of SeqP _ (Id a) _ _ -> a
+      leg' = mapOverVals pren lig
+      leg = case leg' of SeqP _ (Id a) _ _ -> a
+      pren :: Show a => AVal a -> Id a
+      pren aval = Id $ readSingleAVal aval undefined
    in leg
 
       -- arp :: Wiz Id Int
