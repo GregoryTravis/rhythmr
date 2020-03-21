@@ -111,13 +111,33 @@ mapPic :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
 mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapPic f (LoopP tag pos color) = LoopP tag (f pos) (f color)
 
-zipWithPic :: (forall a . Show a => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
+zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
 zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' = SeqP tag (f pos pos') (f size size') (f color color')
 zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' = LoopP tag (f pos pos') (f color color')
 
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
 getTag (SeqP tag _ _ _) = tag
+
+picInterpolator :: Pic c -> Pic Interpolator
+picInterpolator (LoopP tag _ _) =
+  LoopP tag v2FloatInterpolator colorInterpolator
+
+----data Pair a = Pair (a, a)
+--data Wut a = Wut (AVal a) (Id a)
+--data Ven c d a = Ven (c a) (d a)
+--ven :: (c a) -> (d a) -> Ven c d a
+--ven = Ven
+
+----updatePic' :: Float -> Pic AVal -> Pic Id -> Pic AVal
+---- updatePic' :: Float -> Pic AVal -> Pic Id -> Pic Wut
+---- updatePic' t old new = zipWithPic Wut old new
+---- updatePic' :: Float -> Pic AVal -> Pic Id -> Pic (Ven (Ven AVal Id) Interpolator)
+---- updatePic' t old new = zipWithPic ven (zipWithPic ven old new) (picInterpolator new)
+--updatePic' :: Float -> Pic AVal -> Pic Id -> Pic AVal
+--updatePic' t old new = mapPic f $ zipWithPic ven (zipWithPic ven old new) (picInterpolator new)
+--  where --f :: Show a => (Ven (Ven AVal Id) Interpolator) a -> AVal a
+--        f (Ven (Ven aval (Id v)) interpolator) = updateAVal t aval v interpolator
 
 updatePic :: Float -> Pic AVal -> Pic Id -> Pic AVal
 updatePic t (LoopP tag pos color) (LoopP tag' (Id pos') (Id color')) | tag == tag' =
