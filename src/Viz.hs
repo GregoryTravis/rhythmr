@@ -103,11 +103,6 @@ deriving instance () => Show (Pic Id)
 data Id a = Id a
   deriving Show
 
--- When you write something you already wrote and it's identical
--- Probably happens more in Haskell
--- mapPic :: (forall a . c a -> d a) -> Pic c -> Pic d
--- mapPic f (LoopP tag pos color) = LoopP tag (f pos) (f color)
--- mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
 mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapPic f (LoopP tag pos color) = LoopP tag (f pos) (f color)
@@ -130,24 +125,10 @@ data Ven c d a = Ven (c a) (d a)
 ven :: (c a) -> (d a) -> Ven c d a
 ven = Ven
 
---updatePic' :: Float -> Pic AVal -> Pic Id -> Pic AVal
--- updatePic' :: Float -> Pic AVal -> Pic Id -> Pic Wut
--- updatePic' t old new = zipWithPic Wut old new
--- updatePic' :: Float -> Pic AVal -> Pic Id -> Pic (Ven (Ven AVal Id) Interpolator)
--- updatePic' t old new = zipWithPic ven (zipWithPic ven old new) (picInterpolator new)
 updatePic :: Float -> Pic AVal -> Pic Id -> Pic AVal
 updatePic t old new = mapPic f $ zipWithPic ven (zipWithPic ven old new) (picInterpolator new)
   where f :: (Eq a, Show a) => (Ven (Ven AVal Id) Interpolator) a -> AVal a
         f (Ven (Ven aval (Id v)) interpolator) = updateAVal t aval v interpolator
-
--- updatePic :: Float -> Pic AVal -> Pic Id -> Pic AVal
--- updatePic t (LoopP tag pos color) (LoopP tag' (Id pos') (Id color')) | tag == tag' =
---   LoopP tag (updateAVal t pos pos' v2FloatInterpolator)
---             (updateAVal t color color' colorInterpolator)
--- updatePic t (SeqP tag pos size color) (SeqP tag' (Id pos') (Id size') (Id color')) | tag == tag' =
---   SeqP tag (updateAVal t pos pos' v2FloatInterpolator)
---            (updateAVal t size size' floatInterpolator)
---            (updateAVal t color color' colorInterpolator)
 
 idToAVal :: Id a -> AVal a
 idToAVal (Id a) = constAVal a
