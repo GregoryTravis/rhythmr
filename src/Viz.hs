@@ -126,6 +126,8 @@ updatePic t (SeqP tag pos size color) (SeqP tag' (Id pos') (Id size') (Id color'
 
 idToAVal :: Id a -> AVal a
 idToAVal (Id a) = constAVal a
+aValToId :: Show a => Float -> AVal a -> Id a
+aValToId t = Id . flip readAVal t
 
 constPic :: Pic Id -> Pic AVal
 constPic = mapPic idToAVal
@@ -166,18 +168,11 @@ updateViz t (Viz oldPics) newPics =
    in Viz newAValPics
 
 renderViz :: Float -> Viz -> Picture
-renderViz t (Viz pics) = Pictures $ map (renderPic t) pics
+renderViz t (Viz pics) = Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
 
-renderPic :: Float -> Pic AVal -> Picture
-renderPic t (LoopP _ pos color) =
-  let (V2 x y) = readAVal pos t
-      color' = readAVal color t
-   in Translate x y $ Color color' $ Circle 10
-renderPic t (SeqP _ pos size color) =
-  let (V2 x y) = readAVal pos t
-      size' = readAVal size t
-      color' = readAVal color t
-   in Translate x y $ Color color' $ Circle size'
+renderPic :: Pic Id -> Picture
+renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ Circle 10
+renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ Circle size
 
 stateToPics :: State -> [Pic Id]
 stateToPics s@(State { loops }) = map toPic loops
