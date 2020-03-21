@@ -102,6 +102,15 @@ deriving instance () => Show (Pic AVal)
 data Id a = Id a
   deriving Show
 
+-- When you write something you already wrote and it's identical
+-- Probably happens more in Haskell
+-- mapPic :: (forall a . c a -> d a) -> Pic c -> Pic d
+-- mapPic f (LoopP tag pos color) = LoopP tag (f pos) (f color)
+-- mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
+mapPic :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
+mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
+mapPic f (LoopP tag pos color) = LoopP tag (f pos) (f color)
+
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
 getTag (SeqP tag _ _ _) = tag
@@ -115,9 +124,11 @@ updatePic t (SeqP tag pos size color) (SeqP tag' (Id pos') (Id size') (Id color'
            (updateAVal t size size' floatInterpolator)
            (updateAVal t color color' colorInterpolator)
 
+idToAVal :: Id a -> AVal a
+idToAVal (Id a) = constAVal a
+
 constPic :: Pic Id -> Pic AVal
-constPic (LoopP tag (Id pos) (Id color)) = LoopP tag (constAVal pos) (constAVal color)
-constPic (SeqP tag (Id pos) (Id size) (Id color)) = SeqP tag (constAVal pos) (constAVal size) (constAVal color)
+constPic = mapPic idToAVal
 
 v2FloatInterpolator = Interpolator interpV
 floatInterpolator = Interpolator interp
@@ -133,10 +144,6 @@ colorInterpolator' t s e color color' = makeColor r'' g'' b'' a''
 
 -- pef :: Show (c _) => Pic c
 -- pef = undefined
-
-mapOverVals :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
-mapOverVals f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
-mapOverVals f (LoopP tag pos color) = LoopP tag (f pos) (f color)
 
 data Viz = Viz [Pic AVal]
   deriving Show
