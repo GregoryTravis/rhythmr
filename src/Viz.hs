@@ -17,7 +17,7 @@ import Data.Maybe (fromJust)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
 --import Graphics.Gloss.Data.Picture
-import Graphics.Gloss.Interface.IO.Game
+--import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Exit (exitSuccess)
 
@@ -110,6 +110,10 @@ data Id a = Id a
 mapPic :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
 mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapPic f (LoopP tag pos color) = LoopP tag (f pos) (f color)
+
+zipWithPic :: (forall a . Show a => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
+zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' = SeqP tag (f pos pos') (f size size') (f color color')
+zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' = LoopP tag (f pos pos') (f color color')
 
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
