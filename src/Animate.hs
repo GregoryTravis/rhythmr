@@ -4,6 +4,7 @@ module Animate
 , readAVal
 , updateAVal
 , constAVal
+, aValSize
 ) where
 
 import qualified Data.Map.Strict as M
@@ -28,7 +29,7 @@ aValSize (Const _) = 1
 aValSize (Blend _ _ old new _) = (aValSize old) + (aValSize new)
 
 updateAVal :: (Show a, Eq a) => Float -> AVal a -> a -> Interpolator a -> AVal a
-updateAVal t aval a interp = if theSame then aval else blended
+updateAVal t aval a interp = gcAVal t $ if theSame then aval else blended
   where s = t
         e = t + duration
         theSame = case aval of (Const oa) -> oa == a

@@ -111,6 +111,13 @@ zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d
 zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' = SeqP tag (f pos pos') (f size size') (f color color')
 zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' = LoopP tag (f pos pos') (f color color')
 
+mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
+mapSquish f (SeqP tag pos size color) = [f pos, f size, f color]
+mapSquish f (LoopP tag pos color) = [f pos, f color]
+
+gcReport :: Viz -> [Int]
+gcReport (Viz pics) = concat $ map (mapSquish aValSize) pics
+
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
 getTag (SeqP tag _ _ _) = tag
@@ -181,8 +188,12 @@ stateToPics s@(State { loops }) = map toPic loops
                                                      Nothing -> ((gridPosition loop s), green)
                 aps = affinityPositions s
 
+reportViz :: Viz -> Viz
+reportViz = id
+--reportViz v = eesp (gcReport v) v
+
 stateToViz :: Viz -> State -> Float -> Viz
-stateToViz v s t = updateViz t v (stateToPics s)
+stateToViz v s t = reportViz $ updateViz t v (stateToPics s)
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
