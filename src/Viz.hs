@@ -228,12 +228,16 @@ welp =
       pics = [LoopP (LoopT (Loop "asdf")) (Id (V2 0.0 0.0)) (Id (makeColor 1.0 0.0 0.0 1.0))]
       pics' :: [Pic Id]
       pics' = [LoopP (LoopT (Loop "asdf")) (Id (V2 1.0 2.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
+      pics'' :: [Pic Id]
+      pics'' = [LoopP (LoopT (Loop "asdf")) (Id (V2 4.0 4.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
       wiz :: Wiz
       wiz =  updateWiz 0.0 emptyWiz pics
       wiz' :: Wiz
       wiz' =  updateWiz 1.0 wiz pics'
+      wiz'' :: Wiz
+      wiz'' =  updateWiz 1.5 wiz' pics''
       --leg = show $ (wiz', renderWiz 1.5 wiz')
-      leg = show $ [renderWiz t wiz' | t <- [1.0, 1.5, 2.0]]
+      leg = show $ [renderWiz t wiz'' | t <- [1.0, 1.5, 1.75, 2.0, 2.5]]
       --leg = show wiz'
       --leg = 34
    in leg
