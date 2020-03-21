@@ -1,15 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
---{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Viz
-  ( stateToViz'
+  ( stateToViz
   , initViz
-  , renderViz'
+  , renderViz
   ) where
 
 import qualified Data.List as L
@@ -98,8 +97,6 @@ data Tag = LoopT Loop | SeqT Loop Int
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float)) (c Color)
            | SeqP Tag (c (V2 Float)) (c Float) (c Color)
-  --deriving Show
----deriving instance Show a => Show (Pic (c :: a -> c a))
 deriving instance () => Show (Pic AVal)
 
 data Id a = Id a
@@ -137,16 +134,9 @@ colorInterpolator' t s e color color' = makeColor r'' g'' b'' a''
 -- pef :: Show (c _) => Pic c
 -- pef = undefined
 
---mapOverVals :: forall a c c' . (c a -> c' a) -> Pic c -> Pic c'
---mapOverVals :: (c a -> c' a) -> Pic c -> Pic c'
 mapOverVals :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
 mapOverVals f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapOverVals f (LoopP tag pos color) = LoopP tag (f pos) (f color)
--- This fails because f might have any single particular value for it's a, but we are here applying it to Int
--- No, actually, RankNTypes fixes this, I just had the forall in the wrong place
-
-initty :: Id a -> AVal a
-initty (Id a) = constAVal a
 
 data Viz = Viz [Pic AVal]
   deriving Show
@@ -173,34 +163,14 @@ renderViz t (Viz pics) = Pictures $ map (renderPic t) pics
 
 renderPic :: Float -> Pic AVal -> Picture
 renderPic t (LoopP _ pos color) =
-  let (V2 x y) = readSingleAVal pos t
-      color' = readSingleAVal color t
+  let (V2 x y) = readAVal pos t
+      color' = readAVal color t
    in Translate x y $ Color color' $ Circle 10
 renderPic t (SeqP _ pos size color) =
-  let (V2 x y) = readSingleAVal pos t
-      size' = readSingleAVal size t
-      color' = readSingleAVal color t
+  let (V2 x y) = readAVal pos t
+      size' = readAVal size t
+      color' = readAVal color t
    in Translate x y $ Color color' $ Circle size'
-
-welp :: String
-welp =
-  let pics :: [Pic Id]
-      pics = [LoopP (LoopT (Loop "asdf")) (Id (V2 0.0 0.0)) (Id (makeColor 1.0 0.0 0.0 1.0))]
-      pics' :: [Pic Id]
-      pics' = [LoopP (LoopT (Loop "asdf")) (Id (V2 1.0 2.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
-      pics'' :: [Pic Id]
-      pics'' = [LoopP (LoopT (Loop "asdf")) (Id (V2 4.0 4.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
-      wiz :: Viz
-      wiz =  updateViz 0.0 initViz pics
-      wiz' :: Viz
-      wiz' =  updateViz 1.0 wiz pics'
-      wiz'' :: Viz
-      wiz'' =  updateViz 1.5 wiz' pics''
-      --leg = show $ (wiz', renderViz 1.5 wiz')
-      leg = show $ [renderViz t wiz'' | t <- [1.0, 1.5, 1.75, 2.0, 2.5]]
-      --leg = show wiz'
-      --leg = 34
-   in leg
 
 stateToPics :: State -> [Pic Id]
 stateToPics s@(State { loops }) = map toPic loops
@@ -209,22 +179,8 @@ stateToPics s@(State { loops }) = map toPic loops
                                                      Nothing -> ((gridPosition loop s), green)
                 aps = affinityPositions s
 
---stateToPositions :: State -> [(Loop, V2 Float)]
---stateToPositions s =
---  zip (loops s) $ map lookup (loops s)
---    where positions = esp $ affinityPositions s
---          lookup loop = M.findWithDefault (gridPos loop) loop positions
---          color loop = if M.member loop positions then green else red
---          gridPos loop = gridPosition loop s
-
---stateToPics :: State -> [Pic Id]
---stateToPics s = map toPic (stateToPositions s)
---  where toPic (loop, pos) = LoopP (LoopT loop) (Id pos) (Id red)
-----data Pic c = LoopP Tag (c (V2 Float)) (c Color)
-----data Tag = LoopT Loop | SeqT Loop Int
-
-stateToViz' :: Viz -> State -> Float -> Viz
-stateToViz' v s t = updateViz t v (stateToPics s)
+stateToViz :: Viz -> State -> Float -> Viz
+stateToViz v s t = updateViz t v (stateToPics s)
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
@@ -234,6 +190,3 @@ gridPosition loop (State { loops }) =
       subWindow = (fmap fromIntegral window) / 2.0 - margin * 2
       margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
    in xflip $ subWindow * toGridXYF i (length loops) + margin
-
-renderViz' :: Float -> Viz -> Picture
-renderViz' = renderViz

@@ -267,6 +267,6 @@ affinityMain seed = do
                     soundLoader <- memoizeIO readSound
                     let loader = makeLoader soundLoader looper
                     s <- initState soundLoader looper
-                    guiMain s initViz saver loader stateToViz' renderViz' keyboardHandler respondToStateChange 
+                    guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
