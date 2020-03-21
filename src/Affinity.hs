@@ -50,7 +50,7 @@ emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.em
 
 makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
 makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
-  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [], editorLog = ["Welcome to autobeat"] }
+  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -81,7 +81,8 @@ loadLoops = do
 initState :: (String -> IO Sound) -> Looper -> IO State
 initState soundLoader looper = do
   newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
-                    currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [] }
+                    currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [],
+                    currentSong = Nothing }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -107,8 +108,7 @@ keyboardHandler s 'A' = do
                                    let s' = s { currentGroup = g }
                                    setState s'
 keyboardHandler s 'S' = do
-  playSong s
-  setState s
+  setState (setSong s)
 keyboardHandler s '\ESC' = retCommand Quit
 keyboardHandler s 'p' = do
   let s' = nextFromStack $ pushCurrentGroup s
@@ -152,58 +152,78 @@ respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
   --resetTerm
   putStrLn $ displayer s'
-  if currentGroup s' /= currentGroup s && currentGroup s' /= []
-      then playCurrent s'
-      else return ()
+  if currentSong s' /= currentSong s && currentSong s' /= Nothing
+     then playCurrentSong s'
+     else if currentGroup s' /= currentGroup s && currentGroup s' /= []
+            then playCurrent s'
+            else return ()
 
-playSong :: State -> IO ()
-playSong s = do
-  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
-                                 Nothing -> return []
-  let clickTrackArr = parArrangement (map (singleSoundArrangement loopLengthFrames) clickTrack)
-  -- let sis = currentGroup s -- should be affinity group or something / 68
-  --     someSounds = map ((sounds s) !!) sis
-  someSounds <- loadLoopSounds (soundLoader s) (currentGroup s)
+playCurrentSong :: State -> IO ()
+playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
+  sounds <- loadLoopSounds (soundLoader s) loops
+  arr <- renderScore score sounds
+  mix <- renderArrangement arr
+  setSound (looper s) mix
+playCurrentSong s@(State { currentSong = Nothing }) = return ()
+
+setSong :: State -> State
+setSong s =
   let score = Score [[Measure 0 NoFX],
                      [Measure 0 (Reverb 85)],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40)],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
       revReverb = FXs [Reverse, Reverb 85, Reverse]
-  --arr <- renderScore score someSounds
-  let sound = (someSounds !! 0)
-      snd = singleSoundArrangement loopLengthFrames sound
-      doub = double (singleSoundArrangement loopLengthFrames sound)
-      halv = halve (singleSoundArrangement loopLengthFrames sound)
-      soundArr = singleSoundArrangement loopLengthFrames sound
-      sound2 = (someSounds !! 1)
-      soundArr2 = singleSoundArrangement loopLengthFrames sound2
-  doubS <- renderArrangement doub
-  -- let quad = double (singleSoundArrangement loopLengthFrames doubS)
-  --     arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
-  --let arr = rev (eqDice soundArr 8)
-  arr <- chopOut (eqDice soundArr 16) 0.5
-  --msp soundArr
-  --msp arr
-  msp "HEYO"
+   in s { currentSong = Just (score, currentGroup s) }
 
-  --let arr' = seqArrangement [soundArr, clickTrackArr, arr]
-  --let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr, parArrangement [soundArr, soundArr, arr]]
-  let arr' = seqArrangement [clickTrackArr, soundArr, (parArrangement [soundArr, soundArr2]), (parArrangement [soundArr, soundArr2]),
-                                            arr, (parArrangement [arr, soundArr2]), (parArrangement [arr, soundArr2])]
-  -- let arr' = arr
+--playSong :: State -> IO ()
+--playSong s = do
+--  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
+--                                 Nothing -> return []
+--  let clickTrackArr = parArrangement (map (singleSoundArrangement loopLengthFrames) clickTrack)
+--  -- let sis = currentGroup s -- should be affinity group or something / 68
+--  --     someSounds = map ((sounds s) !!) sis
+--  someSounds <- loadLoopSounds (soundLoader s) (currentGroup s)
+--  let score = Score [[Measure 0 NoFX],
+--                     [Measure 0 (Reverb 85)],
+--                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40)],
+--                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
+--                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
+--      revReverb = FXs [Reverse, Reverb 85, Reverse]
+--  --arr <- renderScore score someSounds
+--  let sound = (someSounds !! 0)
+--      snd = singleSoundArrangement loopLengthFrames sound
+--      doub = double (singleSoundArrangement loopLengthFrames sound)
+--      halv = halve (singleSoundArrangement loopLengthFrames sound)
+--      soundArr = singleSoundArrangement loopLengthFrames sound
+--      sound2 = (someSounds !! 1)
+--      soundArr2 = singleSoundArrangement loopLengthFrames sound2
+--  doubS <- renderArrangement doub
+--  -- let quad = double (singleSoundArrangement loopLengthFrames doubS)
+--  --     arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
+--  --let arr = rev (eqDice soundArr 8)
+--  arr <- chopOut (eqDice soundArr 16) 0.5
+--  --msp soundArr
+--  --msp arr
+--  msp "HEYO"
 
-  --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
-  -- let acc = acceptable s
-  --     accSounds = map (map ((sounds s) !!)) acc
-  --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
-  --songMix <- renderArrangement $ parArrangement [arr', clickTrackArr]
-  songMix <- renderArrangement arr'
-  setSound (looper s) songMix
-  where dub x = seqArrangement [x, x]
-        --addClickMaybe arr = parArrangement [arr, clickTrackArr]
-        -- addClickMaybe arr = case addClick of (Just s) -> parArrangement [arr, (singleSoundArrangement loopLengthFrames s)]
-        --                                      Nothing -> arr
+--  --let arr' = seqArrangement [soundArr, clickTrackArr, arr]
+--  --let arr' = seqArrangement [clickTrackArr, soundArr, soundArr, arr, arr, parArrangement [soundArr, soundArr, arr]]
+--  let arr' = seqArrangement [clickTrackArr, soundArr, (parArrangement [soundArr, soundArr2]), (parArrangement [soundArr, soundArr2]),
+--                                            arr, (parArrangement [arr, soundArr2]), (parArrangement [arr, soundArr2])]
+--  -- let arr' = arr
+
+--  --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
+--  -- let acc = acceptable s
+--  --     accSounds = map (map ((sounds s) !!)) acc
+--  --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
+--  --songMix <- renderArrangement $ parArrangement [arr', clickTrackArr]
+--  songMix <- renderArrangement arr'
+--  setSound (looper s) songMix
+--  where dub x = seqArrangement [x, x]
+--        --addClickMaybe arr = parArrangement [arr, clickTrackArr]
+--        -- addClickMaybe arr = case addClick of (Just s) -> parArrangement [arr, (singleSoundArrangement loopLengthFrames s)]
+--        --                                      Nothing -> arr
   
 playCurrent :: State -> IO ()
 playCurrent s = do

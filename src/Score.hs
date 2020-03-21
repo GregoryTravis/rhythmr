@@ -12,8 +12,9 @@ import Sound
 import Util
 
 data Measure = Measure Int FX
+  deriving Eq
 data Score = Score [[Measure]]
-
+  deriving Eq
 
   --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
 renderScore :: Score -> [Sound] -> IO Arrangement

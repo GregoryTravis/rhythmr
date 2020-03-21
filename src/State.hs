@@ -20,6 +20,7 @@ import System.Random
 
 import Loop
 import Looper
+import Score
 import Sound
 import Util
 
@@ -33,7 +34,8 @@ data State =
         , looper :: Looper
         , soundLoader :: String -> IO Sound
         , editorLog :: [String]
-        , stack :: [[Loop]] }
+        , stack :: [[Loop]]
+        , currentSong :: Maybe (Score, [Loop]) }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where

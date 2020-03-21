@@ -10,7 +10,7 @@ import Util
 
 data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int | Phaser | Pitch Int | Reverb Int
                | Reverse | FXs [FX] | Tremolo Int Int
-  deriving Show
+  deriving (Eq, Show)
 
 --ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
 ssRun :: [String] -> (Sound -> IO Sound)
