@@ -27,10 +27,13 @@ module Util
 , randFromList
 , clump
 , allPairs
+, pairUp
 ) where
 
 import Control.Exception
+import Data.Containers.ListUtils (nubOrd)
 import Data.List (groupBy)
+import qualified Data.Map.Strict as M
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
 import Data.Time.Clock (diffUTCTime)
@@ -145,3 +148,12 @@ clump n xs = (take n xs) : (clump n (drop n xs))
 
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
 allPairs [] = []
+
+-- Pair up values by matching them on the result of applying a function
+pairUp :: Ord t => [a] -> [b] -> (a -> t) -> (b -> t) -> [(Maybe a, Maybe b)]
+pairUp as bs aKey bKey =
+  let --aMap :: M.Map t a
+      aMap = M.fromList (zip (map aKey as) as)
+      bMap = M.fromList (zip (map bKey bs) bs)
+      allTs = nubOrd $ M.keys aMap ++ M.keys bMap
+   in zip (map (aMap M.!?) allTs) (map (bMap M.!?) allTs)

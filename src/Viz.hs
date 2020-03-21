@@ -160,17 +160,12 @@ initViz = Viz []
 -- Match old and new Pics via id; new ones are just initialized via const
 updateViz :: Float -> Viz -> [Pic Id] -> Viz
 updateViz t (Viz oldPics) newPics =
-  let oldTagToPic :: M.Map Tag (Pic AVal)
-      oldTagToPic = M.fromList (zip (map getTag oldPics) oldPics)
-      newTagToPic :: M.Map Tag (Pic Id)
-      newTagToPic = M.fromList (zip (map getTag newPics) newPics)
-      -- For each new Pic, get it's corresponding old one, if any
-      newAValPics :: [Pic AVal]
-      newAValPics = map interp (M.toList newTagToPic)
-      interp :: (Tag, Pic Id) -> Pic AVal
-      interp (id, newPic) = case oldTagToPic M.!? id of Just (oldAVal) -> updatePic t oldAVal newPic
-                                                        Nothing -> constPic newPic
-   in Viz newAValPics
+  let oldAndNew = filter hasNew $ pairUp oldPics newPics getTag getTag
+   in Viz $ map merge oldAndNew
+  where hasNew (_, Nothing) = False
+        hasNew _ = True
+        merge (Just oldPic, Just newPic) = updatePic t oldPic newPic
+        merge (Nothing, Just newPic) = constPic newPic
 
 renderViz :: Float -> Viz -> Picture
 renderViz t (Viz pics) = Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
