@@ -51,7 +51,7 @@ applyInterpolator (Interpolator f) = f
 -- getInterpolator (Const _) = interp
 -- getInterpolator (Blend _ _ _ _ interp) = interp
 
-duration = 1.0
+duration = 0.5
 
 aValSize :: AVal a -> Int
 aValSize (Const _) = 1
@@ -78,7 +78,7 @@ gcAValMap :: Show a => Float -> AValMap k a -> AValMap k a
 gcAValMap t (AValMap m interp) = AValMap m' interp
   where m' = M.map (gcAVal t) m
 
-readSingleAVal a t | TR.trace (show ("rSA", a, t)) False = undefined
+--readSingleAVal a t | TR.trace (show ("rSA", a, t)) False = undefined
 readSingleAVal a t = readSingleAVal' a t
 
 readSingleAVal' :: Show a => AVal a -> Float -> a

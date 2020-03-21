@@ -28,10 +28,6 @@ import Loop
 import State
 import Util
 
-type ID = String
-
-data Viz = Viz (AValMap String (V2 Float))
-
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
 
@@ -82,9 +78,6 @@ affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith r
   where rah :: (V2 Float -> V2 Float) -> [Loop] -> [(Loop, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
-initViz :: Viz
-initViz = Viz (emptyAValMap (Interpolator interpV))
-
 interpV :: Float -> Float -> Float -> V2 Float -> V2 Float -> V2 Float
 interpV t s e (V2 x y) (V2 x' y') = V2 x'' y''
   where x'' = interp t s e x x'
@@ -99,37 +92,6 @@ clip :: (Ord a, Num a) => a -> a -> a -> a
 clip lo hi x | x < lo = lo
 clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
-
--- data Wiz f a = Wiz (f a) (f a)
---   deriving Show
--- data Bef a = Bef a
---   deriving Show
--- -- data Id a = Id a
--- --   deriving Show
-
--- grah :: ((f a) -> (g a)) -> Wiz f a -> Wiz g a
--- grah f (Wiz x y) = Wiz (f x) (f y)
-
-----
-
--- One LoopT for each Loop, but multiple SeqPosT and SeqSizeT for each Loop
--- data Tag = LoopT Loop | SeqPosT Loop Int | SeqSizeT
---   deriving Ord
-
--- Conceit here is that LoopT is what we currently have, and it has a position and Color,
--- while SeqT has a position, color, and size.  Furthermore, LoopT is distinguished by Loop,
--- while SeqT is distinguished by Loop and an Int
--- Each one of these you could simply apply; but instead we want magic interpolation
--- data Pic = LoopT Loop (V2 Float) Color |
-
--- (Loop, "loop") -> V2 Float
--- (Loop, "seqpos") -> V2 Float
--- (Loop, "seqsize") -> V2 Float
--- -- or (Loop, "seq") -> (V2 Float, Float)
-
---
--- Ok clearly we should store the AVals right in our structure, so we can have different types.
--- Then we have update :: S AVal -> S Id -> S AVal, where the arg to S is a container (functor?)
 
 -- Some potential for inconsistency here, Pic and it's Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int
@@ -186,14 +148,14 @@ mapOverVals f (LoopP tag pos color) = LoopP tag (f pos) (f color)
 initty :: Id a -> AVal a
 initty (Id a) = constAVal a
 
--- This will be the new Viz
-data Wiz = Wiz [Pic AVal]
+data Viz = Viz [Pic AVal]
   deriving Show
-emptyWiz = Wiz []
+initViz :: Viz
+initViz = Viz []
 
 -- Match old and new Pics via id; new ones are just initialized via const
-updateWiz :: Float -> Wiz -> [Pic Id] -> Wiz
-updateWiz t (Wiz oldPics) newPics =
+updateViz :: Float -> Viz -> [Pic Id] -> Viz
+updateViz t (Viz oldPics) newPics =
   let oldTagToPic :: M.Map Tag (Pic AVal)
       oldTagToPic = M.fromList (zip (map getTag oldPics) oldPics)
       newTagToPic :: M.Map Tag (Pic Id)
@@ -204,10 +166,10 @@ updateWiz t (Wiz oldPics) newPics =
       interp :: (Tag, Pic Id) -> Pic AVal
       interp (id, newPic) = case oldTagToPic M.!? id of Just (oldAVal) -> updatePic t oldAVal newPic
                                                         Nothing -> constPic newPic
-   in Wiz newAValPics
+   in Viz newAValPics
 
-renderWiz :: Float -> Wiz -> Picture
-renderWiz t (Wiz pics) = Pictures $ map (renderPic t) pics
+renderViz :: Float -> Viz -> Picture
+renderViz t (Viz pics) = Pictures $ map (renderPic t) pics
 
 renderPic :: Float -> Pic AVal -> Picture
 renderPic t (LoopP _ pos color) =
@@ -220,8 +182,6 @@ renderPic t (SeqP _ pos size color) =
       color' = readSingleAVal color t
    in Translate x y $ Color color' $ Circle size'
 
---stateToPics :: State -> [Pic Id]
-
 welp :: String
 welp =
   let pics :: [Pic Id]
@@ -230,47 +190,26 @@ welp =
       pics' = [LoopP (LoopT (Loop "asdf")) (Id (V2 1.0 2.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
       pics'' :: [Pic Id]
       pics'' = [LoopP (LoopT (Loop "asdf")) (Id (V2 4.0 4.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
-      wiz :: Wiz
-      wiz =  updateWiz 0.0 emptyWiz pics
-      wiz' :: Wiz
-      wiz' =  updateWiz 1.0 wiz pics'
-      wiz'' :: Wiz
-      wiz'' =  updateWiz 1.5 wiz' pics''
-      --leg = show $ (wiz', renderWiz 1.5 wiz')
-      leg = show $ [renderWiz t wiz'' | t <- [1.0, 1.5, 1.75, 2.0, 2.5]]
+      wiz :: Viz
+      wiz =  updateViz 0.0 initViz pics
+      wiz' :: Viz
+      wiz' =  updateViz 1.0 wiz pics'
+      wiz'' :: Viz
+      wiz'' =  updateViz 1.5 wiz' pics''
+      --leg = show $ (wiz', renderViz 1.5 wiz')
+      leg = show $ [renderViz t wiz'' | t <- [1.0, 1.5, 1.75, 2.0, 2.5]]
       --leg = show wiz'
       --leg = 34
    in leg
 
--- welp =
---   let log :: Pic Id
---       log = SeqP (SeqT (Loop "asdf") 4) (Id (V2 3.4 4.5)) (Id 6.7) (Id red)
---       lig :: Pic AVal
---       lig = mapOverVals initty log
---       leg :: V2 Float
-
---       -- This was the workaround
---       -- leg = case lig of SeqP _ aval _ _ -> readSingleAVal aval undefined
--- -      -- This is more right, but it's not allowed because I can't figure out
---       -- how to say that the argument to c (above) is a Show
---       leg' = mapOverVals pren lig
---       leg = case leg' of SeqP _ (Id a) _ _ -> a
---       pren :: Show a => AVal a -> Id a
---       pren aval = Id $ readSingleAVal aval undefined
---    in leg
-
---       -- arp :: Wiz Id Int
---       -- arp = Wiz (Id 3) (Id 4)
---       -- gep (Id a) = (Bef a)
---       -- leg :: Wiz Bef Int
---       -- leg = grah gep arp
+stateToPics :: State -> [Pic Id]
+stateToPics s = map toPic (stateToPositions s)
+  where toPic (loop, pos) = LoopP (LoopT loop) (Id pos) (Id red)
+--data Pic c = LoopP Tag (c (V2 Float)) (c Color)
+--data Tag = LoopT Loop | SeqT Loop Int
 
 stateToViz' :: Viz -> State -> Float -> Viz
-stateToViz' (Viz aValMap) s t = Viz aValMap'
-  where aValMap' = eesp leg $ gcAValMap t $ foldr set aValMap (stateToPositions s)
-        set (id, pos) avm = setAVal t id pos avm
-        --leg = 23
-        leg = eesp welp (undefined :: String)
+stateToViz' v s t = updateViz t v (stateToPics s)
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
@@ -281,15 +220,12 @@ gridPosition loop (State { loops }) =
       margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
    in xflip $ subWindow * toGridXYF i (length loops) + margin
 
-stateToPositions :: State -> [(String, V2 Float)]
+stateToPositions :: State -> [(Loop, V2 Float)]
 stateToPositions s =
-  zip loopNames $ map lookup (loops s)
+  zip (loops s) $ map lookup (loops s)
     where positions = esp $ affinityPositions s
-          loopNames = map loopFilename (loops s)
           lookup loop = M.findWithDefault (gridPos loop) loop positions
           gridPos loop = gridPosition loop s
 
 renderViz' :: Float -> Viz -> Picture
-renderViz' t (Viz avm) = Pictures (map render vals)
-  where render (_, (V2 x y)) = Translate x y $ Circle 10
-        vals = getAllAVals avm t
+renderViz' = renderViz
