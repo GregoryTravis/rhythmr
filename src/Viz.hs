@@ -119,16 +119,15 @@ picInterpolator :: Pic c -> Pic Interpolator
 picInterpolator (LoopP tag _ _) =
   LoopP tag v2FloatInterpolator colorInterpolator
 
---data Pair a = Pair (a, a)
-data Wut a = Wut (AVal a) (Id a)
-data Ven c d a = Ven (c a) (d a)
-ven :: (c a) -> (d a) -> Ven c d a
-ven = Ven
+-- Surely this exists already
+data Pair c d a = Pair (c a) (d a)
+pair :: (c a) -> (d a) -> Pair c d a
+pair = Pair
 
 updatePic :: Float -> Pic AVal -> Pic Id -> Pic AVal
-updatePic t old new = mapPic f $ zipWithPic ven (zipWithPic ven old new) (picInterpolator new)
-  where f :: (Eq a, Show a) => (Ven (Ven AVal Id) Interpolator) a -> AVal a
-        f (Ven (Ven aval (Id v)) interpolator) = updateAVal t aval v interpolator
+updatePic t old new = mapPic f $ zipWithPic pair (zipWithPic pair old new) (picInterpolator new)
+  where f :: (Eq a, Show a) => (Pair (Pair AVal Id) Interpolator) a -> AVal a
+        f (Pair (Pair aval (Id v)) interpolator) = updateAVal t aval v interpolator
 
 idToAVal :: Id a -> AVal a
 idToAVal (Id a) = constAVal a
