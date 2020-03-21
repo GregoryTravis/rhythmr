@@ -203,10 +203,25 @@ welp =
    in leg
 
 stateToPics :: State -> [Pic Id]
-stateToPics s = map toPic (stateToPositions s)
-  where toPic (loop, pos) = LoopP (LoopT loop) (Id pos) (Id red)
---data Pic c = LoopP Tag (c (V2 Float)) (c Color)
---data Tag = LoopT Loop | SeqT Loop Int
+stateToPics s@(State { loops }) = map toPic loops
+  where toPic loop = LoopP (LoopT loop) (Id pos) (Id color)
+          where (pos, color) = case aps M.!? loop of Just pos -> (pos, red)
+                                                     Nothing -> ((gridPosition loop s), green)
+                aps = affinityPositions s
+
+--stateToPositions :: State -> [(Loop, V2 Float)]
+--stateToPositions s =
+--  zip (loops s) $ map lookup (loops s)
+--    where positions = esp $ affinityPositions s
+--          lookup loop = M.findWithDefault (gridPos loop) loop positions
+--          color loop = if M.member loop positions then green else red
+--          gridPos loop = gridPosition loop s
+
+--stateToPics :: State -> [Pic Id]
+--stateToPics s = map toPic (stateToPositions s)
+--  where toPic (loop, pos) = LoopP (LoopT loop) (Id pos) (Id red)
+----data Pic c = LoopP Tag (c (V2 Float)) (c Color)
+----data Tag = LoopT Loop | SeqT Loop Int
 
 stateToViz' :: Viz -> State -> Float -> Viz
 stateToViz' v s t = updateViz t v (stateToPics s)
@@ -219,13 +234,6 @@ gridPosition loop (State { loops }) =
       subWindow = (fmap fromIntegral window) / 2.0 - margin * 2
       margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
    in xflip $ subWindow * toGridXYF i (length loops) + margin
-
-stateToPositions :: State -> [(Loop, V2 Float)]
-stateToPositions s =
-  zip (loops s) $ map lookup (loops s)
-    where positions = esp $ affinityPositions s
-          lookup loop = M.findWithDefault (gridPos loop) loop positions
-          gridPos loop = gridPosition loop s
 
 renderViz' :: Float -> Viz -> Picture
 renderViz' = renderViz
