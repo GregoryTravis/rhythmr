@@ -1,5 +1,10 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE NamedFieldPuns #-}
+--{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Viz
   ( stateToViz'
@@ -12,6 +17,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
+--import Graphics.Gloss.Data.Picture
 import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Exit (exitSuccess)
@@ -126,16 +132,45 @@ clip lo hi x | otherwise = x
 -- Then we have update :: S AVal -> S Id -> S AVal, where the arg to S is a container (functor?)
 
 -- Some potential for inconsistency here, Pic and it's Tag could differ
-
 data Tag = LoopT Loop | SeqT Loop Int
-  --deriving Show
+  deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float)) (c Color)
            | SeqP Tag (c (V2 Float)) (c Float) (c Color)
-           | Nuh Tag (c Int)
   --deriving Show
+---deriving instance Show a => Show (Pic (c :: a -> c a))
+deriving instance () => Show (Pic AVal)
 
 data Id a = Id a
-  --deriving Show
+  deriving Show
+
+getTag :: Pic a -> Tag
+getTag (LoopP tag _ _) = tag
+getTag (SeqP tag _ _ _) = tag
+
+updatePic :: Float -> Pic AVal -> Pic Id -> Pic AVal
+updatePic t (LoopP tag pos color) (LoopP tag' (Id pos') (Id color')) | tag == tag' =
+  LoopP tag (updateAVal t pos pos' v2FloatInterpolator)
+            (updateAVal t color color' colorInterpolator)
+updatePic t (SeqP tag pos size color) (SeqP tag' (Id pos') (Id size') (Id color')) | tag == tag' =
+  SeqP tag (updateAVal t pos pos' v2FloatInterpolator)
+           (updateAVal t size size' floatInterpolator)
+           (updateAVal t color color' colorInterpolator)
+
+constPic :: Pic Id -> Pic AVal
+constPic (LoopP tag (Id pos) (Id color)) = LoopP tag (constAVal pos) (constAVal color)
+constPic (SeqP tag (Id pos) (Id size) (Id color)) = SeqP tag (constAVal pos) (constAVal size) (constAVal color)
+
+v2FloatInterpolator = Interpolator interpV
+floatInterpolator = Interpolator interp
+colorInterpolator = Interpolator colorInterpolator'
+colorInterpolator' :: Float -> Float -> Float -> Color -> Color -> Color
+colorInterpolator' t s e color color' = makeColor r'' g'' b'' a''
+  where r'' = interp t s e r r'
+        g'' = interp t s e g g'
+        b'' = interp t s e b b'
+        a'' = interp t s e a a'
+        (r, g, b, a) = rgbaOfColor color
+        (r', g', b', a') = rgbaOfColor color'
 
 -- pef :: Show (c _) => Pic c
 -- pef = undefined
@@ -145,42 +180,93 @@ data Id a = Id a
 mapOverVals :: (forall a . Show a => c a -> c' a) -> Pic c -> Pic c'
 mapOverVals f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
 mapOverVals f (LoopP tag pos color) = LoopP tag (f pos) (f color)
-mapOverVals f (Nuh tag i) = Nuh tag (f i)
 -- This fails because f might have any single particular value for it's a, but we are here applying it to Int
 -- No, actually, RankNTypes fixes this, I just had the forall in the wrong place
 
 initty :: Id a -> AVal a
 initty (Id a) = constAVal a
 
-welp =
-  let log :: Pic Id
-      log = SeqP (SeqT (Loop "asdf") 4) (Id (V2 3.4 4.5)) (Id 6.7) (Id red)
-      lig :: Pic AVal
-      lig = mapOverVals initty log
-      leg :: V2 Float
+-- This will be the new Viz
+data Wiz = Wiz [Pic AVal]
+  deriving Show
+emptyWiz = Wiz []
 
-      -- This was the workaround
-      -- leg = case lig of SeqP _ aval _ _ -> readSingleAVal aval undefined
-      -- This is more right, but it's not allowed because I can't figure out
-      -- how to say that the argument to c (above) is a Show
-      leg' = mapOverVals pren lig
-      leg = case leg' of SeqP _ (Id a) _ _ -> a
-      pren :: Show a => AVal a -> Id a
-      pren aval = Id $ readSingleAVal aval undefined
+-- Match old and new Pics via id; new ones are just initialized via const
+updateWiz :: Float -> Wiz -> [Pic Id] -> Wiz
+updateWiz t (Wiz oldPics) newPics =
+  let oldTagToPic :: M.Map Tag (Pic AVal)
+      oldTagToPic = M.fromList (zip (map getTag oldPics) oldPics)
+      newTagToPic :: M.Map Tag (Pic Id)
+      newTagToPic = M.fromList (zip (map getTag newPics) newPics)
+      -- For each new Pic, get it's corresponding old one, if any
+      newAValPics :: [Pic AVal]
+      newAValPics = map interp (M.toList newTagToPic)
+      interp :: (Tag, Pic Id) -> Pic AVal
+      interp (id, newPic) = case oldTagToPic M.!? id of Just (oldAVal) -> updatePic t oldAVal newPic
+                                                        Nothing -> constPic newPic
+   in Wiz newAValPics
+
+renderWiz :: Float -> Wiz -> Picture
+renderWiz t (Wiz pics) = Pictures $ map (renderPic t) pics
+
+renderPic :: Float -> Pic AVal -> Picture
+renderPic t (LoopP _ pos color) =
+  let (V2 x y) = readSingleAVal pos t
+      color' = readSingleAVal color t
+   in Translate x y $ Color color' $ Circle 10
+renderPic t (SeqP _ pos size color) =
+  let (V2 x y) = readSingleAVal pos t
+      size' = readSingleAVal size t
+      color' = readSingleAVal color t
+   in Translate x y $ Color color' $ Circle size'
+
+--stateToPics :: State -> [Pic Id]
+
+welp :: String
+welp =
+  let pics :: [Pic Id]
+      pics = [LoopP (LoopT (Loop "asdf")) (Id (V2 0.0 0.0)) (Id (makeColor 1.0 0.0 0.0 1.0))]
+      pics' :: [Pic Id]
+      pics' = [LoopP (LoopT (Loop "asdf")) (Id (V2 1.0 2.0)) (Id (makeColor 0.0 1.0 0.0 1.0))]
+      wiz :: Wiz
+      wiz =  updateWiz 0.0 emptyWiz pics
+      wiz' :: Wiz
+      wiz' =  updateWiz 1.0 wiz pics'
+      --leg = show $ (wiz', renderWiz 1.5 wiz')
+      leg = show $ [renderWiz t wiz' | t <- [1.0, 1.5, 2.0]]
+      --leg = show wiz'
+      --leg = 34
    in leg
 
-      -- arp :: Wiz Id Int
-      -- arp = Wiz (Id 3) (Id 4)
-      -- gep (Id a) = (Bef a)
-      -- leg :: Wiz Bef Int
-      -- leg = grah gep arp
+-- welp =
+--   let log :: Pic Id
+--       log = SeqP (SeqT (Loop "asdf") 4) (Id (V2 3.4 4.5)) (Id 6.7) (Id red)
+--       lig :: Pic AVal
+--       lig = mapOverVals initty log
+--       leg :: V2 Float
+
+--       -- This was the workaround
+--       -- leg = case lig of SeqP _ aval _ _ -> readSingleAVal aval undefined
+-- -      -- This is more right, but it's not allowed because I can't figure out
+--       -- how to say that the argument to c (above) is a Show
+--       leg' = mapOverVals pren lig
+--       leg = case leg' of SeqP _ (Id a) _ _ -> a
+--       pren :: Show a => AVal a -> Id a
+--       pren aval = Id $ readSingleAVal aval undefined
+--    in leg
+
+--       -- arp :: Wiz Id Int
+--       -- arp = Wiz (Id 3) (Id 4)
+--       -- gep (Id a) = (Bef a)
+--       -- leg :: Wiz Bef Int
+--       -- leg = grah gep arp
 
 stateToViz' :: Viz -> State -> Float -> Viz
 stateToViz' (Viz aValMap) s t = Viz aValMap'
   where aValMap' = eesp leg $ gcAValMap t $ foldr set aValMap (stateToPositions s)
         set (id, pos) avm = setAVal t id pos avm
         --leg = 23
-        leg = welp
+        leg = eesp welp (undefined :: String)
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
