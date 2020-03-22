@@ -24,6 +24,7 @@ import System.Exit (exitSuccess)
 import Animate
 import Gui
 import Loop
+import Score
 import State
 import Util
 
@@ -181,19 +182,42 @@ renderPic :: Pic Id -> Picture
 renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ Circle 10
 renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ Circle size
 
-stateToPics :: State -> [Pic Id]
-stateToPics s@(State { loops }) = map toPic loops
+stateToPics :: State -> State -> [Pic Id]
+stateToPics oldS s = affinitiesToPics s ++ sequenceToPics oldS s
+
+affinitiesToPics :: State -> [Pic Id]
+affinitiesToPics s@(State { loops }) = map toPic loops
   where toPic loop = LoopP (LoopT loop) (Id pos) (Id color)
           where (pos, color) = case aps M.!? loop of Just pos -> (pos, red)
                                                      Nothing -> ((gridPosition loop s), green)
                 aps = affinityPositions s
 
+sequenceToPics :: State -> State -> [Pic Id]
+sequenceToPics oldS (State { currentSong = Nothing }) = []
+--sequenceToPics oldS s | currentSong oldS == currentSong s = 
+sequenceToPics _ (State { currentSong = Just (score, loops) }) = map toPic (zip [0..] (seqLayOutPositions $ seqLoopsAndPositions score loops))
+  where toPic (i, (loop, pos)) = SeqP (SeqT loop i) (Id pos) (Id 10.0) (Id black)
+
+seqLayOutPositions :: [(Loop, V2 Int)] -> [(Loop, V2 Float)]
+seqLayOutPositions poses = map lop poses
+  where lop (loop, pos) = (loop, fpos pos)
+        fpos pos = fmap fromIntegral pos * V2 20.0 20.0 - (window / 2.0) + margin
+        window = fmap fromIntegral $ V2 windowWidth windowHeight
+        margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
+
+seqLoopsAndPositions :: Score -> [Loop] -> [(Loop, V2 Int)]
+seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]
+  where col :: [Measure] -> Int -> [(Loop, V2 Int)]
+        col measures x = zipWith (one x) measures [0..]
+        one :: Int -> Measure -> Int -> (Loop, V2 Int)
+        one x (Measure i _) y = (loops !! i, V2 x y)
+
 reportViz :: Viz -> Viz
 reportViz = id
 --reportViz v = eesp (gcReport v) v
 
-stateToViz :: Viz -> State -> Float -> Viz
-stateToViz v s t = reportViz $ updateViz t v (stateToPics s)
+stateToViz :: State -> Viz -> State -> Float -> Viz
+stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics oldS s)
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =

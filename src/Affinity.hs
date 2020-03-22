@@ -160,7 +160,7 @@ respondToStateChange s s' = do
 
 playCurrentSong :: State -> IO ()
 playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
-  sounds <- loadLoopSounds (soundLoader s) loops
+  sounds <- eesp (score, loops) $ loadLoopSounds (soundLoader s) loops
   arr <- renderScore score sounds
   mix <- renderArrangement arr
   setSound (looper s) mix
@@ -174,7 +174,7 @@ setSong s =
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
       revReverb = FXs [Reverse, Reverb 85, Reverse]
-   in s { currentSong = Just (score, currentGroup s) }
+   in s { currentSong = Just (score, acceptable s !! 0) }
 
 --playSong :: State -> IO ()
 --playSong s = do
