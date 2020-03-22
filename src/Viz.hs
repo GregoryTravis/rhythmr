@@ -182,8 +182,8 @@ renderPic :: Pic Id -> Picture
 renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ Circle 10
 renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ Circle size
 
-stateToPics :: State -> State -> [Pic Id]
-stateToPics oldS s = affinitiesToPics s ++ sequenceToPics oldS s
+stateToPics :: Float -> State -> State -> [Pic Id]
+stateToPics t oldS s = affinitiesToPics s ++ sequenceToPics t oldS s
 
 affinitiesToPics :: State -> [Pic Id]
 affinitiesToPics s@(State { loops }) = map toPic loops
@@ -192,11 +192,17 @@ affinitiesToPics s@(State { loops }) = map toPic loops
                                                      Nothing -> ((gridPosition loop s), green)
                 aps = affinityPositions s
 
-sequenceToPics :: State -> State -> [Pic Id]
-sequenceToPics oldS (State { currentSong = Nothing }) = []
---sequenceToPics oldS s | currentSong oldS == currentSong s = 
-sequenceToPics _ (State { currentSong = Just (score, loops) }) = map toPic (zip [0..] (seqLayOutPositions $ seqLoopsAndPositions score loops))
-  where toPic (i, (loop, pos)) = SeqP (SeqT loop i) (Id pos) (Id 10.0) (Id black)
+sequenceToPics :: Float -> State -> State -> [Pic Id]
+sequenceToPics t _ (State { currentSong = Nothing }) = []
+sequenceToPics t _ s@(State { currentSong = Just (score, loops) }) = L.zipWith toPic [0..] endPositions
+  --where toPic i loop pos = SeqP (SeqT loop i) (Id pos) (Id 10.0) (Id black)
+  --      --toAnim i loop sPos ePos = combine (toPic i loop sPos) (toPic i loop ePos)
+  --      toAnim i loop sPos ePos = toPic i loop ePos
+  --      combine p p' = updatePic t (constPic p) p'
+  where toPic i (loop, pos) = SeqP (SeqT loop i) (Id pos) (Id 10.0) (Id black)
+        startPositions = map (aps M.!) loops
+        endPositions = (seqLayOutPositions $ seqLoopsAndPositions score loops)
+        aps = affinityPositions s
 
 seqLayOutPositions :: [(Loop, V2 Int)] -> [(Loop, V2 Float)]
 seqLayOutPositions poses = map lop poses
@@ -217,7 +223,7 @@ reportViz = id
 --reportViz v = eesp (gcReport v) v
 
 stateToViz :: State -> Viz -> State -> Float -> Viz
-stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics oldS s)
+stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =
