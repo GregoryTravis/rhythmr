@@ -206,7 +206,7 @@ sequenceToPics t oldS s =
           where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0) (Id black)
                 startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0) (Id black)
                 startPos = aps M.! loop
-        combine p p' = updatePic (t+duration) (t+2*duration) (constPic p) (constPic p')
+        combine p p' = updatePic (t+2*duration) (t+3*duration) (constPic p) (constPic p')
         endPositions score loops = (seqLayOutPositions $ seqLoopsAndPositions score loops)
         aps = affinityPositions s
 
