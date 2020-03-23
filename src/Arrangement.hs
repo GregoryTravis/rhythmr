@@ -50,6 +50,7 @@ pToNrp (Placement sound (Span s e)) = do
 -- All Placements must be Placements and not NRPlacements
 renderArrangement :: Arrangement -> IO Sound
 renderArrangement arr = do
+  --whatThreadIO "renderArrangement"
   --msp arr
   nrpArr <- arrPToNrp arr
   --msp nrpArr

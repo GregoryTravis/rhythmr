@@ -180,7 +180,7 @@ updateViz t (Viz oldPics) newPics =
         merge (Nothing, Just newPic) = newPic
 
 renderViz :: Float -> Viz -> Picture
-renderViz t (Viz pics) = Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
+renderViz t (Viz pics) = {-whatThread "renderViz" $-} Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
 
 renderPic :: Pic Id -> Picture
 renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ Circle 10

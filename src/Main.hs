@@ -1,7 +1,6 @@
 module Main where
 
---import Data.List.Utils (replace)
---import System.Directory
+import GHC.Conc
 import System.Environment (getArgs)
 
 import Affinity
@@ -24,6 +23,9 @@ doStuff [] = doStuff doStuffDefault
 
 main = withPortaudio $ do
   noBuffering
+  putStrLn $ "numCapabilities: " ++ show numCapabilities
+  np <- getNumProcessors
+  putStrLn $ "getNumProcessors: " ++ show np
   args <- getArgs
   msp $ "++ " ++ (show args)
   doStuff args

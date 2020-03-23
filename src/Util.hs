@@ -28,6 +28,8 @@ module Util
 , clump
 , allPairs
 , pairUp
+, whatThread
+, whatThreadIO
 ) where
 
 import Control.Exception
@@ -39,6 +41,7 @@ import Data.Text.Lazy (toStrict)
 import Data.Time.Clock (diffUTCTime)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Typeable (typeOf)
+import GHC.Conc
 import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, stderr, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
@@ -157,3 +160,14 @@ pairUp as bs aKey bKey =
       bMap = M.fromList (zip (map bKey bs) bs)
       allTs = nubOrd $ M.keys aMap ++ M.keys bMap
    in zip (map (aMap M.!?) allTs) (map (bMap M.!?) allTs)
+
+whatThread :: String -> a -> a
+whatThread label x = unsafePerformIO $ do
+  whatThreadIO label
+  return x
+
+whatThreadIO :: String -> IO ()
+whatThreadIO label = do
+  threadId <- myThreadId
+  (capability, pinned) <- threadCapability threadId
+  msp (label, capability, pinned)
