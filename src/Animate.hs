@@ -28,20 +28,20 @@ aValSize :: AVal a -> Int
 aValSize (Const _) = 1
 aValSize (Blend _ _ old new _) = (aValSize old) + (aValSize new)
 
-updateAVal :: (Show a, Eq a) => Float -> AVal a -> a -> Interpolator a -> AVal a
+updateAVal :: (Show a, Eq a) => Float -> AVal a -> AVal a -> Interpolator a -> AVal a
 updateAVal t aval a interp = gcAVal t $ if theSame then aval else blended
   where s = t
         e = t + duration
-        theSame = case aval of (Const oa) -> oa == a
-                               _ -> False
+        theSame = case (aval, a) of ((Const oa), (Const a)) -> oa == a
+                                    _ -> False
         --(oa, _) = readAVal aval t
-        blended = Blend s e aval (constAVal a) interp
+        blended = Blend s e aval a interp
 
 constAVal :: a -> AVal a
 constAVal a = Const a
 
 gcAVal :: Show a => Float -> AVal a -> AVal a
-gcAVal t a@(Blend s e old new interp) | e <= t = eesp ("gc", old, new) $ gcAVal t new
+gcAVal t a@(Blend s e old new interp) | e <= t = {-eesp ("gc", old, new) $-} gcAVal t new
 gcAVal t a@(Blend s e old new interp) | otherwise = Blend s e (gcAVal t old) (gcAVal t new) interp
 gcAVal t a@(Const _) = a
 

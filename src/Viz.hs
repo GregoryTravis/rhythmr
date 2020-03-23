@@ -94,7 +94,7 @@ clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
 
 -- Some potential for inconsistency here, Pic and it's Tag could differ
-data Tag = LoopT Loop | SeqT Loop Int
+data Tag = LoopT Loop | SeqT Loop Int Float
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float)) (c Color)
            | SeqP Tag (c (V2 Float)) (c Float) (c Color)
@@ -126,16 +126,18 @@ getTag (SeqP tag _ _ _) = tag
 picInterpolator :: Pic c -> Pic Interpolator
 picInterpolator (LoopP tag _ _) =
   LoopP tag v2FloatInterpolator colorInterpolator
+picInterpolator (SeqP tag _ _ _) =
+  SeqP tag v2FloatInterpolator floatInterpolator colorInterpolator
 
 -- Surely this exists already
 data Pair c d a = Pair (c a) (d a)
 pair :: (c a) -> (d a) -> Pair c d a
 pair = Pair
 
-updatePic :: Float -> Pic AVal -> Pic Id -> Pic AVal
+updatePic :: Float -> Pic AVal -> Pic AVal -> Pic AVal
 updatePic t old new = mapPic f $ zipWithPic pair (zipWithPic pair old new) (picInterpolator new)
-  where f :: (Eq a, Show a) => (Pair (Pair AVal Id) Interpolator) a -> AVal a
-        f (Pair (Pair aval (Id v)) interpolator) = updateAVal t aval v interpolator
+  where f :: (Eq a, Show a) => (Pair (Pair AVal AVal) Interpolator) a -> AVal a
+        f (Pair (Pair aval v) interpolator) = updateAVal t aval v interpolator
 
 idToAVal :: Id a -> AVal a
 idToAVal (Id a) = constAVal a
@@ -166,14 +168,14 @@ initViz :: Viz
 initViz = Viz []
 
 -- Match old and new Pics via id; new ones are just initialized via const
-updateViz :: Float -> Viz -> [Pic Id] -> Viz
+updateViz :: Float -> Viz -> [Pic AVal] -> Viz
 updateViz t (Viz oldPics) newPics =
   let oldAndNew = filter hasNew $ pairUp oldPics newPics getTag getTag
    in Viz $ map merge oldAndNew
   where hasNew (_, Nothing) = False
         hasNew _ = True
         merge (Just oldPic, Just newPic) = updatePic t oldPic newPic
-        merge (Nothing, Just newPic) = constPic newPic
+        merge (Nothing, Just newPic) = newPic
 
 renderViz :: Float -> Viz -> Picture
 renderViz t (Viz pics) = Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
@@ -182,26 +184,28 @@ renderPic :: Pic Id -> Picture
 renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ Circle 10
 renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ Circle size
 
-stateToPics :: Float -> State -> State -> [Pic Id]
+stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = affinitiesToPics s ++ sequenceToPics t oldS s
 
-affinitiesToPics :: State -> [Pic Id]
+affinitiesToPics :: State -> [Pic AVal]
 affinitiesToPics s@(State { loops }) = map toPic loops
-  where toPic loop = LoopP (LoopT loop) (Id pos) (Id color)
+  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (Id color)
           where (pos, color) = case aps M.!? loop of Just pos -> (pos, red)
                                                      Nothing -> ((gridPosition loop s), green)
                 aps = affinityPositions s
 
-sequenceToPics :: Float -> State -> State -> [Pic Id]
+sequenceToPics :: Float -> State -> State -> [Pic AVal]
 sequenceToPics t _ (State { currentSong = Nothing }) = []
-sequenceToPics t _ s@(State { currentSong = Just (score, loops) }) = L.zipWith toPic [0..] endPositions
-  --where toPic i loop pos = SeqP (SeqT loop i) (Id pos) (Id 10.0) (Id black)
-  --      --toAnim i loop sPos ePos = combine (toPic i loop sPos) (toPic i loop ePos)
-  --      toAnim i loop sPos ePos = toPic i loop ePos
-  --      combine p p' = updatePic t (constPic p) p'
-  where toPic i (loop, pos) = SeqP (SeqT loop i) (Id pos) (Id 10.0) (Id black)
-        startPositions = map (aps M.!) loops
-        endPositions = (seqLayOutPositions $ seqLoopsAndPositions score loops)
+sequenceToPics t oldS s =
+  let State { currentSong = Just (score, loops) } = s
+      theSame = currentSong oldS == currentSong s
+   in L.zipWith (toPic theSame) [0..] (endPositions score loops)
+  where toPic theSame i (loop, pos) = if theSame then constPic endPic else combine startPic endPic
+          where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0) (Id black)
+                startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0) (Id black)
+                startPos = aps M.! loop
+        combine p p' = updatePic (t+1.0) (constPic p) (constPic p')
+        endPositions score loops = (seqLayOutPositions $ seqLoopsAndPositions score loops)
         aps = affinityPositions s
 
 seqLayOutPositions :: [(Loop, V2 Int)] -> [(Loop, V2 Float)]
