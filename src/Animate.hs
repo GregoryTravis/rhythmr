@@ -12,8 +12,6 @@ import qualified Debug.Trace as TR
 
 import Util
 
-duration = 0.5
-
 data AVal a = Const a | Blend Float Float (AVal a) (AVal a) (Interpolator a)
 
 instance Show a => Show (AVal a) where
@@ -28,14 +26,12 @@ aValSize :: AVal a -> Int
 aValSize (Const _) = 1
 aValSize (Blend _ _ old new _) = (aValSize old) + (aValSize new)
 
-updateAVal :: (Show a, Eq a) => Float -> AVal a -> AVal a -> Interpolator a -> AVal a
-updateAVal t aval a interp = gcAVal t $ if theSame then aval else blended
-  where s = t
-        e = t + duration
-        theSame = case (aval, a) of ((Const oa), (Const a)) -> oa == a
+updateAVal :: (Show a, Eq a) => Float -> Float -> AVal a -> AVal a -> Interpolator a -> AVal a
+updateAVal t t' aval a interp = gcAVal t $ if theSame then aval else blended
+  where theSame = case (aval, a) of ((Const oa), (Const a)) -> oa == a
                                     _ -> False
         --(oa, _) = readAVal aval t
-        blended = Blend s e aval a interp
+        blended = Blend t t' aval a interp
 
 constAVal :: a -> AVal a
 constAVal a = Const a

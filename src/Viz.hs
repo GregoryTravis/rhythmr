@@ -28,6 +28,8 @@ import Score
 import State
 import Util
 
+duration = 0.5
+
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
 
@@ -134,10 +136,10 @@ data Pair c d a = Pair (c a) (d a)
 pair :: (c a) -> (d a) -> Pair c d a
 pair = Pair
 
-updatePic :: Float -> Pic AVal -> Pic AVal -> Pic AVal
-updatePic t old new = mapPic f $ zipWithPic pair (zipWithPic pair old new) (picInterpolator new)
+updatePic :: Float -> Float -> Pic AVal -> Pic AVal -> Pic AVal
+updatePic t t' old new = mapPic f $ zipWithPic pair (zipWithPic pair old new) (picInterpolator new)
   where f :: (Eq a, Show a) => (Pair (Pair AVal AVal) Interpolator) a -> AVal a
-        f (Pair (Pair aval v) interpolator) = updateAVal t aval v interpolator
+        f (Pair (Pair aval v) interpolator) = updateAVal t t' aval v interpolator
 
 idToAVal :: Id a -> AVal a
 idToAVal (Id a) = constAVal a
@@ -174,7 +176,7 @@ updateViz t (Viz oldPics) newPics =
    in Viz $ map merge oldAndNew
   where hasNew (_, Nothing) = False
         hasNew _ = True
-        merge (Just oldPic, Just newPic) = updatePic t oldPic newPic
+        merge (Just oldPic, Just newPic) = updatePic t (t+duration) oldPic newPic
         merge (Nothing, Just newPic) = newPic
 
 renderViz :: Float -> Viz -> Picture
@@ -200,11 +202,11 @@ sequenceToPics t oldS s =
   let State { currentSong = Just (score, loops) } = s
       theSame = currentSong oldS == currentSong s
    in L.zipWith (toPic theSame) [0..] (endPositions score loops)
-  where toPic theSame i (loop, pos) = if theSame then constPic endPic else combine startPic endPic
+  where toPic theSame i (loop, pos) = if (esp theSame) then constPic endPic else combine startPic endPic
           where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0) (Id black)
                 startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0) (Id black)
                 startPos = aps M.! loop
-        combine p p' = updatePic (t+1.0) (constPic p) (constPic p')
+        combine p p' = updatePic (t+duration) (t+2*duration) (constPic p) (constPic p')
         endPositions score loops = (seqLayOutPositions $ seqLoopsAndPositions score loops)
         aps = affinityPositions s
 
