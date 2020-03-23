@@ -174,7 +174,12 @@ setSong s =
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
                      [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
       revReverb = FXs [Reverse, Reverb 85, Reverse]
-   in s { currentSong = Just (score, acceptable s !! 0) }
+   in s { currentSong = Just (score, someAcceptable s) }
+
+-- Of all acceptable groups, pick the last one that has at least 4 elements
+someAcceptable :: State -> [Loop]
+someAcceptable s = last $ filter atLeastFour $ acceptable s
+  where atLeastFour l = length l >= 4
 
 --playSong :: State -> IO ()
 --playSong s = do
