@@ -1,6 +1,8 @@
 module Gfx
 ( gfxMain ) where
 
+--This works if you uncomment gl in the cabal file
+--import Graphics.GL (glBindTextureUnit)
 import Graphics.UI.GLUT
 
 import Util
