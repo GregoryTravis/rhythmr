@@ -38,26 +38,26 @@ display ioref = do
   renderPrimitive Quads $ do
     color3f 1 0 0
     vertex3f 0 0 0
-    vertex3f 0 0.2 0
-    vertex3f 0.2 0.2 0
-    vertex3f 0.2 0 0
+    vertex3f 0 0.9 0
+    vertex3f 0.9 0.9 0
+    vertex3f 0.9 0 0
 
     color3f 0 1 0
     vertex3f 0 0 0
-    vertex3f 0 (-0.2) 0
-    vertex3f 0.2 (-0.2) 0
-    vertex3f 0.2 0 0
+    vertex3f 0 (-0.9) 0
+    vertex3f 0.9 (-0.9) 0
+    vertex3f 0.9 0 0
 
     color3f 0 0 1
     vertex3f 0 0 0
-    vertex3f 0 (-0.2) 0
-    vertex3f (-0.2) (-0.2) 0
-    vertex3f (-0.2) 0 0
+    vertex3f 0 (-0.9) 0
+    vertex3f (-0.9) (-0.9) 0
+    vertex3f (-0.9) 0 0
 
     color3f 1 0 1
     vertex3f 0 0 0
-    vertex3f t 0.2 0
-    vertex3f (-0.2) 0.2 0
-    vertex3f (-0.2) 0 0
+    vertex3f (-t) 0.9 0
+    vertex3f (-0.9) 0.9 0
+    vertex3f (-0.9) 0 0
   flush
   writeIORef ioref (t + 0.02)
