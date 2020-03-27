@@ -194,9 +194,10 @@ loopColor loop =
    in makeColor r g b 1.0
 
 rect :: Color -> Picture
-rect color = Pictures [bg, waveForm]
+rect color = Pictures [bg, border]
   where bg = Color color $ Polygon $ rectanglePath 25.0 20.0
-        waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
+        border = Color black $ lineLoop $ rectanglePath 25.0 20.0
+        --waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
 
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ rect color
