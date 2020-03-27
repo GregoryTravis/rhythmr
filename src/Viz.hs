@@ -99,7 +99,7 @@ clip lo hi x | otherwise = x
 data Tag = LoopT Loop | SeqT Loop Int Float
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float))
-           | SeqP Tag (c (V2 Float)) (c Float) (c Color)
+           | SeqP Tag (c (V2 Float)) (c Float)
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
 
@@ -107,15 +107,15 @@ data Id a = Id a
   deriving Show
 
 mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
-mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) (f color)
+mapPic f (SeqP tag pos size) = SeqP tag (f pos) (f size)
 mapPic f (LoopP tag pos) = LoopP tag (f pos)
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
-zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' = SeqP tag (f pos pos') (f size size') (f color color')
+zipWithPic f (SeqP tag pos size) (SeqP tag' pos' size') | tag == tag' = SeqP tag (f pos pos') (f size size')
 zipWithPic f (LoopP tag pos) (LoopP tag' pos') | tag == tag' = LoopP tag (f pos pos')
 
 mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
-mapSquish f (SeqP tag pos size color) = [f pos, f size, f color]
+mapSquish f (SeqP tag pos size) = [f pos, f size]
 mapSquish f (LoopP tag pos) = [f pos]
 
 gcReport :: Viz -> [Int]
@@ -123,13 +123,13 @@ gcReport (Viz pics) = concat $ map (mapSquish aValSize) pics
 
 getTag :: Pic a -> Tag
 getTag (LoopP tag _) = tag
-getTag (SeqP tag _ _ _) = tag
+getTag (SeqP tag _ _) = tag
 
 picInterpolator :: Pic c -> Pic Interpolator
 picInterpolator (LoopP tag _) =
   LoopP tag v2FloatInterpolator
-picInterpolator (SeqP tag _ _ _) =
-  SeqP tag v2FloatInterpolator floatInterpolator colorInterpolator
+picInterpolator (SeqP tag _ _) =
+  SeqP tag v2FloatInterpolator floatInterpolator
 
 -- Surely this exists already
 data Pair c d a = Pair (c a) (d a)
@@ -199,7 +199,8 @@ rect = Polygon $ rectanglePath 15.0 10.0
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ Color color $ rect
   where color = loopColor loop
-renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ rect
+renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size)) = Translate x y $ Color color $ rect
+  where color = loopColor loop
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = affinitiesToPics s ++ sequenceToPics t oldS s
@@ -218,8 +219,8 @@ sequenceToPics t oldS s =
       theSame = currentSong oldS == currentSong s
    in L.zipWith (toPic theSame) [0..] (endPositions score loops)
   where toPic theSame i (loop, pos) = if (esp theSame) then constPic endPic else combine startPic endPic
-          where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0) (Id black)
-                startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0) (Id black)
+          where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0)
+                startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0)
                 startPos = aps M.! loop
         combine p p' = updatePic (t+2*duration) (t+3*duration) (constPic p) (constPic p')
         endPositions score loops = (seqLayOutPositions $ seqLoopsAndPositions score loops)
