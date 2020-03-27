@@ -182,9 +182,12 @@ updateViz t (Viz oldPics) newPics =
 renderViz :: Float -> Viz -> Picture
 renderViz t (Viz pics) = {-whatThread "renderViz" $-} Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
 
+rect :: Picture
+rect = Polygon $ rectanglePath 15.0 10.0
+
 renderPic :: Pic Id -> Picture
-renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ Circle 10
-renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ Polygon $ rectanglePath 15.0 10.0
+renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ rect
+renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ rect
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = affinitiesToPics s ++ sequenceToPics t oldS s
