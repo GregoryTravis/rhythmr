@@ -194,7 +194,7 @@ loopColor loop =
    in makeColor r g b 1.0
 
 rect :: Picture
-rect = Polygon $ rectanglePath 15.0 10.0
+rect = Polygon $ rectanglePath 25.0 20.0
 
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ Color color $ rect
@@ -229,7 +229,7 @@ sequenceToPics t oldS s =
 seqLayOutPositions :: [(Loop, V2 Int)] -> [(Loop, V2 Float)]
 seqLayOutPositions poses = map lop poses
   where lop (loop, pos) = (loop, fpos pos)
-        fpos pos = fmap fromIntegral pos * V2 20.0 20.0 - (window / 2.0) + margin
+        fpos pos = fmap fromIntegral pos * V2 28.0 22.0 - (window / 2.0) + margin
         window = fmap fromIntegral $ V2 windowWidth windowHeight
         margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
 
