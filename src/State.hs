@@ -35,7 +35,7 @@ data State =
         , soundLoader :: String -> IO Sound
         , editorLog :: [String]
         , stack :: [[Loop]]
-        , currentSong :: Maybe (Score, [Loop]) }
+        , currentSong :: Maybe (Score, [[Loop]]) }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where

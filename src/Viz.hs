@@ -233,12 +233,12 @@ seqLayOutPositions poses = map lop poses
         window = fmap fromIntegral $ V2 windowWidth windowHeight
         margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
 
-seqLoopsAndPositions :: Score -> [Loop] -> [(Loop, V2 Int)]
+seqLoopsAndPositions :: Score -> [[Loop]] -> [(Loop, V2 Int)]
 seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]
   where col :: [Measure] -> Int -> [(Loop, V2 Int)]
         col measures x = zipWith (one x) measures [0..]
         one :: Int -> Measure -> Int -> (Loop, V2 Int)
-        one x (Measure i _) y = (loops !! i, V2 x y)
+        one x (Measure (g, i) _) y = ((loops !! g) !! i, V2 x y)
 
 reportViz :: Viz -> Viz
 reportViz = id
