@@ -16,7 +16,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
---import Graphics.Gloss.Data.Picture
+import Graphics.Gloss.Data.Picture
 --import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Exit (exitSuccess)
@@ -193,13 +193,15 @@ loopColor loop =
       b = fromIntegral bi / 256.0
    in makeColor r g b 1.0
 
-rect :: Picture
-rect = Polygon $ rectanglePath 25.0 20.0
+rect :: Color -> Picture
+rect color = Pictures [bg, waveForm]
+  where bg = Color color $ Polygon $ rectanglePath 25.0 20.0
+        waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ Color color $ rect
+renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ rect color
   where color = loopColor loop
-renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size)) = Translate x y $ Color color $ rect
+renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size)) = Translate x y $ rect color
   where color = loopColor loop
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
