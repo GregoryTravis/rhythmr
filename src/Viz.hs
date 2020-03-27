@@ -182,11 +182,23 @@ updateViz t (Viz oldPics) newPics =
 renderViz :: Float -> Viz -> Picture
 renderViz t (Viz pics) = {-whatThread "renderViz" $-} Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
 
+loopColor :: Loop -> Color
+loopColor loop =
+  let hash = getHash loop
+      ri = read ("0x" ++ (take 2 hash)) :: Int
+      gi = read ("0x" ++ (take 2 $ drop 2 hash)) :: Int
+      bi = read ("0x" ++ (take 2 $ drop 4 hash)) :: Int
+      r = fromIntegral ri / 256.0
+      g = fromIntegral gi / 256.0
+      b = fromIntegral bi / 256.0
+   in makeColor r g b 1.0
+
 rect :: Picture
 rect = Polygon $ rectanglePath 15.0 10.0
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP _ (Id (V2 x y)) (Id color)) = Translate x y $ Color color $ rect
+renderPic (LoopP (LoopT loop) (Id (V2 x y)) _) = Translate x y $ Color color $ rect
+  where color = loopColor loop
 renderPic (SeqP _ (Id (V2 x y)) (Id size) (Id color)) = Translate x y $ Color color $ rect
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
