@@ -30,11 +30,13 @@ module Util
 , pairUp
 , whatThread
 , whatThreadIO
+--, minimumBy
+, maximumBy
 ) where
 
 import Control.Exception
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (groupBy)
+import Data.List (groupBy, maximumBy, minimumBy)
 import qualified Data.Map.Strict as M
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
@@ -171,3 +173,9 @@ whatThreadIO label = do
   threadId <- myThreadId
   (capability, pinned) <- threadCapability threadId
   msp (label, capability, pinned)
+
+-- minimum :: Ord a => [a] -> a
+-- minimum = minimumBy (<)
+
+maximum :: Ord a => [a] -> a
+maximum = maximumBy compare

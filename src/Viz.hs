@@ -229,9 +229,22 @@ sequenceToPics t oldS s =
 seqLayOutPositions :: [(Loop, V2 Int)] -> [(Loop, V2 Float)]
 seqLayOutPositions poses = map lop poses
   where lop (loop, pos) = (loop, fpos pos)
-        fpos pos = fmap fromIntegral pos * V2 28.0 22.0 - (window / 2.0) + margin
+        fpos pos = fmap fromIntegral pos * room - (window / 2.0) + seqMargin
         window = fmap fromIntegral $ V2 windowWidth windowHeight
-        margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
+        room :: V2 Float
+        room = V2 28.0 22.0
+        allXs :: [Int]
+        allXs = map (\(_, V2 x _) -> x) poses
+        allYs :: [Int]
+        allYs = map (\(_, V2 _ y) -> y) poses
+        seqSizeI :: V2 Int
+        seqSizeI = V2 (maximum allXs) (maximum allYs)
+        seqSize :: V2 Float
+        seqSize = fmap fromIntegral seqSizeI * room
+        seqMargin :: V2 Float
+        seqMargin = (seqWindow - seqSize) / 2
+        seqWindow :: V2 Float
+        seqWindow = window / 2 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
 
 seqLoopsAndPositions :: Score -> [[Loop]] -> [(Loop, V2 Int)]
 seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]
