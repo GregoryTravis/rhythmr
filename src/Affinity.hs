@@ -50,7 +50,8 @@ emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.em
 
 makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
 makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
-  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [], stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing }
+  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [],
+                   stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing, affinityCycle = 0 }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -82,7 +83,7 @@ initState :: (String -> IO Sound) -> Looper -> IO State
 initState soundLoader looper = do
   newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [],
-                    currentSong = Nothing }
+                    currentSong = Nothing, affinityCycle = 0 }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -126,6 +127,7 @@ keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s 's' = retCommand $ Save "history.ab"
 keyboardHandler s 'L' = retCommand $ Load "history.ab"
 keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
+keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s key = setState s'
   where s' = edlog s ("?? " ++ (show key))
 
@@ -182,8 +184,9 @@ setSong s =
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
 someAcceptable :: State -> [[Loop]]
-someAcceptable s = take 2 $ reverse $ filter atLeastFour $ acceptable s
+someAcceptable s = take 2 $ reverse $ rotateMod ac $ filter atLeastFour $ acceptable s
   where atLeastFour l = length l >= 4
+        ac = affinityCycle s
 
 --playSong :: State -> IO ()
 --playSong s = do

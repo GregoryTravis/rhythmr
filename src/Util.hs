@@ -32,6 +32,8 @@ module Util
 , whatThreadIO
 --, minimumBy
 , maximumBy
+, rotate
+, rotateMod
 ) where
 
 import Control.Exception
@@ -147,6 +149,7 @@ randFromList xs = do
   i <- getStdRandom (randomR (0, length xs - 1))
   return $ xs !! i
 
+-- Nest elements in groups of n; ok if it doesn't divide evenly
 clump :: Int -> [a] -> [[a]]
 clump n [] = []
 clump n xs = (take n xs) : (clump n (drop n xs))
@@ -179,3 +182,12 @@ whatThreadIO label = do
 
 maximum :: Ord a => [a] -> a
 maximum = maximumBy compare
+
+-- Some monarch on SO: https://stackoverflow.com/a/55743500/5265393
+-- One day I'll know why this works
+rotate :: Int -> [a] -> [a]
+rotate = drop <> take
+
+rotateMod :: Int -> [a] -> [a]
+rotateMod n xs = rotate n' xs
+  where n' = n `mod` length xs
