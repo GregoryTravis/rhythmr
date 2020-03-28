@@ -10,16 +10,19 @@ import Bars
 import Diag
 import Feh
 import Gfx
+import Hypercube
 import Looper (withPortaudio)
 import Mess
 import Sound
 import Util
 
-doStuffDefault = ["aff", "2345"]
+--doStuffDefault = ["aff", "2345"]
 --doStuffDefault = ["g"]
+doStuffDefault = ["hy"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["g"] = gfxMain
+doStuff ["hy"] = hypercubeMain
 doStuff [] = doStuff doStuffDefault
 
 main = withPortaudio $ do
