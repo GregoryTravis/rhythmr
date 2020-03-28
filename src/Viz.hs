@@ -96,11 +96,12 @@ clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
 
 -- Some potential for inconsistency here, Pic and it's Tag could differ
-data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop
+data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float))
            | SeqP Tag (c (V2 Float)) (c Float)
            | LoopPlaceP Tag (c (V2 Float))
+           | MarkP Tag (c (V2 Float))
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
 
@@ -111,16 +112,19 @@ mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
 mapPic f (SeqP tag pos size) = SeqP tag (f pos) (f size)
 mapPic f (LoopP tag pos) = LoopP tag (f pos)
 mapPic f (LoopPlaceP tag pos) = LoopPlaceP tag (f pos)
+mapPic f (MarkP tag pos) = MarkP tag (f pos)
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
 zipWithPic f (SeqP tag pos size) (SeqP tag' pos' size') | tag == tag' = SeqP tag (f pos pos') (f size size')
 zipWithPic f (LoopP tag pos) (LoopP tag' pos') | tag == tag' = LoopP tag (f pos pos')
 zipWithPic f (LoopPlaceP tag pos) (LoopPlaceP tag' pos') | tag == tag' = LoopPlaceP tag (f pos pos')
+zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
 
 mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
 mapSquish f (SeqP tag pos size) = [f pos, f size]
 mapSquish f (LoopP tag pos) = [f pos]
 mapSquish f (LoopPlaceP tag pos) = [f pos]
+mapSquish f (MarkP tag pos) = [f pos]
 
 gcReport :: Viz -> [Int]
 gcReport (Viz pics) = concat $ map (mapSquish aValSize) pics
@@ -129,6 +133,7 @@ getTag :: Pic a -> Tag
 getTag (LoopP tag _) = tag
 getTag (SeqP tag _ _) = tag
 getTag (LoopPlaceP tag _) = tag
+getTag (MarkP tag _) = tag
 
 picInterpolator :: Pic c -> Pic Interpolator
 picInterpolator (LoopP tag _) =
@@ -137,6 +142,8 @@ picInterpolator (SeqP tag _ _) =
   SeqP tag v2FloatInterpolator floatInterpolator
 picInterpolator (LoopPlaceP tag _) =
   LoopPlaceP tag v2FloatInterpolator
+picInterpolator (MarkP tag _) =
+  MarkP tag v2FloatInterpolator
 
 -- Surely this exists already
 data Pair c d a = Pair (c a) (d a)
@@ -204,20 +211,34 @@ loopColor loop =
 
 rectWidth :: Float
 rectWidth = 25
+rectHeight :: Float
 rectHeight = 20
+rectDim :: V2 Float
 rectDim = V2 rectWidth rectHeight
-rectThickness = 1.5
+rectThickness :: Float
+rectThickness = 3
 
-rect :: Color -> Picture
-rect color = Pictures [bg, border]
+markMargin = 10
+markThickness = 3
+markDim = rectDim + (V2 markMargin markMargin)
+
+markRect :: Picture
+markRect = Color black $ thickBorder markThickness (V2 0 0) markDim
+-- markRect = Color black $ rectangleWire w h
+--   where V2 w h = rectDim + 2 * m
+--         V2 tx ty = (-m)
+--         m = V2 markMargin markMargin
+
+rect :: Color -> Color -> Picture
+rect color borderColor = Pictures [bg, border]
   where bg = Color color $ Polygon $ rectanglePath rectWidth rectHeight
-        border = rectBorder color
+        border = rectBorder borderColor
         --border = Color black $ lineLoop $ rectanglePath 25.0 20.0
         --waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
 
 rectBorder :: Color -> Picture
 --rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
-rectBorder color = Color black $ thickBorder rectThickness (V2 0 0) rectDim
+rectBorder color = Color color $ thickBorder rectThickness (V2 0 0) rectDim
 
 rectAt :: V2 Float -> V2 Float -> Picture
 rectAt a b = Translate tx ty $ Polygon $ rectanglePath w h
@@ -226,7 +247,7 @@ rectAt a b = Translate tx ty $ Polygon $ rectanglePath w h
 
 thickLine :: Float -> V2 Float -> V2 Float -> Picture
 thickLine thickness a b = Polygon (map unR2 pts)
-  where along = signorm (b - a) ^* thickness
+  where along = signorm (b - a) ^* (thickness/2)
         left = perp along
         pts = [a - along - left,
                b + along - left,
@@ -264,12 +285,15 @@ thickBorder thickness a b = Pictures lines
 --   where bg = Color color $ Polygon $ rectanglePath 25.0 20.0
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ rect color
+renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ rect color black
   where color = loopColor loop
-renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size)) = Translate x y $ rect color
+renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size)) = Translate x y $ rect color black
   where color = loopColor loop
-renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y))) = Translate x y $ rectBorder color
-  where color = withAlpha 0.3 $ loopColor loop
+renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y))) = Translate x y $ rect color borderColor
+  where color = withAlpha a $ loopColor loop
+        borderColor = withAlpha a $ black
+        a = 0.2
+renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ sequenceToPics t oldS s
@@ -280,11 +304,13 @@ loopPlacePics s@(State { loops }) = map toPic loops
           where pos = (gridPosition loop s)
 
 affinitiesToPics :: State -> [Pic AVal]
-affinitiesToPics s@(State { loops }) = map toPic loops
+affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
   where toPic loop = constPic $ LoopP (LoopT loop) (Id pos)
           where pos = case aps M.!? loop of Just pos -> pos
                                             Nothing -> (gridPosition loop s)
                 aps = affinityPositions s
+        marks = map (uncurry toMark) (zip [0..] (currentGroup s))
+        toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
 
 sequenceToPics :: Float -> State -> State -> [Pic AVal]
 sequenceToPics t _ (State { currentSong = Nothing }) = []
@@ -340,5 +366,5 @@ gridPosition loop (State { loops }) =
       xflip (V2 x y) = V2 (-x) y
       window = V2 windowWidth windowHeight
       subWindow = (fmap fromIntegral window) / 2.0 - margin * 2
-      margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 15
+      margin = pure $ fromIntegral $ (min windowWidth windowHeight) `div` 20
    in xflip $ subWindow * toGridXYF i (length loops) + margin
