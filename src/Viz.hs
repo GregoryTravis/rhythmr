@@ -278,25 +278,10 @@ thickBorder thickness a b = Pictures lines
         ba = blah a b
         blah (V2 x _) (V2 _ y) = V2 x y
 
--- thickBorder ll ur thickness | x0 < x1 && y0 < y1 = Pictures
---   where thx = V2 (thickness/2) 0
---         thy = V2 0 (thickness/2)
---         rects = [rectAt (ll - thx - thy) (lr + thx + thy),
---                  rectAt (lr - thx - thy) (ur + thx + thy),
---                  rectAt (ul - thx - thy) (ur + thx + thy),
---                  rectAt (ll - thx - thy) (ul + thx + thy)]
---         V2 x0 y0 = ll
---         V2 x1 y1 = ur
---         ul = V2 x0 y1
---         lr = V2 x1 y0
-
--- thickBorder (V2 x0 y0) (V2 x1 y1) thickness = Pictures (map (uncurry thickLine) edges)
---   where corners = [V2 x0 y0, V2 x1, y0, V2 x1 y1, V2 x0 y1]
---         edges = zip corners (drop 1 (cycle corners))
-
--- rectNoBorder :: Color -> Picture
--- rectNoBorder color = bg
---   where bg = Color color $ Polygon $ rectanglePath 25.0 20.0
+upTri :: Picture
+upTri = Color black $ Scale scale scale $ Polygon pts
+  where pts = [(0.0, 0.5), (0.5, (-0.5)), ((-0.5), (-0.5))]
+        scale = 10
 
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ rect color black
@@ -362,11 +347,11 @@ seqLayOutPositions poses = map lop poses
 
 -- TODO really shouldn't duplicate this, but how?
 renderProgress :: State -> Float -> Picture
-renderProgress (State { currentSong = Just (score, loops) }) progress = eesp (V2 tx ty) $ Color red $ Translate tx ty $ Circle 10
+renderProgress (State { currentSong = Just (score, loops) }) progress = Translate tx (ty - 5) $ upTri
   where tx = interp progress 0 1 left right
         V2 _ ty = (-(window / 2)) + seqMargin - room / 2
         V2 left _ = (-(window / 2)) + seqMargin - room / 2
-        V2 right _ = (-seqMargin) + room
+        V2 right _ = (-seqMargin) + room / 2
         window = fmap fromIntegral $ V2 windowWidth windowHeight
         room :: V2 Float
         room = V2 32.0 27.0
