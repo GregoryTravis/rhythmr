@@ -209,8 +209,7 @@ sequenceCursor s@(State { looper }) = do
   --msp ("mp", progress)
   --let progress = 0.3
   --msp $ ("cs", case s of State { currentSong } -> currentSong)
-  return $ case progress of Just progress -> renderProgress s progress
-                            Nothing -> Blank
+  return $ renderProgress s progress
 
 loopColor :: Loop -> Color
 loopColor loop =

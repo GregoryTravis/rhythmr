@@ -70,13 +70,11 @@ loop' l@(Looper sv iv _) currentIndex = do
   loop' l nextCurrentIndex
 
 -- returns 0..1
-getProgress :: Looper -> IO (Maybe Float)
+getProgress :: Looper -> IO Float
 getProgress (Looper sv iv lv) = do
   currentIndex <- readIORef iv
   length <- readIORef lv
-  --msp ("ci", currentIndex, length, granularity)
-  --let numGrains = fromIntegral length / fromIntegral granularity
-  return $ Just $ fromIntegral currentIndex / fromIntegral length
+  return $ fromIntegral currentIndex / fromIntegral length
 
   -- soundMaybe <- tryTakeMVar sv
   -- let prog (Sound { samples = buffer }) =
