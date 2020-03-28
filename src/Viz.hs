@@ -73,7 +73,7 @@ ringOfCirclesInUnitSquare n = circles
                 offset = (1.0 - margin - (circleRadius / 2)) *^ V2 (cos ang) (sin ang)
         tr (V2 x y) p = Translate x y p
         circleRadius = 0.15
-        margin = 0.65
+        margin = 0.55
 
 affinityPositions :: State -> M.Map Loop (V2 Float)
 affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
@@ -186,6 +186,8 @@ updateViz t (Viz oldPics) newPics =
         merge (Just oldPic, Just newPic) = updatePic t (t+duration) oldPic newPic
         merge (Nothing, Just newPic) = newPic
 
+unR2 (V2 x y) = (x, y)
+
 renderViz :: Float -> Viz -> Picture
 renderViz t (Viz pics) = {-whatThread "renderViz" $-} Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
 
@@ -200,14 +202,62 @@ loopColor loop =
       b = fromIntegral bi / 256.0
    in makeColor r g b 1.0
 
+rectWidth :: Float
+rectWidth = 25
+rectHeight = 20
+rectDim = V2 rectWidth rectHeight
+rectThickness = 1.5
+
 rect :: Color -> Picture
 rect color = Pictures [bg, border]
-  where bg = Color color $ Polygon $ rectanglePath 25.0 20.0
-        border = Color black $ lineLoop $ rectanglePath 25.0 20.0
+  where bg = Color color $ Polygon $ rectanglePath rectWidth rectHeight
+        border = rectBorder color
+        --border = Color black $ lineLoop $ rectanglePath 25.0 20.0
         --waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
 
 rectBorder :: Color -> Picture
-rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
+--rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
+rectBorder color = Color black $ thickBorder rectThickness (V2 0 0) rectDim
+
+rectAt :: V2 Float -> V2 Float -> Picture
+rectAt a b = Translate tx ty $ Polygon $ rectanglePath w h
+  where V2 w h = b - a
+        V2 tx ty = ((b - a) / 2) + a
+
+thickLine :: Float -> V2 Float -> V2 Float -> Picture
+thickLine thickness a b = Polygon (map unR2 pts)
+  where along = signorm (b - a) ^* thickness
+        left = perp along
+        pts = [a - along - left,
+               b + along - left,
+               b + along + left,
+               a - along + left]
+
+thickBorder :: Float -> V2 Float -> V2 Float -> Picture
+thickBorder thickness a b = Pictures lines
+  where lines = map (uncurry (thickLine thickness)) (pairUp pts)
+        pairUp pts = zip pts (drop 1 (cycle pts))
+        pts = map center [a, ab, b, ba]
+        center v = v - ((b - a) / 2)
+        ab = blah b a
+        ba = blah a b
+        blah (V2 x _) (V2 _ y) = V2 x y
+
+-- thickBorder ll ur thickness | x0 < x1 && y0 < y1 = Pictures
+--   where thx = V2 (thickness/2) 0
+--         thy = V2 0 (thickness/2)
+--         rects = [rectAt (ll - thx - thy) (lr + thx + thy),
+--                  rectAt (lr - thx - thy) (ur + thx + thy),
+--                  rectAt (ul - thx - thy) (ur + thx + thy),
+--                  rectAt (ll - thx - thy) (ul + thx + thy)]
+--         V2 x0 y0 = ll
+--         V2 x1 y1 = ur
+--         ul = V2 x0 y1
+--         lr = V2 x1 y0
+
+-- thickBorder (V2 x0 y0) (V2 x1 y1) thickness = Pictures (map (uncurry thickLine) edges)
+--   where corners = [V2 x0 y0, V2 x1, y0, V2 x1 y1, V2 x0 y1]
+--         edges = zip corners (drop 1 (cycle corners))
 
 -- rectNoBorder :: Color -> Picture
 -- rectNoBorder color = bg
@@ -256,7 +306,7 @@ seqLayOutPositions poses = map lop poses
         fpos pos = fmap fromIntegral pos * room - (window / 2.0) + seqMargin
         window = fmap fromIntegral $ V2 windowWidth windowHeight
         room :: V2 Float
-        room = V2 28.0 22.0
+        room = V2 32.0 27.0
         allXs :: [Int]
         allXs = map (\(_, V2 x _) -> x) poses
         allYs :: [Int]
