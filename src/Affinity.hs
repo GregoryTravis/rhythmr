@@ -95,7 +95,7 @@ keyboardHandler :: (State -> Char -> IO (GuiCommand State))
 --keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
-  let s' = s { currentGroup = group }
+  let s' = s { currentGroup = group, currentSong = Nothing }
   --msp "YOSH"
   --playCurrent s'
   setState s'
