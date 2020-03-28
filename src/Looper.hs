@@ -3,6 +3,7 @@ module Looper
 , withPortaudio
 , withLooper
 , setSound
+, getProgress
 ) where
 
 import Control.Concurrent (forkIO, killThread)
@@ -24,7 +25,7 @@ foreign import ccall "term_audio" term_audio :: IO ()
 
 granularity = 64
 
-data Looper = Looper (MVar Sound)
+data Looper = Looper (MVar Sound) (IORef Int) (IORef Int)
 
 withPortaudio :: IO a -> IO a
 withPortaudio action = do
@@ -34,7 +35,9 @@ withPortaudio action = do
 withLooper :: (Looper -> IO a) -> IO a
 withLooper action = do
   sv <- newEmptyMVar
-  let looper = Looper sv
+  iv <- newIORef 0
+  lv <- newIORef 1
+  let looper = Looper sv iv lv
   threadId <- forkIO $ loop looper
   let cleanup = killThread threadId
   (action looper) `finally` cleanup
@@ -43,24 +46,48 @@ setSound :: Looper -> Sound -> IO ()
 setSound l sound = do
   --msp ("set", SV.length (samples sound))
   -- Dum way to make sure the sound is evaluated before putting it in the mvar
-  let (Looper sv) = (samples sound) `seq` l
+  let (Looper sv _ lv) = (samples sound) `seq` l
   empty <- isEmptyMVar sv
   if empty
      then putMVar sv sound
      else do swapMVar sv sound
              return ()
+  let (Sound { samples = buffer }) = sound
+  writeIORef lv (SV.length buffer)
 
 loop :: Looper -> IO ()
 loop looper = loop' looper 0
 loop' :: Looper -> Int -> IO ()
-loop' l@(Looper sv) currentIndex = do
+loop' l@(Looper sv iv _) currentIndex = do
   --msp currentIndex
   Sound { samples = buffer } <- readMVar sv
   let grain = SV.take granularity (SV.drop currentIndex buffer)
       grainLength = SV.length grain
       nextCurrentIndex = (currentIndex + (grainLength * 1)) `mod` (SV.length buffer)
   writeAudioAllAtOnce grain
+  writeIORef iv currentIndex
+  --msp ("wrote", currentIndex)
   loop' l nextCurrentIndex
+
+-- returns 0..1
+getProgress :: Looper -> IO (Maybe Float)
+getProgress (Looper sv iv lv) = do
+  currentIndex <- readIORef iv
+  length <- readIORef lv
+  --msp ("ci", currentIndex, length, granularity)
+  --let numGrains = fromIntegral length / fromIntegral granularity
+  return $ Just $ fromIntegral currentIndex / fromIntegral length
+
+  -- soundMaybe <- tryTakeMVar sv
+  -- let prog (Sound { samples = buffer }) =
+  --       let numGrains = SV.length buffer
+  --        in fromIntegral currentIndex / fromIntegral numGrains
+  -- return $ case soundMaybe of Just sound -> Just $ prog sound
+  --                             Nothing -> Nothing
+  --return 0.4
+  ------msp ("prog", currentIndex)
+  ----let numGrains = SV.length buffer
+  ----return $ fromIntegral currentIndex / fromIntegral numGrains
 
 writeAudioAllAtOnce :: Vector Float -> IO ()
 writeAudioAllAtOnce v = do

@@ -24,6 +24,7 @@ import System.Exit (exitSuccess)
 import Animate
 import Gui
 import Loop
+import Looper
 import Score
 import State
 import Util
@@ -195,8 +196,21 @@ updateViz t (Viz oldPics) newPics =
 
 unR2 (V2 x y) = (x, y)
 
-renderViz :: Float -> Viz -> Picture
-renderViz t (Viz pics) = {-whatThread "renderViz" $-} Pictures $ map renderPic (map (mapPic (aValToId t)) pics)
+renderViz :: Float -> State -> Viz -> IO Picture
+renderViz t s (Viz pics) = do
+  let anims = map renderPic (map (mapPic (aValToId t)) pics)
+  cursor <- sequenceCursor s
+  --msp ("renderViz", cursor)
+  return $ Pictures $ [cursor] ++ anims
+
+sequenceCursor :: State -> IO Picture
+sequenceCursor s@(State { looper }) = do
+  progress <- getProgress looper
+  --msp ("mp", progress)
+  --let progress = 0.3
+  --msp $ ("cs", case s of State { currentSong } -> currentSong)
+  return $ case progress of Just progress -> renderProgress s progress
+                            Nothing -> Blank
 
 loopColor :: Loop -> Color
 loopColor loop =
@@ -345,6 +359,31 @@ seqLayOutPositions poses = map lop poses
         seqMargin = (seqWindow - seqSize) / 2
         seqWindow :: V2 Float
         seqWindow = window / 2 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
+
+-- TODO really shouldn't duplicate this, but how?
+renderProgress :: State -> Float -> Picture
+renderProgress (State { currentSong = Just (score, loops) }) progress = eesp (V2 tx ty) $ Color red $ Translate tx ty $ Circle 10
+  where tx = interp progress 0 1 left right
+        V2 _ ty = (-(window / 2)) + seqMargin - room / 2
+        V2 left _ = (-(window / 2)) + seqMargin - room / 2
+        V2 right _ = (-seqMargin) + room
+        window = fmap fromIntegral $ V2 windowWidth windowHeight
+        room :: V2 Float
+        room = V2 32.0 27.0
+        allXs :: [Int]
+        allXs = map (\(_, V2 x _) -> x) poses
+        allYs :: [Int]
+        allYs = map (\(_, V2 _ y) -> y) poses
+        seqSizeI :: V2 Int
+        seqSizeI = V2 (maximum allXs) (maximum allYs)
+        seqSize :: V2 Float
+        seqSize = fmap fromIntegral seqSizeI * room
+        seqMargin :: V2 Float
+        seqMargin = (seqWindow - seqSize) / 2
+        seqWindow :: V2 Float
+        seqWindow = window / 2 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
+        poses = seqLoopsAndPositions score loops
+renderProgress _ _ = Blank
 
 seqLoopsAndPositions :: Score -> [[Loop]] -> [(Loop, V2 Int)]
 seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]

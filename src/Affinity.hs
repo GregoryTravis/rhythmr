@@ -168,7 +168,7 @@ playCurrentSong s@(State { currentSong = Nothing }) = return ()
 
 setSong :: State -> State
 setSong s =
-  let score = Score [[Measure (0, 0) NoFX],
+  let score = Score $ take 2 [[Measure (0, 0) NoFX],
                      [Measure (0, 0) (Reverb 85)],
                      [Measure (0, 0) NoFX, Measure (0, 1) (Tremolo 10 40)],
                      [Measure (0, 0) NoFX, Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],

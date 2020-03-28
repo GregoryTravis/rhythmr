@@ -34,10 +34,11 @@ data GuiState s v = GuiState (History s) Float v
 data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t) => s -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> v -> Picture) -> (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
+guiMain :: (Eq s, Show s, Read t, Show t) => s -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
+                                             (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
 guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange =
   let initWorld = GuiState (start s) 0 (stateToViz s initViz s 0)
-      worldToPicture (GuiState _ t v) = return (renderViz t v)
+      worldToPicture (GuiState h t v) = renderViz t (cur h) v
       eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
       eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
         command <- keyboardHandler (cur h) c
