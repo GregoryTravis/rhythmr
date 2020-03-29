@@ -65,15 +65,7 @@ adjacentVerts pt =
       flipCoord 1 = 0
    in map (fromJust . fromVector) flippedPtsV
 
--- listToV :: [a] -> V n a
--- listToV = fromJust . fromVector . V.fromList
-
 projectHypercube = undefined
-
-hypercubeMain = do
-  let p :: Polytope
-      p = makeHypercube
-  msp p
 
 -- All possible ways to pick one element from each sublist
 -- e.g. expy [[1, 2], [3, 4]] => [[1, 3], [1, 4], [2, 3], [2, 4]]
@@ -82,50 +74,7 @@ expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- expy xss]
 --expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- xss] ++ expy xss
 expy [] = [[]]
 
---hypercubeMain = do
-  -- let n = 8
-  --     Just v = fromVector $ V.fromList (take n [2..]) :: Maybe (V 8 Int)
-  --     Just m = fromVector $ V.fromList (take n (repeat v)) :: Maybe (V 8 (V 8 Int))
-  -- msp v
-  -- msp m
-  -- let id = identity :: M44 Int
-  -- msp id
-  -- msp $ id !*! id
-  -- msp $ m !*! m
-
---data Hypercube = Hypercube [Vector Double]
---  deriving Show
-
---hmap :: (Vector Double -> Vector Double) -> Hypercube -> Hypercube
---hmap f (Hypercube pts) = Hypercube (map f pts)
-
---makeHypercube :: Int -> Hypercube
---makeHypercube n = Hypercube $ map fromList vertses
---  where vertses = expy (take n (repeat [0.0, 1.0]))
-
----- All possible ways to pick one element from each sublist
----- e.g. expy [[1, 2], [3, 4]] => [[1, 3], [1, 4], [2, 3], [2, 4]]
---expy :: [[a]] -> [[a]]
---expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- expy xss]
-----expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- xss] ++ expy xss
---expy [] = [[]]
-
---projectHypercube :: Hypercube -> [V2 Double]
-----projectHypercube (Hypercube pts) = map projectPt pts
---projectHypercube = hmap projectPt
-
---translate :: Vector Double -> Hypercube -> Hypercube
---translate = hmap translatePt
-
---projectPt :: Vector Double -> V2 Double
---projectPt v =
---  let xy = V2 (v V.! 0) (v V.! 1)
---      zs = product (V.drop 2 v)
---   in xy ^/ zs
-
---hypercubeMain = do
---  let h = makeHypercube 3
---  msp h
---  let p = projectHypercube h
---  msp p
---  --msp $ expy [[1, 2], [3, 4]]
+hypercubeMain = do
+  let p :: Polytope
+      p = makeHypercube
+  msp p
