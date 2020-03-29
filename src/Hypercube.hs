@@ -19,9 +19,9 @@ import Linear.V
 
 import Util
 
-type VN a = V 4 a
+type VN a = V 8 a
 numDims :: Int
-numDims = 4
+numDims = 8
 type Pt = VN Double
 type Mat = VN (VN Double)
 
@@ -124,10 +124,12 @@ expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- expy xss]
 --expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- xss] ++ expy xss
 expy [] = [[]]
 
+-- The formula for far isn't right; it should produce approx the same size
+-- projection at any dimension, but it doesn't.
 moveAway :: Pt
 moveAway = fromJust $ fromVector $ V.fromList allButXY
   where allButXY = [0, 0] ++ (take (numDims - 2) (repeat far))
-        far = 2
+        far = 50 ** (1 / fromIntegral (numDims - 2))
 -- Wrong! I was only pushing along Z, but I should have been pushing along *all but x and y*
 -- where justZ = esp $ (V.fromList (take numDims (repeat 0))) `V.update` (V.fromList [(2, 20)])
 

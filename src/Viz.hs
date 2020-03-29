@@ -224,7 +224,7 @@ renderPolytope p =
               orig = V2 (w/4) (-(h/4))
               V2 w h = fmap fromIntegral windowDim
               scale :: Double
-              scale = 600
+              scale = 2000
    in Color black $ Pictures $ map toLine proj
 
 sequenceCursor :: State -> IO Picture
