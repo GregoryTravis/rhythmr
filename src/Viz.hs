@@ -206,7 +206,7 @@ renderViz t s (Viz pics) = do
   return $ Pictures $ [cursor] ++ anims ++ [hc]
 
 renderHypercube :: Float -> Picture
-renderHypercube t = renderPolytope (showIt (rotatePolytope (ang/2) 0 2 (rotatePolytope ang 0 1 makeHypercube)))
+renderHypercube t = renderPolytope (showIt (rotatePolytope (ang/4) 1 3 (rotatePolytope (ang/2) 0 2 (rotatePolytope ang 0 1 makeHypercube))))
   where ang :: Double
         ang = realToFrac t * (pi/4)
         --(t * realToFrac (pi/4))

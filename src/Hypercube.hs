@@ -82,12 +82,17 @@ adjacentVerts pt =
 -- Project the edges of the polytope to 2D.
 -- Divide the first two coordinates by the product of the others
 projectPolytope :: Polytope -> [(V2 Double, V2 Double)]
-projectPolytope (Polytope verts edges) = map projEdge $ V.toList edges
+projectPolytope p@(Polytope verts edges) = map projEdge $ V.toList edges
   where projEdge (a, b) = (projectedPts V.! a, projectedPts V.! b)
         projectedPts = V.map projectPt verts
+        --yah = ("edges", getEdges p)
+
+inFront :: Pt -> Bool
+inFront pt = z >= 1.0
+  where z = (V.toList $ toVector pt) !! 2
 
 projectPt :: Pt -> V2 Double
-projectPt pt =
+projectPt pt | inFront pt =
   let ptList = V.toList $ toVector pt
       ([x, y], theRest) = splitAt 2 ptList
       prod = product theRest
@@ -120,8 +125,13 @@ expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- expy xss]
 expy [] = [[]]
 
 moveAway :: Pt
-moveAway = fromJust $ fromVector $ justZ
-  where justZ = (V.fromList (take numDims (repeat 0))) `V.update` (V.fromList [(2, 5)])
+moveAway = fromJust $ fromVector $ V.fromList allButXY
+  where allButXY = [0, 0] ++ (take (numDims - 2) (repeat far))
+        far = 2
+-- Wrong! I was only pushing along Z, but I should have been pushing along *all but x and y*
+-- where justZ = esp $ (V.fromList (take numDims (repeat 0))) `V.update` (V.fromList [(2, 20)])
+
+--(Data.Vector.fromList (take 4 (repeat 0))) `Data.Vector.update` (Data.Vector.fromList [(2, 5)])
 
 rotatePolytope :: Double -> Int -> Int -> Polytope -> Polytope
 rotatePolytope ang a b p = mapVerts (mkRotation ang a b !*) p
@@ -144,8 +154,8 @@ hypercubeMain = do
   msp moveAway
   msp proj
   --mapM_ msp (getVerts p)
-  --mapM_ (msp . uncurry (-)) (getEdges p)
-  msp $ hist $ map (uncurry (-)) $ V.toList (getEdges p)
+  mapM_ (msp . uncurry (-)) (getEdges p)
+  --msp $ hist $ map (uncurry (-)) $ V.toList (getEdges p)
 
   -- let n = 3
   --     v :: V 3 Int
