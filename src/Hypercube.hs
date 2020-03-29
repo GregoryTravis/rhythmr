@@ -3,10 +3,10 @@
 module Hypercube
 ( makeHypercube
 , hypercubeMain
-, projectHypercube ) where
+, projectPolytope ) where
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (product)
+import Data.List (product, splitAt)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Vector (Vector, fromList, (!))
@@ -16,15 +16,20 @@ import Linear.V
 
 import Util
 
-type Pt = V 3 Double
+type VN a = V 3 a
 numDims :: Int
 numDims = 3
+type Pt = VN Double
+type Mat = VN (VN Double)
 
 data Polytope = Polytope (Vector Pt) (Vector (Int, Int))
   deriving Show
 
 mapVerts :: (Pt -> Pt) -> Polytope -> Polytope
 mapVerts f (Polytope verts edges) = Polytope (V.map f verts) edges
+
+-- mapVertsV :: (Vector Double -> Vector Double) -> Polytope -> Polytope
+-- mapVertsV f = mapVerts (fromJust . fromVector . f . toVector)
 
 getEdges :: Polytope -> Vector (Pt, Pt)
 getEdges (Polytope verts edges) = V.map edge edges
@@ -65,7 +70,40 @@ adjacentVerts pt =
       flipCoord 1 = 0
    in map (fromJust . fromVector) flippedPtsV
 
-projectHypercube = undefined
+-- Project the edges of the polytope to 2D.
+-- Divide the first two coordinates by the product of the others
+projectPolytope :: Polytope -> [(V2 Double, V2 Double)]
+projectPolytope (Polytope verts edges) = map projEdge $ V.toList edges
+  where projEdge (a, b) = (projectedPts V.! a, projectedPts V.! b)
+        projectedPts = V.map projectPt verts
+
+projectPt :: Pt -> V2 Double
+projectPt pt =
+  let ptList = V.toList $ toVector pt
+      ([x, y], theRest) = splitAt 2 ptList
+      prod = product theRest
+   in V2 (x / prod) (y / prod)
+
+vecVecToMat :: Vector (Vector Double) -> Mat
+vecVecToMat vs = fromJust $ fromVector (V.map (fromJust . fromVector) vs :: Vector Pt) :: Mat
+
+listListToMat :: [[Double]] -> Mat
+listListToMat dses = vecVecToMat $ V.fromList (map V.fromList dses)
+
+-- Rotate in the plane specified by the pair of axis numbers
+mkRotation :: Double -> Int -> Int -> Mat
+mkRotation ang a b = listListToMat nses
+  where nses = [[val a' b' | a' <- [0..numDims-1]] | b' <- [0..numDims-1]]
+        val a' b' | a == a' && a == b' = c
+        val a' b' | b == a' && b == b' = c
+        val a' b' | b == a' && a == b' = (-s)
+        val a' b' | a == a' && b == b' = s
+        val a' b' | a' == b' = 1
+        val a' b' | otherwise = 0
+        c = cos ang
+        s = sin ang
+
+--V2 (Data.Vector.fromList [(1,2)]) (Data.Vector.fromList [(2,3)]) !*! Data.Vector.fromList [(1,V3 0 0 1), (2, V3 0 0 5)]
 
 -- All possible ways to pick one element from each sublist
 -- e.g. expy [[1, 2], [3, 4]] => [[1, 3], [1, 4], [2, 3], [2, 4]]
@@ -77,4 +115,30 @@ expy [] = [[]]
 hypercubeMain = do
   let p :: Polytope
       p = makeHypercube
+      turn :: Mat
+      turn = mkRotation (pi/4) 0 1
+      moveAway :: Pt
+      moveAway = fromJust $ fromVector $ V.fromList [0, 0, 5] :: V 3 Double
+      both :: Pt -> Pt
+      both pt = moveAway + (turn !* pt)
+      p' = mapVerts both p
+      proj = projectPolytope p'
+  msp $ turn !*! turn
+  msp $ [moveAway] !*! turn
   msp p
+  msp moveAway
+  msp proj
+
+  -- let n = 3
+  --     v :: V 3 Int
+  --     v = fromJust $ fromVector $ V.fromList (take n [2..])
+  --     m :: V 3 (V 3 Int)
+  --     m = fromJust $ fromVector $ V.fromList (take n (repeat v))
+  -- msp v
+  -- msp m
+  -- let id = identity :: M44 Int
+  -- msp id
+  -- msp $ id !*! id
+  -- msp $ m !*! m
+  -- msp $ [v] !*! m
+  -- msp $ m !* v
