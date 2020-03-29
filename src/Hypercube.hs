@@ -2,14 +2,18 @@
 
 module Hypercube
 ( Polytope
+, Pt
 , makeHypercube
 , hypercubeMain
 , projectPolytope
 , rotatePolytope
+, applyMatrix
+, rotateTowards
+, getVerts
 , showIt ) where
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (product, splitAt)
+import Data.List (product, sortBy, splitAt)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Vector (Vector, fromList, (!))
@@ -138,8 +142,36 @@ moveAway = fromJust $ fromVector $ V.fromList allButXY
 rotatePolytope :: Double -> Int -> Int -> Polytope -> Polytope
 rotatePolytope ang a b p = mapVerts (mkRotation ang a b !*) p
 
+applyMatrix :: Mat -> Polytope -> Polytope
+applyMatrix m p = mapVerts (m !*) p
+
 showIt :: Polytope -> Polytope
 showIt = mapVerts (moveAway +)
+
+-- Rotation bringing one vector towards another. Try a small rotation along
+-- each axis, and check whether or not the vector got closer or further away.
+-- Use the axis that got it the closest. By axis I really mean plane, defined
+-- by two axes.
+rotateTowards :: Double -> Pt -> Pt -> Mat
+rotateTowards ang src dest = use $ esp $ bestBy score somePlanes
+  where allPlanes :: [(Int, Int)]
+        allPlanes = allPairs [0..numDims-1]
+        somePlanes :: [(Int, Int)]
+        somePlanes = [(0, 1), (0, 2), (1, 2)]
+        smallRot :: (Int, Int) -> Mat
+        smallRot (a, b) = mkRotation (pi/16) a b
+        score :: (Int, Int) -> Double
+        score (a, b) = (m !* src) `dot` dest
+          where m = smallRot (a, b)
+        use (a, b) = mkRotation ang a b
+
+-- Get a score for each element and return the value with the highest score
+bestBy :: Ord s => (a -> s) -> [a] -> a
+bestBy scorer xs =
+  let pairs = zip xs (map scorer xs)
+      sorted = sortBy cmp pairs
+      cmp (x, score) (x', score') = compare score score'
+   in fst $ head (reverse sorted)
 
 hypercubeMain = do
   let p :: Polytope

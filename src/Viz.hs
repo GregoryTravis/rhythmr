@@ -13,6 +13,7 @@ module Viz
 
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
+import qualified Data.Vector as V
 import Data.Maybe (fromJust)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
@@ -206,10 +207,19 @@ renderViz t s (Viz pics) = do
   return $ Pictures $ [cursor] ++ anims ++ [hc]
 
 renderHypercube :: Float -> Picture
-renderHypercube t = renderPolytope (showIt (rotatePolytope (ang/4) 1 3 (rotatePolytope (ang/2) 0 2 (rotatePolytope ang 0 1 makeHypercube))))
-  where ang :: Double
+renderHypercube t = renderPolytope (showIt (transformHypercube t))
+
+transformHypercube :: Float -> Polytope
+transformHypercube t = applyMatrix m makeHypercube
+  where m = rotateTowards ang src dest
+        src = (getVerts makeHypercube) V.! 0
+        dest = (getVerts makeHypercube) V.! 1
         ang = realToFrac t * (pi/4)
-        --(t * realToFrac (pi/4))
+
+----transformHypercube t = rotatePolytope (ang/4) 1 3 (rotatePolytope (ang/2) 0 2 (rotatePolytope ang 0 1 makeHypercube))
+--transformHypercube t = rotatePolytope (ang/4) 5 6 makeHypercube
+--  where ang :: Double
+--        ang = realToFrac t * (pi/4)
 
 renderPolytope :: Polytope -> Picture
 renderPolytope p =

@@ -155,6 +155,7 @@ clump :: Int -> [a] -> [[a]]
 clump n [] = []
 clump n xs = (take n xs) : (clump n (drop n xs))
 
+-- Order-independent
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs
 allPairs [] = []
 
