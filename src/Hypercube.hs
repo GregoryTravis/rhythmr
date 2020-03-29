@@ -19,9 +19,9 @@ import Linear.V
 
 import Util
 
-type VN a = V 3 a
+type VN a = V 4 a
 numDims :: Int
-numDims = 3
+numDims = 4
 type Pt = VN Double
 type Mat = VN (VN Double)
 
@@ -33,6 +33,9 @@ mapVerts f (Polytope verts edges) = Polytope (V.map f verts) edges
 
 -- mapVertsV :: (Vector Double -> Vector Double) -> Polytope -> Polytope
 -- mapVertsV f = mapVerts (fromJust . fromVector . f . toVector)
+
+getVerts :: Polytope -> Vector Pt
+getVerts (Polytope verts _) = verts
 
 getEdges :: Polytope -> Vector (Pt, Pt)
 getEdges (Polytope verts edges) = V.map edge edges
@@ -109,8 +112,6 @@ mkRotation ang a b = listListToMat nses
         c = cos ang
         s = sin ang
 
---V2 (Data.Vector.fromList [(1,2)]) (Data.Vector.fromList [(2,3)]) !*! Data.Vector.fromList [(1,V3 0 0 1), (2, V3 0 0 5)]
-
 -- All possible ways to pick one element from each sublist
 -- e.g. expy [[1, 2], [3, 4]] => [[1, 3], [1, 4], [2, 3], [2, 4]]
 expy :: [[a]] -> [[a]]
@@ -119,7 +120,8 @@ expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- expy xss]
 expy [] = [[]]
 
 moveAway :: Pt
-moveAway = fromJust $ fromVector $ V.fromList [0, 0, 5] :: V 3 Double
+moveAway = fromJust $ fromVector $ justZ
+  where justZ = (V.fromList (take numDims (repeat 0))) `V.update` (V.fromList [(2, 5)])
 
 rotatePolytope :: Double -> Int -> Int -> Polytope -> Polytope
 rotatePolytope ang a b p = mapVerts (mkRotation ang a b !*) p
@@ -141,6 +143,9 @@ hypercubeMain = do
   msp p
   msp moveAway
   msp proj
+  --mapM_ msp (getVerts p)
+  --mapM_ (msp . uncurry (-)) (getEdges p)
+  msp $ hist $ map (uncurry (-)) $ V.toList (getEdges p)
 
   -- let n = 3
   --     v :: V 3 Int

@@ -34,11 +34,12 @@ module Util
 , maximumBy
 , rotate
 , rotateMod
+, hist
 ) where
 
 import Control.Exception
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (groupBy, maximumBy, minimumBy)
+import Data.List (group, groupBy, maximumBy, minimumBy, sort)
 import qualified Data.Map.Strict as M
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
@@ -191,3 +192,9 @@ rotate = drop <> take
 rotateMod :: Int -> [a] -> [a]
 rotateMod n xs = rotate n' xs
   where n' = n `mod` length xs
+
+hist :: (Ord a) => [a] -> [(Int, a)]
+hist xs = zip lens reps
+  where grouped = group $ sort xs
+        lens = map length grouped
+        reps = map head grouped
