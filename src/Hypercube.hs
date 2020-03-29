@@ -58,7 +58,10 @@ makeHypercube =
       vertToEdgeIndices (a, b) = (vertToIndex M.! a, vertToIndex M.! b)
       sortEdge (a, b) | a > b = (b, a)
       sortEdge p = p
-   in Polytope verts edges
+      centerIt :: Polytope -> Polytope
+      centerIt = mapVerts (trans+)
+        where trans = fromJust $ fromVector $ V.fromList (take numDims $ repeat (-0.5)) :: Pt
+   in centerIt $ Polytope verts edges
 
 -- Takes a pt with coordinates 0, 1 and return all adjacent pts
 adjacentVerts :: Pt -> [Pt]

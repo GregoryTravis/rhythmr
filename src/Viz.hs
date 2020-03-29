@@ -206,7 +206,7 @@ renderViz t s (Viz pics) = do
   return $ Pictures $ [cursor] ++ anims ++ [hc]
 
 renderHypercube :: Float -> Picture
-renderHypercube t = renderPolytope (showIt (rotatePolytope (esp ang) 0 1 makeHypercube))
+renderHypercube t = renderPolytope (showIt (rotatePolytope (ang/2) 1 2 (rotatePolytope ang 0 1 makeHypercube)))
   where ang :: Double
         ang = realToFrac t * (pi/4)
         --(t * realToFrac (pi/4))
@@ -224,8 +224,8 @@ renderPolytope p =
               orig = V2 (w/4) (-(h/4))
               V2 w h = fmap fromIntegral windowDim
               scale :: Double
-              scale = 150
-   in Color black $ Pictures $ esp $ map toLine proj
+              scale = 600
+   in Color black $ Pictures $ map toLine proj
 
 sequenceCursor :: State -> IO Picture
 sequenceCursor s@(State { looper }) = do
