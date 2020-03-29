@@ -4,7 +4,8 @@ module Gui
   ( guiMain
   , GuiCommand(..)
   , windowWidth
-  , windowHeight ) where
+  , windowHeight
+  , windowDim ) where
 
 import Control.Concurrent (forkIO, threadDelay, killThread)
 --import Control.Concurrent.MVar
@@ -27,6 +28,7 @@ import Util
 
 windowWidth = 800
 windowHeight = 800
+windowDim = V2 windowWidth windowHeight
 
 data GuiState s v = GuiState (History s) Float v
 

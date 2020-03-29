@@ -23,6 +23,7 @@ import System.Exit (exitSuccess)
 
 import Animate
 import Gui
+import Hypercube
 import Loop
 import Looper
 import Score
@@ -199,9 +200,32 @@ unR2 (V2 x y) = (x, y)
 renderViz :: Float -> State -> Viz -> IO Picture
 renderViz t s (Viz pics) = do
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
+      hc = renderHypercube t
   cursor <- sequenceCursor s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [cursor] ++ anims
+  return $ Pictures $ [cursor] ++ anims ++ [hc]
+
+renderHypercube :: Float -> Picture
+renderHypercube t = renderPolytope (showIt (rotatePolytope (esp ang) 0 1 makeHypercube))
+  where ang :: Double
+        ang = realToFrac t * (pi/4)
+        --(t * realToFrac (pi/4))
+
+renderPolytope :: Polytope -> Picture
+renderPolytope p =
+  let proj :: [(V2 Double, V2 Double)]
+      proj = projectPolytope p
+      toLine (a, b) = Line [toPoint (trans a), toPoint (trans b)]
+      toPoint :: V2 Double -> (Float, Float)
+      toPoint (V2 x y) = (realToFrac x, realToFrac y)
+      trans :: V2 Double -> V2 Double
+      trans v = orig + scale *^ v
+        where orig :: V2 Double
+              orig = V2 (w/4) (-(h/4))
+              V2 w h = fmap fromIntegral windowDim
+              scale :: Double
+              scale = 150
+   in Color black $ Pictures $ esp $ map toLine proj
 
 sequenceCursor :: State -> IO Picture
 sequenceCursor s@(State { looper }) = do

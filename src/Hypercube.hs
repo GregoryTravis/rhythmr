@@ -1,9 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 
 module Hypercube
-( makeHypercube
+( Polytope
+, makeHypercube
 , hypercubeMain
-, projectPolytope ) where
+, projectPolytope
+, rotatePolytope
+, showIt ) where
 
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (product, splitAt)
@@ -112,13 +115,20 @@ expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- expy xss]
 --expy (xs : xss) = [x' : xs' | x' <- xs, xs' <- xss] ++ expy xss
 expy [] = [[]]
 
+moveAway :: Pt
+moveAway = fromJust $ fromVector $ V.fromList [0, 0, 5] :: V 3 Double
+
+rotatePolytope :: Double -> Int -> Int -> Polytope -> Polytope
+rotatePolytope ang a b p = mapVerts (mkRotation ang a b !*) p
+
+showIt :: Polytope -> Polytope
+showIt = mapVerts (moveAway +)
+
 hypercubeMain = do
   let p :: Polytope
       p = makeHypercube
       turn :: Mat
       turn = mkRotation (pi/4) 0 1
-      moveAway :: Pt
-      moveAway = fromJust $ fromVector $ V.fromList [0, 0, 5] :: V 3 Double
       both :: Pt -> Pt
       both pt = moveAway + (turn !* pt)
       p' = mapVerts both p
