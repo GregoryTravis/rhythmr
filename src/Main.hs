@@ -16,9 +16,9 @@ import Mess
 import Sound
 import Util
 
-doStuffDefault = ["aff", "2345"]
+--doStuffDefault = ["aff", "2345"]
 --doStuffDefault = ["g"]
---doStuffDefault = ["hy"]
+doStuffDefault = ["hy"]
 doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["g"] = gfxMain
