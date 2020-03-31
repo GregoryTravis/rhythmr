@@ -225,7 +225,7 @@ transformHypercube s mat t = {-eesp debug $-} (applyMatrix mat' makeHypercube, m
         src = mat !* srcOrig
         dest = pointingAtCamera
         dt = 0.1
-        rot = rotateTowards dt src dest
+        rot = rotateTowards (pi/64) src dest
         mat' = mat !*! rot
         debug = ("TH", srcOrig, src, dest, src `dot` dest, tSrc, tSrc `dot` dest, pt)
           where tSrc :: Pt

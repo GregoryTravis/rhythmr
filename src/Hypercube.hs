@@ -18,7 +18,7 @@ module Hypercube
 , showIt ) where
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (product, sortBy, splitAt)
+import Data.List (product, sortBy, sortOn, splitAt)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Tuple (swap)
@@ -29,9 +29,9 @@ import Linear.V
 
 import Util
 
-type VN a = V 4 a
+type VN a = V 3 a
 numDims :: Int
-numDims = 4
+numDims = 3
 type Pt = VN Double
 type Mat = VN (VN Double)
 
@@ -172,48 +172,89 @@ applyMatrix m p = mapVerts (m !*) p
 showIt :: Polytope -> Polytope
 showIt = mapVerts (moveAway +)
 
+allPlanes :: [(Int, Int)]
+allPlanes = (allPairs [0..numDims-1])
+
 -- All axes (planes) that include at least one of the 3 visible ones
 planesSomeVisible :: [(Int, Int)]
 planesSomeVisible = planes ++ swapped
   where hasXYOrZ (a, b) = a <= 2 || b <= 2
-        planes = filter hasXYOrZ (allPairs [0..numDims-1])
+        planes = filter hasXYOrZ allPlanes
         swapped = map swap planes
 
 -- Rotation bringing one vector towards another. Try a small rotation along
--- each axis, and check whether or not the vector got closer or further away.
--- Use the axis that got it the closest. By axis I really mean plane, defined
--- by two axes.
+-- each 2-plane that includes at least one of the three visible axes, and
+-- measure how much closer src got to dest via that rotation. Score each
+-- rotation by how much closer src gets to dest (comparing dot products). If
+-- the score is negative, use its reverse. Then take the n best ones and blend
+-- them, which means to concatenate them in an arbitrary but consistent order,
+-- by the default ordering on the planes. Scale the rotations by 1/n of the
+-- supplied angle.
+--
+-- opt: this calculates all the rots, then picks the best and recalculates
+-- them, since some of them were reversed.
 rotateTowards :: Double -> Pt -> Pt -> Mat
 rotateTowards dt src dest | coincide src dest = identity
-rotateTowards dt src dest | otherwise = {-eesp debug $-} newRot
-  where allPlanes :: [(Int, Int)]
-        allPlanes = allPairs [0..numDims-1]
-        somePlanes :: [(Int, Int)]
-        --somePlanes = [(0, 1), (0, 2), (1, 2)]
-        somePlanes = planesSomeVisible
-        smallRot :: (Int, Int) -> Mat
-        smallRot (a, b) = mkRotation ang a b
-        planesAndScores :: [((Int, Int), Double)]
-        --planesAndScores = map absFlip $ map (\x -> (x, score x)) somePlanes
-        planesAndScores = map (\x -> (x, score x)) somePlanes
-        best :: (Int, Int)
-        best = fst $ bestBy snd planesAndScores
-        absFlip :: ((Int, Int), Double) -> ((Int, Int), Double)
-        absFlip ((a, b), n) | n < 0 = ((b, a), (-n))
-        absFlip x | otherwise = x
-        score :: (Int, Int) -> Double
-        score (a, b) = {-eeesp (a, b) $-} (m !* src) `dot` dest
-          where m = smallRot (a, b)
-        use (a, b) = mkRotation ang a b
-        ang = (pi/denom) * dt
-        newRot = use best
-        debug = ("RT", best, sd < sd', sd, sd', src, dest, src, newRot)
-          where src' = newRot !* src
-                sd = src `dot` dest
-                sd' = src' `dot` dest
-        -- debug = ("RT", src `dot` dest, src' `dot` dest, src, dest, src')
-        --   where src' = (use best) !* src
-        denom = 16
+rotateTowards ang src dest = eeesp debug concatenated
+  where concatenated :: Mat
+        concatenated = foldr (!*!) identity bestN
+        bestCount :: Int
+        bestCount = 3
+        angFrac :: Double
+        angFrac = ang / fromIntegral bestCount
+        bestN :: [Mat]
+        bestN = map (uncurry $ mkRotation angFrac) $ map snd $ take bestCount scored
+        planes :: [(Int, Int)]
+        planes = allPlanes
+        rots :: [Mat]
+        rots = map (uncurry $ mkRotation smallAng) planes
+        scores :: [Double]
+        scores = map score rots
+        score :: Mat -> Double
+        score m = (signorm (m !* src)) `dot` (signorm dest)
+        scored :: [(Double, (Int, Int))]
+        scored = reverse $ sortOn fst $ map flipBad (zip scores planes)
+        --scored = sortOn fst $ map flipBad $ score planes
+        flipBad (s, (a, b)) | s < 0 = (-s, (b, a))
+        flipBad p | otherwise = p
+        smallAng = pi / 16
+        debug = ("D", ang, src, dest, scored)
+
+-- -- Rotation bringing one vector towards another. Try a small rotation along
+-- -- each axis, and check whether or not the vector got closer or further away.
+-- -- Use the axis that got it the closest. By axis I really mean plane, defined
+-- -- by two axes.
+-- rotateTowards :: Double -> Pt -> Pt -> Mat
+--rotateTowards dt src dest | coincide src dest = identity
+--rotateTowards dt src dest | otherwise = {-eesp debug $-} newRot
+--  where allPlanes :: [(Int, Int)]
+--        allPlanes = allPairs [0..numDims-1]
+--        somePlanes :: [(Int, Int)]
+--        --somePlanes = [(0, 1), (0, 2), (1, 2)]
+--        somePlanes = planesSomeVisible
+--        smallRot :: (Int, Int) -> Mat
+--        smallRot (a, b) = mkRotation ang a b
+--        planesAndScores :: [((Int, Int), Double)]
+--        --planesAndScores = map absFlip $ map (\x -> (x, score x)) somePlanes
+--        planesAndScores = map (\x -> (x, score x)) somePlanes
+--        best :: (Int, Int)
+--        best = fst $ bestBy snd planesAndScores
+--        absFlip :: ((Int, Int), Double) -> ((Int, Int), Double)
+--        absFlip ((a, b), n) | n < 0 = ((b, a), (-n))
+--        absFlip x | otherwise = x
+--        score :: (Int, Int) -> Double
+--        score (a, b) = {-eeesp (a, b) $-} (m !* src) `dot` dest
+--          where m = smallRot (a, b)
+--        use (a, b) = mkRotation ang a b
+--        ang = (pi/denom) * dt
+--        newRot = use best
+--        debug = ("RT", best, sd < sd', sd, sd', src, dest, src, newRot)
+--          where src' = newRot !* src
+--                sd = src `dot` dest
+--                sd' = src' `dot` dest
+--        -- debug = ("RT", src `dot` dest, src' `dot` dest, src, dest, src')
+--        --   where src' = (use best) !* src
+--        denom = 16
 
 -- True if the points are close enough together
 coincide :: Pt -> Pt -> Bool
