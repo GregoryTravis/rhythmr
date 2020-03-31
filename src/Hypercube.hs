@@ -18,7 +18,7 @@ module Hypercube
 , showIt ) where
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (product, sortBy, sortOn, splitAt)
+import Data.List (product, sort, sortBy, sortOn, splitAt)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Tuple (swap)
@@ -201,11 +201,11 @@ rotateTowards ang src dest = eesp debug concatenated
         origDot :: Double
         origDot = (signorm src) `dot` (signorm dest)
         bestCount :: Int
-        bestCount = 3
+        bestCount = 2
         angFrac :: Double
         angFrac = ang / fromIntegral bestCount
         bestN :: [Mat]
-        bestN = map (uncurry $ mkRotation angFrac) $ map snd $ take bestCount scored
+        bestN = map (uncurry $ mkRotation angFrac) $ sort $ map snd $ take bestCount scored
         planes :: [(Int, Int)]
         planes = allPlanes ++ map swap allPlanes
         rots :: [Mat]
