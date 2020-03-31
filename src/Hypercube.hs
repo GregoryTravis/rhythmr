@@ -201,13 +201,13 @@ rotateTowards ang src dest = eesp debug concatenated
         origDot :: Double
         origDot = (signorm src) `dot` (signorm dest)
         bestCount :: Int
-        bestCount = 2
+        bestCount = 3
         angFrac :: Double
         angFrac = ang / fromIntegral bestCount
         bestN :: [Mat]
         bestN = map (uncurry $ mkRotation angFrac) $ map snd $ take bestCount scored
         planes :: [(Int, Int)]
-        planes = allPlanes
+        planes = allPlanes ++ map swap allPlanes
         rots :: [Mat]
         rots = map (uncurry $ mkRotation smallAng) planes
         scores :: [Double]
@@ -216,10 +216,12 @@ rotateTowards ang src dest = eesp debug concatenated
         score m = thisDot - origDot
           where thisDot = (signorm (m !* src)) `dot` (signorm dest)
         scored :: [(Double, (Int, Int))]
-        scored = reverse $ sortOn fst $ map flipBad (zip scores planes)
+        scored = filter positive $ reverse $ sortOn fst (zip scores planes)
+        positive :: (Double, (Int, Int)) -> Bool
+        positive = (>0) . fst
         --scored = sortOn fst $ map flipBad $ score planes
-        flipBad (s, (a, b)) | s < 0 = (-s, (b, a))
-        flipBad p | otherwise = p
+        -- flipBad (s, (a, b)) | s < 0 = (-s, (b, a))
+        -- flipBad p | otherwise = p
         smallAng = pi / 16
         debug = ("D", ang, src, dest, scored)
 
