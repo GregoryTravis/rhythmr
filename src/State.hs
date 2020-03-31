@@ -14,10 +14,12 @@ module State
   ) where
 
 import Control.Monad (replicateM)
+import Data.IORef
 import qualified Data.Set as S
 import Graph
 import System.Random
 
+import Hypercube
 import Loop
 import Looper
 import Score
@@ -36,7 +38,8 @@ data State =
         , editorLog :: [String]
         , stack :: [[Loop]]
         , currentSong :: Maybe (Score, [[Loop]])
-        , affinityCycle :: Int }
+        , affinityCycle :: Int
+        , currentHypercubeMat :: IORef Mat }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where

@@ -7,12 +7,14 @@ module Affinity
 
 import Control.Concurrent
 import Control.Monad (replicateM)
+import Data.IORef
 import Data.List (intercalate, transpose, sortOn, elemIndex, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Graphics.Gloss
 import Linear
+import Linear.Matrix (identity)
 import System.Console.ANSI (clearScreen, setCursorPosition)
 import System.Directory (listDirectory)
 
@@ -23,6 +25,7 @@ import Constants
 import Dice
 import FX
 import Gui
+import Hypercube
 import Loop
 import Looper
 import Memoize (memoizeIO)
@@ -50,8 +53,11 @@ emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.em
 
 makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
 makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
+  let mat = identity :: Mat
+  matRef <- newIORef mat
   return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [],
-                   stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing, affinityCycle = 0 }
+                   stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing, affinityCycle = 0,
+                   currentHypercubeMat = matRef }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -81,9 +87,11 @@ loadLoops = do
 
 initState :: (String -> IO Sound) -> Looper -> IO State
 initState soundLoader looper = do
+  let mat = identity :: Mat
+  matRef <- newIORef mat
   newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [],
-                    currentSong = Nothing, affinityCycle = 0 }
+                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)

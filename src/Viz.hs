@@ -11,6 +11,7 @@ module Viz
   , renderViz
   ) where
 
+import Data.IORef
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
@@ -20,6 +21,7 @@ import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Picture
 --import Graphics.Gloss.Interface.IO.Game
 import Linear
+import Linear.V (fromVector)
 import System.Exit (exitSuccess)
 
 import Animate
@@ -198,28 +200,64 @@ updateViz t (Viz oldPics) newPics =
 
 unR2 (V2 x y) = (x, y)
 
+-- TODO: This matrix ioref in the state is a crime against nature
 renderViz :: Float -> State -> Viz -> IO Picture
 renderViz t s (Viz pics) = do
+  mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
-      hc = renderHypercube t
+      (hc, mat') = renderHypercube s mat t
+  writeIORef (currentHypercubeMat s) mat'
   cursor <- sequenceCursor s
   --msp ("renderViz", cursor)
   return $ Pictures $ [cursor] ++ anims ++ [hc]
 
-renderHypercube :: Float -> Picture
-renderHypercube t = renderPolytope (showIt (transformHypercube t))
+renderHypercube :: State -> Mat -> Float -> (Picture, Mat)
+renderHypercube s mat t =
+  let (hyp, mat') = transformHypercube s mat t
+      picture = renderPolytope (showIt hyp)
+   in (picture, mat')
 
-transformHypercube :: Float -> Polytope
-transformHypercube t = applyMatrix m makeHypercube
-  where m = rotateTowards ang src dest
-        src = (getVerts makeHypercube) V.! 0
-        dest = (getVerts makeHypercube) V.! 1
-        ang = realToFrac t * (pi/4)
+-- Transform the current vertex of interest, from its current location, to the
+-- camera-facing point (0, 0, -1, whatever...). Return the updated current matrix.
+transformHypercube :: State -> Mat -> Float -> (Polytope, Mat)
+transformHypercube s mat t = {-eesp debug $-} (applyMatrix mat' makeHypercube, mat')
+  where srcOrig = {-eeesp "voi" $-} vertexOfInterest s
+        src = mat !* srcOrig
+        dest = pointingAtCamera
+        dt = 0.1
+        rot = rotateTowards dt src dest
+        mat' = mat !*! rot
+        debug = ("TH", srcOrig, src, dest, src `dot` dest, tSrc, tSrc `dot` dest, pt)
+          where tSrc :: Pt
+                tSrc = mat' !* srcOrig
+                pt :: V2 Double
+                pt = projectPt (moveAway + tSrc)
+
+vertexOfInterest :: State -> Pt
+-- hack!
+vertexOfInterest (State { currentGroup }) | currentGroup == [] = pointingAtCamera
+vertexOfInterest (State { currentGroup }) | otherwise =
+  let s = take numDims (getHash (head currentGroup))
+      coords = map (\x -> if x <= '7' then (-0.5) else 0.5) s
+   in fromJust $ fromVector (V.fromList coords) :: Pt
+
+--   where m = rotateTowards ang src dest
+--         src = (getVerts makeHypercube) V.! 0
+--         dest = (getVerts makeHypercube) V.! 1
+--         ang = realToFrac t * (pi/4)
 
 ----transformHypercube t = rotatePolytope (ang/4) 1 3 (rotatePolytope (ang/2) 0 2 (rotatePolytope ang 0 1 makeHypercube))
 --transformHypercube t = rotatePolytope (ang/4) 5 6 makeHypercube
 --  where ang :: Double
 --        ang = realToFrac t * (pi/4)
+
+scaleByDim :: M.Map Int Double
+scaleByDim = M.fromList [(3, 1000), (4, 6000), (8, 2500000)]
+
+square :: [V2 Double]
+square = [V2 o o, V2 no o, V2 no no, V2 o no]
+  where o = 1
+        no = (-1)
 
 renderPolytope :: Polytope -> Picture
 renderPolytope p =
@@ -234,8 +272,16 @@ renderPolytope p =
               orig = V2 (w/4) (-(h/4))
               V2 w h = fmap fromIntegral windowDim
               scale :: Double
-              scale = 2000
-   in Color black $ Pictures $ map toLine proj
+              --scale = 2500000 -- 8d
+              --scale = 1000 -- 3d
+              scale = scaleByDim M.! numDims
+      centerBox = Translate (w/4) (-(h/4)) $ rectangleWire 10 10
+        where V2 w h = fmap fromIntegral windowDim
+      -- centerBox = map Line edges
+      --   where edges = toArr $ zip tsq (take 4 (drop 1 (cycle tsq)))
+      --         toArr (a, b) = [a, b]
+      --         tsq = map trans $ (map (^* 10)) square
+   in Color black $ Pictures $ map toLine proj ++ [centerBox]
 
 sequenceCursor :: State -> IO Picture
 sequenceCursor s@(State { looper }) = do

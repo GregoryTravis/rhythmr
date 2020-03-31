@@ -3,6 +3,7 @@
 module Hypercube
 ( Polytope
 , Pt
+, Mat
 , makeHypercube
 , hypercubeMain
 , projectPolytope
@@ -10,12 +11,17 @@ module Hypercube
 , applyMatrix
 , rotateTowards
 , getVerts
+, pointingAtCamera
+, numDims
+, moveAway
+, projectPt
 , showIt ) where
 
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (product, sortBy, splitAt)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Tuple (swap)
 import Data.Vector (Vector, fromList, (!))
 import qualified Data.Vector as V
 import Linear
@@ -23,9 +29,9 @@ import Linear.V
 
 import Util
 
-type VN a = V 8 a
+type VN a = V 4 a
 numDims :: Int
-numDims = 8
+numDims = 4
 type Pt = VN Double
 type Mat = VN (VN Double)
 
@@ -44,6 +50,8 @@ getVerts (Polytope verts _) = verts
 getEdges :: Polytope -> Vector (Pt, Pt)
 getEdges (Polytope verts edges) = V.map edge edges
   where edge (a, b) = (verts V.! a, verts V.!b)
+
+pointingAtCamera = fromJust $ fromVector (V.fromList ([0, 0, -0.5] ++ take (numDims-3) (repeat 0))) :: Pt
 
 makeHypercube :: Polytope
 makeHypercube =
@@ -83,6 +91,21 @@ adjacentVerts pt =
       flipCoord 1 = 0
    in map (fromJust . fromVector) flippedPtsV
 
+envelope2 :: (Double -> Double -> Bool) -> Pt -> Pt -> Pt
+envelope2 cmp a b =
+  let al = V.toList (toVector a)
+      bl = V.toList (toVector b)
+      maxes = zipWith (\a b -> if a `cmp` b then a else b) al bl
+   in fromJust $ fromVector (V.fromList maxes) :: Pt
+
+envelope :: (Double -> Double -> Bool) -> [Pt] -> Pt
+envelope cmp = foldr1 (envelope2 cmp)
+
+boundingBox :: Polytope -> (Pt, Pt)
+boundingBox p =
+  let verts = getVerts p
+   in (envelope (<) (V.toList verts), envelope (>) (V.toList verts))
+
 -- Project the edges of the polytope to 2D.
 -- Divide the first two coordinates by the product of the others
 projectPolytope :: Polytope -> [(V2 Double, V2 Double)]
@@ -101,6 +124,7 @@ projectPt pt | inFront pt =
       ([x, y], theRest) = splitAt 2 ptList
       prod = product theRest
    in V2 (x / prod) (y / prod)
+projectPt pt | otherwise = eesp ("not in front", pt) undefined
 
 vecVecToMat :: Vector (Vector Double) -> Mat
 vecVecToMat vs = fromJust $ fromVector (V.map (fromJust . fromVector) vs :: Vector Pt) :: Mat
@@ -131,9 +155,9 @@ expy [] = [[]]
 -- The formula for far isn't right; it should produce approx the same size
 -- projection at any dimension, but it doesn't.
 moveAway :: Pt
-moveAway = fromJust $ fromVector $ V.fromList allButXY
+moveAway = eeesp "moveAway" $ fromJust $ fromVector $ V.fromList allButXY
   where allButXY = [0, 0] ++ (take (numDims - 2) (repeat far))
-        far = 50 ** (1 / fromIntegral (numDims - 2))
+        far = 5 -- 100 ** (1 / fromIntegral (numDims - 2))
 -- Wrong! I was only pushing along Z, but I should have been pushing along *all but x and y*
 -- where justZ = esp $ (V.fromList (take numDims (repeat 0))) `V.update` (V.fromList [(2, 20)])
 
@@ -148,22 +172,52 @@ applyMatrix m p = mapVerts (m !*) p
 showIt :: Polytope -> Polytope
 showIt = mapVerts (moveAway +)
 
+-- All axes (planes) that include at least one of the 3 visible ones
+planesSomeVisible :: [(Int, Int)]
+planesSomeVisible = planes ++ swapped
+  where hasXYOrZ (a, b) = a <= 2 || b <= 2
+        planes = filter hasXYOrZ (allPairs [0..numDims-1])
+        swapped = map swap planes
+
 -- Rotation bringing one vector towards another. Try a small rotation along
 -- each axis, and check whether or not the vector got closer or further away.
 -- Use the axis that got it the closest. By axis I really mean plane, defined
 -- by two axes.
 rotateTowards :: Double -> Pt -> Pt -> Mat
-rotateTowards ang src dest = use $ esp $ bestBy score somePlanes
+rotateTowards dt src dest | coincide src dest = identity
+rotateTowards dt src dest | otherwise = {-eesp debug $-} newRot
   where allPlanes :: [(Int, Int)]
         allPlanes = allPairs [0..numDims-1]
         somePlanes :: [(Int, Int)]
-        somePlanes = [(0, 1), (0, 2), (1, 2)]
+        --somePlanes = [(0, 1), (0, 2), (1, 2)]
+        somePlanes = planesSomeVisible
         smallRot :: (Int, Int) -> Mat
-        smallRot (a, b) = mkRotation (pi/16) a b
+        smallRot (a, b) = mkRotation ang a b
+        planesAndScores :: [((Int, Int), Double)]
+        --planesAndScores = map absFlip $ map (\x -> (x, score x)) somePlanes
+        planesAndScores = map (\x -> (x, score x)) somePlanes
+        best :: (Int, Int)
+        best = fst $ bestBy snd planesAndScores
+        absFlip :: ((Int, Int), Double) -> ((Int, Int), Double)
+        absFlip ((a, b), n) | n < 0 = ((b, a), (-n))
+        absFlip x | otherwise = x
         score :: (Int, Int) -> Double
-        score (a, b) = (m !* src) `dot` dest
+        score (a, b) = {-eeesp (a, b) $-} (m !* src) `dot` dest
           where m = smallRot (a, b)
         use (a, b) = mkRotation ang a b
+        ang = (pi/denom) * dt
+        newRot = use best
+        debug = ("RT", best, sd < sd', sd, sd', src, dest, src, newRot)
+          where src' = newRot !* src
+                sd = src `dot` dest
+                sd' = src' `dot` dest
+        -- debug = ("RT", src `dot` dest, src' `dot` dest, src, dest, src')
+        --   where src' = (use best) !* src
+        denom = 16
+
+-- True if the points are close enough together
+coincide :: Pt -> Pt -> Bool
+coincide a b = (signorm a) `dot` (signorm b) > 0.99
 
 -- Get a score for each element and return the value with the highest score
 bestBy :: Ord s => (a -> s) -> [a] -> a
