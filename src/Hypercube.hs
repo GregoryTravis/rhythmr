@@ -195,11 +195,13 @@ planesSomeVisible = planes ++ swapped
 -- them, since some of them were reversed.
 rotateTowards :: Double -> Pt -> Pt -> Mat
 rotateTowards dt src dest | coincide src dest = identity
-rotateTowards ang src dest = eeesp debug concatenated
+rotateTowards ang src dest = eesp debug concatenated
   where concatenated :: Mat
         concatenated = foldr (!*!) identity bestN
+        origDot :: Double
+        origDot = (signorm src) `dot` (signorm dest)
         bestCount :: Int
-        bestCount = 3
+        bestCount = 2
         angFrac :: Double
         angFrac = ang / fromIntegral bestCount
         bestN :: [Mat]
@@ -211,7 +213,8 @@ rotateTowards ang src dest = eeesp debug concatenated
         scores :: [Double]
         scores = map score rots
         score :: Mat -> Double
-        score m = (signorm (m !* src)) `dot` (signorm dest)
+        score m = thisDot - origDot
+          where thisDot = (signorm (m !* src)) `dot` (signorm dest)
         scored :: [(Double, (Int, Int))]
         scored = reverse $ sortOn fst $ map flipBad (zip scores planes)
         --scored = sortOn fst $ map flipBad $ score planes
