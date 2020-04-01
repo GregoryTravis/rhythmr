@@ -4,6 +4,7 @@ module Hypercube
 ( Polytope
 , Pt
 , Mat
+, DepthPt(..)
 , makeHypercube
 , hypercubeMain
 , projectPolytope
@@ -30,13 +31,17 @@ import Linear.Matrix
 
 import Util
 
-type VN a = V 3 a
+type VN a = V 4 a
 numDims :: Int
-numDims = 3
+numDims = 4
 type Pt = VN Double
 type Mat = VN (VN Double)
 
 data Polytope = Polytope (Vector Pt) (Vector (Int, Int))
+  deriving Show
+
+-- depth is 0..1, with 0 being closest
+data DepthPt = DepthPt (V2 Double) Double
   deriving Show
 
 mapVerts :: (Pt -> Pt) -> Polytope -> Polytope
@@ -109,11 +114,27 @@ boundingBox p =
 
 -- Project the edges of the polytope to 2D.
 -- Divide the first two coordinates by the product of the others
-projectPolytope :: Polytope -> [(V2 Double, V2 Double)]
+projectPolytope :: Polytope -> [(DepthPt, DepthPt)]
 projectPolytope p@(Polytope verts edges) = map projEdge $ V.toList edges
-  where projEdge (a, b) = (projectedPts V.! a, projectedPts V.! b)
+  where projEdge (a, b) = (blah a, blah b)
+        blah :: Int -> DepthPt
+        blah i = DepthPt (projectedPts V.! i) (depths V.! i)
         projectedPts = V.map projectPt verts
-        --yah = ("edges", getEdges p)
+        depths = vertDepths p
+        debug = (minimum depths, maximum depths)
+
+vertDepths :: Polytope -> V.Vector Double
+vertDepths p@(Polytope verts edges) =
+  let (lo, hi) = boundingBox p
+      loZ :: Double
+      loZ = head (drop 2 (V.toList $ toVector lo))
+      hiZ :: Double
+      hiZ = head (drop 2 (V.toList $ toVector hi))
+      trans x = (x - loZ) / (hiZ - loZ)
+      dep :: Pt -> Double
+      dep pt = trans $ head (drop 2 (V.toList $ toVector  pt))
+        where debug = ("D", pt, loZ, hiZ)
+   in V.map dep verts
 
 inFront :: Pt -> Bool
 inFront pt = z >= 1.0
@@ -183,9 +204,6 @@ planesSomeVisible = planes ++ swapped
         planes = filter hasXYOrZ allPlanes
         swapped = map swap planes
 
-toVe :: [a] -> V 2 a
-toVe = fromJust . fromVector . V.fromList
-
 -- -- Started working on doing a correct rotation, then noped out
 -- -- row-major: list of rows
 -- bleh =
@@ -196,6 +214,10 @@ toVe = fromJust . fromVector . V.fromList
 --       eReverse = transpose e -- columns are basis
 --       pAgain = eReverse !* p'
 --    in (p, p', norm p, norm p', pAgain, norm pAgain, p - pAgain, norm $ p - pAgain, eReverse) --, pAgain)
+--
+-- -- I forget why I wrote this
+-- toVe :: [a] -> V 2 a
+-- toVe = fromJust . fromVector . V.fromList
 
 -- Rotation bringing one vector towards another. Try a small rotation along
 -- each 2-plane that includes at least one of the three visible axes, and
@@ -210,7 +232,7 @@ toVe = fromJust . fromVector . V.fromList
 -- them, since some of them were reversed.
 rotateTowards :: Double -> Pt -> Pt -> Mat
 rotateTowards dt src dest | coincide src dest = identity
-rotateTowards ang src dest = eesp debug concatenated
+rotateTowards ang src dest = concatenated
   where concatenated :: Mat
         concatenated = foldr (!*!) identity bestN
         origDot :: Double

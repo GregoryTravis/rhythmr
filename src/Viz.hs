@@ -95,6 +95,12 @@ interp :: Float -> Float -> Float -> Float -> Float -> Float
 interp t s e a a' = a + (k * (a' - a))
   where k = clip 0.0 1.0 ((t - s) / (e - s))
 
+-- I know I know
+interpD :: Double -> Double -> Double -> Double -> Double -> Double
+--interp t s e a a' = eesp (t, s, e, a, a') $ a + (k * (a' - a))
+interpD t s e a a' = a + (k * (a' - a))
+  where k = clip 0.0 1.0 ((t - s) / (e - s))
+
 clip :: (Ord a, Num a) => a -> a -> a -> a
 clip lo hi x | x < lo = lo
 clip lo hi x | x > hi = hi
@@ -252,7 +258,7 @@ vertexOfInterest (State { currentGroup }) | otherwise =
 --        ang = realToFrac t * (pi/4)
 
 scaleByDim :: M.Map Int Double
-scaleByDim = M.fromList [(3, 1000), (4, 6000), (8, 2500000)]
+scaleByDim = M.fromList [(3, 1000), (4, 4000), (8, 2500000)]
 
 square :: [V2 Double]
 square = [V2 o o, V2 no o, V2 no no, V2 o no]
@@ -261,11 +267,14 @@ square = [V2 o o, V2 no o, V2 no no, V2 o no]
 
 renderPolytope :: Polytope -> Picture
 renderPolytope p =
-  let proj :: [(V2 Double, V2 Double)]
+  let proj :: [(DepthPt, DepthPt)]
       proj = projectPolytope p
-      toLine (a, b) = Line [toPoint (trans a), toPoint (trans b)]
+      --toLine (DepthPt a ad, DepthPt b bd) = Color (toColor ((ad+bd)/2)) $ Line [toPoint (trans a), toPoint (trans b)]
+      toLine (DepthPt a ad, DepthPt b bd) = fadeLine 4 (trans a) (trans b) ad bd nearColor farColor
       toPoint :: V2 Double -> (Float, Float)
       toPoint (V2 x y) = (realToFrac x, realToFrac y)
+      toColor :: Double -> Color
+      toColor d = mixColors (realToFrac (1 - d)) (realToFrac d) nearColor farColor
       trans :: V2 Double -> V2 Double
       trans v = orig + scale *^ v
         where orig :: V2 Double
@@ -277,11 +286,35 @@ renderPolytope p =
               scale = scaleByDim M.! numDims
       centerBox = Translate (w/4) (-(h/4)) $ rectangleWire 10 10
         where V2 w h = fmap fromIntegral windowDim
+      nearColor = makeColor 0 0 0 1
+      farColor = makeColor 0 0 0 0
       -- centerBox = map Line edges
       --   where edges = toArr $ zip tsq (take 4 (drop 1 (cycle tsq)))
       --         toArr (a, b) = [a, b]
       --         tsq = map trans $ (map (^* 10)) square
-   in Color black $ Pictures $ map toLine proj ++ [centerBox]
+   in Pictures $ map toLine proj ++ [centerBox]
+
+fadeLine :: Int -> V2 Double -> V2 Double -> Double -> Double -> Color -> Color -> Picture
+fadeLine n a b t0 t1 c0 c1 = Pictures $ map jerk fuck -- zipWith (uncurry cl) colors pairs
+  where ts :: [Double]
+        ts = map (/fromIntegral n) (map fromIntegral [0..n])
+        tts :: [Double]
+        tts = map (\t -> interpD t 0 1 t0 t1) ts
+        pts :: [V2 Double]
+        pts = map (\t -> lerp t a b) ts
+        pairs :: [(V2 Double, V2 Double)]
+        pairs = zip pts (tail (cycle pts))
+        cl :: Color -> (V2 Double, V2 Double) -> Picture
+        cl color (V2 x y, V2 x' y') = Color color $ Line [(realToFrac x, realToFrac y), (realToFrac x', realToFrac y')]
+        fuck :: [(Color, (V2 Double, V2 Double))]
+        fuck = zip colors pairs
+        jerk :: (Color, (V2 Double, V2 Double)) -> Picture
+        jerk = uncurry cl
+        colors :: [Color]
+        colors = map toColor tts
+        toColor :: Double -> Color
+        toColor t = mixColors (realToFrac (1 - t)) (realToFrac t) c0 c1
+        debug = (n, t0, t1, ts, tts)
 
 sequenceCursor :: State -> IO Picture
 sequenceCursor s@(State { looper }) = do
