@@ -26,6 +26,7 @@ import Data.Vector (Vector, fromList, (!))
 import qualified Data.Vector as V
 import Linear
 import Linear.V
+import Linear.Matrix
 
 import Util
 
@@ -181,6 +182,20 @@ planesSomeVisible = planes ++ swapped
   where hasXYOrZ (a, b) = a <= 2 || b <= 2
         planes = filter hasXYOrZ allPlanes
         swapped = map swap planes
+
+toVe :: [a] -> V 2 a
+toVe = fromJust . fromVector . V.fromList
+
+-- -- Started working on doing a correct rotation, then noped out
+-- -- row-major: list of rows
+-- bleh =
+--   let eNotNorm = toVe (map toVe [[2, 1], [-1, 2]]) -- rows are basis
+--       e = fmap signorm eNotNorm
+--       p = toVe [2, 3]
+--       p' = e !* p
+--       eReverse = transpose e -- columns are basis
+--       pAgain = eReverse !* p'
+--    in (p, p', norm p, norm p', pAgain, norm pAgain, p - pAgain, norm $ p - pAgain, eReverse) --, pAgain)
 
 -- Rotation bringing one vector towards another. Try a small rotation along
 -- each 2-plane that includes at least one of the three visible axes, and
