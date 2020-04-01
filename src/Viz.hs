@@ -295,7 +295,7 @@ renderPolytope p =
    in Pictures $ map toLine proj ++ [centerBox]
 
 fadeLine :: Int -> V2 Double -> V2 Double -> Double -> Double -> Color -> Color -> Picture
-fadeLine n a b t0 t1 c0 c1 = Pictures $ map jerk fuck -- zipWith (uncurry cl) colors pairs
+fadeLine n a b t0 t1 c0 c1 = Pictures $ zipWith cl colors pairs
   where ts :: [Double]
         ts = map (/fromIntegral n) (map fromIntegral [0..n])
         tts :: [Double]
@@ -306,10 +306,6 @@ fadeLine n a b t0 t1 c0 c1 = Pictures $ map jerk fuck -- zipWith (uncurry cl) co
         pairs = zip pts (tail (cycle pts))
         cl :: Color -> (V2 Double, V2 Double) -> Picture
         cl color (V2 x y, V2 x' y') = Color color $ Line [(realToFrac x, realToFrac y), (realToFrac x', realToFrac y')]
-        fuck :: [(Color, (V2 Double, V2 Double))]
-        fuck = zip colors pairs
-        jerk :: (Color, (V2 Double, V2 Double)) -> Picture
-        jerk = uncurry cl
         colors :: [Color]
         colors = map toColor tts
         toColor :: Double -> Color
