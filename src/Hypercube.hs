@@ -33,7 +33,7 @@ import Util
 
 type VN a = V 4 a
 numDims :: Int
-numDims = 4
+numDims = dim (0 :: VN Double)
 type Pt = VN Double
 type Mat = VN (VN Double)
 
