@@ -42,6 +42,9 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
   let initWorld = GuiState (start s) 0 (stateToViz s initViz s 0)
       worldToPicture (GuiState h t v) = renderViz t (cur h) v
       eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
+      -- This is extremely goofy of me
+      eventHandler (EventKey (SpecialKey KeyLeft) Down x y) gs = eventHandler (EventKey (Char '\STX') Down x y) gs
+      eventHandler (EventKey (SpecialKey KeyRight) Down x y) gs = eventHandler (EventKey (Char '\ETX') Down x y) gs
       eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
         command <- keyboardHandler (cur h) c
         --msp command
@@ -50,7 +53,9 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
            then return gs
            else do respondToStateChange (cur h) (cur h')
                    return $ GuiState h' t (stateToViz (cur h) v (cur h') t)
-      eventHandler e gs = return gs
+      eventHandler e gs = do
+        msp $ "?? " ++ (show e)
+        return gs
       stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)

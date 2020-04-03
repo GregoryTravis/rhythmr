@@ -99,7 +99,7 @@ setState s = return $ NewState s
 retCommand c = return c
 
 -- TODO maybe function type aliases are not good
-keyboardHandler :: (State -> Char -> IO (GuiCommand State))
+keyboardHandler :: State -> Char -> IO (GuiCommand State)
 --keyboardHandler :: KeyboardHandler State
 keyboardHandler s 'r' = do
   group <- randomGroup s
@@ -109,8 +109,11 @@ keyboardHandler s 'r' = do
   setState s'
 keyboardHandler s 'E' = do s' <- newPool s
                            setState s'
-keyboardHandler s 'y' = setState $ like s
-keyboardHandler s 'n' = setState $ dislike s
+keyboardHandler s '\ETX' = setState $ like s
+keyboardHandler s '\STX' = setState $ dislike s
+keyboardHandler s 'i' = setState $ like s
+keyboardHandler s 'b' = setState $ dislike s
+-- Hear the top affinity group
 keyboardHandler s 'A' = do
   case affinities s of [] -> setState s
                        (g:gs) -> do
@@ -124,19 +127,21 @@ keyboardHandler s 'p' = do
   --msp ("eh", currentGroup s, stack s)
   --msp ("eh", currentGroup s', stack s')
   setState s'
-keyboardHandler s ' ' = do
-  s' <- if stack s == []
-             then return $ edlog s "Stack empty, yo"
-             else return $ nextFromStack s
-  --let s' = nextFromStack s
-  setState s'
+--keyboardHandler s ' ' = do
+--  s' <- if stack s == []
+--             then return $ edlog s "Stack empty, yo"
+--             else return $ nextFromStack s
+--  --let s' = nextFromStack s
+--  setState s'
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s 's' = retCommand $ Save "history.ab"
 keyboardHandler s 'L' = retCommand $ Load "history.ab"
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
-keyboardHandler s key = setState s'
+keyboardHandler s key = do
+  msp $ ("?? " ++ (show key))
+  setState s'
   where s' = edlog s ("?? " ++ (show key))
 
 -- Replace the pool with a new random selection -- except keep the ones that
