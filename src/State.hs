@@ -55,7 +55,13 @@ randomGroup s = do
   replicateM groupSize (randFromList (loops s))
 
 affinities :: State -> [[Loop]]
-affinities = (map S.toList) . components . fromComponents . S.toList . likes
+affinities s = ((map S.toList) . (removeDislikes s) . components . fromComponents . S.toList . likes) s
+
+removeDislikes :: State -> [S.Set Loop] -> [S.Set Loop]
+removeDislikes s groups = filter (not . S.null) (map removeEm groups)
+  where removeEm :: S.Set Loop -> S.Set Loop
+        removeEm group = foldr S.difference group dslikes
+        dslikes = map S.fromList $ S.toList $ dislikes s
 
 like :: State -> State
 like s = nextFromStack $ s { likes = S.insert (currentGroup s) (likes s) }
