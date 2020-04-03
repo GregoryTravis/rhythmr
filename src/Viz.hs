@@ -81,7 +81,7 @@ ringOfCirclesInUnitSquare n = circles
         margin = 0.55
 
 affinityPositions :: State -> M.Map Loop (V2 Float)
-affinityPositions s = case acceptable s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
+affinityPositions s = case affinities s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
   where rah :: (V2 Float -> V2 Float) -> [Loop] -> [(Loop, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 

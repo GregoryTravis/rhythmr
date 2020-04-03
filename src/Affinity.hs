@@ -112,7 +112,7 @@ keyboardHandler s 'E' = do s' <- newPool s
 keyboardHandler s 'y' = setState $ like s
 keyboardHandler s 'n' = setState $ dislike s
 keyboardHandler s 'A' = do
-  case acceptable s of [] -> setState s
+  case affinities s of [] -> setState s
                        (g:gs) -> do
                                    let s' = s { currentGroup = g }
                                    setState s'
@@ -134,7 +134,7 @@ keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s 's' = retCommand $ Save "history.ab"
 keyboardHandler s 'L' = retCommand $ Load "history.ab"
-keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
+--keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s key = setState s'
   where s' = edlog s ("?? " ++ (show key))
@@ -192,7 +192,7 @@ setSong s =
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
 someAcceptable :: State -> [[Loop]]
-someAcceptable s = take 2 $ reverse $ rotateMod ac $ filter atLeastFour $ acceptable s
+someAcceptable s = take 2 $ reverse $ rotateMod ac $ filter atLeastFour $ affinities s
   where atLeastFour l = length l >= 4
         ac = affinityCycle s
 
@@ -279,7 +279,7 @@ displayer s = intercalate "\n" lines
         likesS = "Likes: " ++ showList (map showLoops (S.toList (likes s)))
         dislikesS = "Dislikes: " ++ showList (map showLoops (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showLoops (stack s))
-        affS = "Affinities:\n" ++ intercalate "\n" (map show ((map . map) inxOf (bigToSmall $ acceptable s)))
+        affS = "Affinities:\n" ++ intercalate "\n" (map show ((map . map) inxOf (bigToSmall $ affinities s)))
         logS = bar ++ "\n" ++ (intercalate "\n" (renderEdLog s)) ++ "\n" ++ bar
         loopsS = intercalate "\n" (map loopFilename (loops s))
         showList xs = intercalate " " (map show xs)
@@ -293,7 +293,6 @@ displayer s = intercalate "\n" lines
         inxOf loop = fromJust $ elemIndex loop (loops s)
         showLoops :: [Loop] -> String
         showLoops loops = showList $ map inxOf loops
-
 
 -- type KeyboardHandler s = s -> Char -> IO (KHResult s)
 -- wrappedKeyboardHandler :: (State -> Char -> IO (KHResult State)) -> (State -> Char -> IO (KHResult State))

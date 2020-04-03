@@ -1,12 +1,12 @@
 module State
   ( State(..)
   , randomGroup
-  , acceptable
+  , affinities
   , like
   , dislike
   , pushCurrentGroup
   , nextFromStack
-  , combineAffinities
+  --, combineAffinities
   , pushStack
   , pushStackN
   , edlog
@@ -54,8 +54,8 @@ randomGroup s = do
   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
   replicateM groupSize (randFromList (loops s))
 
-acceptable :: State -> [[Loop]]
-acceptable = (map S.toList) . components . fromComponents . S.toList . likes
+affinities :: State -> [[Loop]]
+affinities = (map S.toList) . components . fromComponents . S.toList . likes
 
 like :: State -> State
 like s = nextFromStack $ s { likes = S.insert (currentGroup s) (likes s) }
@@ -76,12 +76,14 @@ nextFromStack s | (stack s) /= [] = s { currentGroup = g, stack = gs }
                 | otherwise = s
   where (g:gs) = stack s
 
-combineAffinities :: State -> State
-combineAffinities s =
-  case acceptable s of (a : b : _) -> nextFromStack $ replaceStack s (combos a b)
-                       _ -> s
-  where combos :: [Loop] -> [Loop] -> [[Loop]]
-        combos xs ys = [xs' ++ ys' | xs' <- clump 2 xs, ys' <- clump 2 ys]
+-- -- Take the first two affinities and produce proposals by mixing pairs from
+-- -- each of them.
+-- combineAffinities :: State -> State
+-- combineAffinities s =
+--   case acceptable s of (a : b : _) -> nextFromStack $ replaceStack s (combos a b)
+--                        _ -> s
+--   where combos :: [Loop] -> [Loop] -> [[Loop]]
+--         combos xs ys = [xs' ++ ys' | xs' <- clump 2 xs, ys' <- clump 2 ys]
 
 pushStack :: State -> [Loop] -> State
 pushStack s x = s { stack = x : stack s }
