@@ -16,6 +16,8 @@ module State
 
 import Control.Monad (replicateM)
 import Data.IORef
+import Data.List (elemIndex, intercalate)
+import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Graph
 import System.Random
@@ -70,15 +72,18 @@ instance RandomGen State where
 --   replicateM groupSize (randFromList (loops s))
 
 affinities :: State -> [[Loop]]
-affinities s = ((map S.toList) . (removeDislikes s) . components . fromComponents . S.toList . likes) s
+affinities s = ((map S.toList) . removeDislikes s . components . fromComponents . S.toList . likes) s
 
 -- Removing a dislike group from a group means removing of its elements, but
 -- *only* if the group contains all of them
 removeDislikes :: State -> [S.Set Loop] -> [S.Set Loop]
 removeDislikes s groups = filter (not . S.null) (map removeEm groups)
   where removeEm :: S.Set Loop -> S.Set Loop
-        removeEm group = foldr differenceIfContained group dslikes
+        removeEm group = foldr (flip differenceIfContained) group dslikes
         dslikes = map S.fromList $ S.toList $ dislikes s
+
+loopToNums :: State -> S.Set Loop -> [Int]
+loopToNums s loops' = map fromJust $ map (flip elemIndex (loops s)) $ S.toList loops'
 
 -- Remove b from a, but only if b is a subset of a
 differenceIfContained :: Ord a => S.Set a -> S.Set a -> S.Set a
@@ -116,7 +121,7 @@ dislike s strategy | otherwise = doDislikeStrategy strategy s
 
 doDislikeStrategy :: Maybe DislikeStrategy -> State -> State
 -- Can't do this with less than 3
-doDislikeStrategy (Just strategy) s | length (currentGroup s) < 3 = s
+doDislikeStrategy (Just strategy) s | length (currentGroup s) < 3 = doLikeStrategy Nothing s
 doDislikeStrategy (Just strategy) s | otherwise = nextFromStack $ pushStackN s (theStrategy (currentGroup s))
   where theStrategy = case strategy of SubsetsStrategy -> allSubs
                                        DNCStrategy -> dncs
@@ -127,7 +132,8 @@ doDislikeStrategy (Just strategy) s | otherwise = nextFromStack $ pushStackN s (
         dncs :: [Loop] -> [[Loop]]
         dncs xs = case splitAt (length xs `div` 2) xs of (a, b) -> [a, b]
 -- Otherwise, default to DNC
-doDislikeStrategy Nothing s = doDislikeStrategy (Just DNCStrategy) s
+doDislikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
+                            | otherwise = doDislikeStrategy (Just DNCStrategy) s
 
 doLikeStrategy :: Maybe LikeStrategy -> State -> State
 -- If explicit, do that
@@ -192,4 +198,4 @@ edlog :: State -> String -> State
 edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 renderEdLog :: State -> [String]
-renderEdLog (State { editorLog = lines }) = take editorLogLength $ (reverse lines) ++ (repeat "")
+renderEdLog (State { editorLog = lines }) = reverse lines

@@ -6,6 +6,8 @@ module Util
 , eesp
 , fesp
 , faresp
+, faaresp
+, faaresp2
 , lesp
 , leesp
 , eeesp
@@ -75,6 +77,19 @@ fesp f a = unsafePerformIO $ do
 faresp f a = unsafePerformIO $ do
   let result = f a
   putStrLn $ evalString $ show $ (a, result)
+  return result
+
+-- thing, function, arg, and result
+faaresp :: (Show a, Show b, Show c) => a -> (b -> c) -> (b -> c)
+faaresp s f a = unsafePerformIO $ do
+  let result = f a
+  putStrLn $ evalString $ show $ (s, a, result)
+  return result
+
+faaresp2 :: (Show a, Show b, Show c, Show d) => a -> (b -> c -> d) -> (b -> c -> d)
+faaresp2 s f a b = unsafePerformIO $ do
+  let result = f a b
+  putStrLn $ evalString $ show $ (s, a, b, result)
   return result
 
 lesp logFile a = leesp logFile (evalString $ show a) a
