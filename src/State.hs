@@ -1,10 +1,11 @@
 module State
   ( State(..)
-  , randomGroup
+  , LikeStrategy(..)
+  , DislikeStrategy(..)
   , affinities
   , like
   , dislike
-  , pushCurrentGroup
+  --, pushCurrentGroup
   , nextFromStack
   --, combineAffinities
   , pushStack
@@ -39,7 +40,8 @@ data State =
         , stack :: [[Loop]]
         , currentSong :: Maybe (Score, [[Loop]])
         , affinityCycle :: Int
-        , currentHypercubeMat :: IORef Mat }
+        , currentHypercubeMat :: IORef Mat
+        , rand :: StdGen }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
@@ -49,36 +51,121 @@ instance Eq State where
 instance Show State where
   show _ = "[State]"
 
-randomGroup :: State -> IO [Loop]
-randomGroup s = do
-  groupSize <- getStdRandom (randomR (2,4)) :: IO Int
-  replicateM groupSize (randFromList (loops s))
+-- This feels very foolish
+instance RandomGen State where
+  next s = let (x, newRand) = next (rand s) in (x, s { rand = newRand })
+  split s = let (r0, r1) = split (rand s) in (s { rand = r0 }, s { rand = r1})
+  -- randomR range s =
+  --   let (result, newRand) = randomR range (rand s)
+  --       newState = s { rand = newRand }
+  --    in (result, newState)
+  -- random s =
+  --   let (result, newRand) = random (rand s)
+  --       newState = s { rand = newRand }
+  --    in (result, newState)
+
+-- randomGroup :: State -> IO [Loop]
+-- randomGroup s = do
+--   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
+--   replicateM groupSize (randFromList (loops s))
 
 affinities :: State -> [[Loop]]
 affinities s = ((map S.toList) . (removeDislikes s) . components . fromComponents . S.toList . likes) s
 
+-- Removing a dislike group from a group means removing of its elements, but
+-- *only* if the group contains all of them
 removeDislikes :: State -> [S.Set Loop] -> [S.Set Loop]
 removeDislikes s groups = filter (not . S.null) (map removeEm groups)
   where removeEm :: S.Set Loop -> S.Set Loop
-        removeEm group = foldr S.difference group dslikes
+        removeEm group = foldr differenceIfContained group dslikes
         dslikes = map S.fromList $ S.toList $ dislikes s
 
-like :: State -> State
-like s = nextFromStack $ s { likes = S.insert (currentGroup s) (likes s) }
-dislike :: State -> State
-dislike s | length (currentGroup s) < 3 = nextFromStack $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
-dislike s | otherwise = nextFromStack $ pushStackN s (allSubs (currentGroup s))
-  where -- A sub is the list with one element removed
+-- Remove b from a, but only if b is a subset of a
+differenceIfContained :: Ord a => S.Set a -> S.Set a -> S.Set a
+differenceIfContained a b = if b `S.isSubsetOf` a then a `S.difference` b else a
+
+-- if no and >2, split and push
+-- if no and <=1, record and pop
+-- if yes, record, and incremental or random (choose randomly, 50/50)
+-- if pop on stack empty, random
+-- plus explicit yes-and-strategy and no-and-strategy
+-- - subsets too, even if one probably wouldn't use it
+--
+-- random
+-- incremental
+-- subs
+-- dnc
+
+-- Set the current group and clear the current song
+setCurrentGroup :: State -> [Loop] -> State
+setCurrentGroup s group = s { currentGroup = group, currentSong = Nothing }
+
+data LikeStrategy = IncrementalStrategy | RandomStrategy
+data DislikeStrategy = SubsetsStrategy | DNCStrategy
+
+like :: State -> Maybe LikeStrategy -> State
+like s strategy | length (currentGroup s) < 2 = doLikeStrategy strategy s 
+                | otherwise = doLikeStrategy strategy $ s { likes = S.insert (currentGroup s) (likes s) }
+
+dislike :: State -> Maybe DislikeStrategy -> State
+-- Don't store a dislike unless it's 2 or 1
+dislike s strategy | len >= 1 && len <= 2 = doDislikeStrategy strategy $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
+  where len = length $ currentGroup s
+dislike s strategy | otherwise = doDislikeStrategy strategy s
+
+
+doDislikeStrategy :: Maybe DislikeStrategy -> State -> State
+-- Can't do this with less than 3
+doDislikeStrategy (Just strategy) s | length (currentGroup s) < 3 = s
+doDislikeStrategy (Just strategy) s | otherwise = nextFromStack $ pushStackN s (theStrategy (currentGroup s))
+  where theStrategy = case strategy of SubsetsStrategy -> allSubs
+                                       DNCStrategy -> dncs
+        -- A sub is the list with one element removed
         allSubs :: [Loop] -> [[Loop]]
         allSubs (x : xs) = [xs] ++ map (x:) (allSubs xs)
         allSubs [] = []
+        dncs :: [Loop] -> [[Loop]]
+        dncs xs = case splitAt (length xs `div` 2) xs of (a, b) -> [a, b]
+-- Otherwise, default to DNC
+doDislikeStrategy Nothing s = doDislikeStrategy (Just DNCStrategy) s
 
-pushCurrentGroup :: State -> State
-pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
-  where p2l (x, y) = [x, y]
+doLikeStrategy :: Maybe LikeStrategy -> State -> State
+-- If explicit, do that
+doLikeStrategy (Just strategy) s =
+  let (group, s') = doStrategy strategy s
+   in setCurrentGroup s' group
+  where doStrategy IncrementalStrategy = incrementallyDifferentGroup
+        doStrategy RandomStrategy = randomGroup
+-- If not, pop if you can
+doLikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
+-- Otherwise, pick randomly
+doLikeStrategy Nothing s | otherwise =
+  let (strategy, s') = randFromListPure s [IncrementalStrategy, RandomStrategy]
+   in doLikeStrategy (Just strategy) s'
+
+incrementallyDifferentGroup :: State -> ([Loop], State)
+incrementallyDifferentGroup s | length (currentGroup s) == 0 = ([], s)
+                              | otherwise =
+  let (loopToReplace, s') = randFromListPure s [0..length (currentGroup s)-1]
+      (newLoop, s'') = randFromListPure s' (loops s)
+   in (replaceInList (currentGroup s) loopToReplace newLoop, s'')
+
+randomGroup :: State -> ([Loop], State)
+randomGroup s =
+  let count :: Int
+      s' :: State
+      (count, s') = randomR (2, 4) s
+      group :: [Loop]
+      s'' :: State
+      (group, s'') = randFromListPureN s' (loops s) count
+   in (group, s'')
+
+-- pushCurrentGroup :: State -> State
+-- pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
+--   where p2l (x, y) = [x, y]
 
 nextFromStack :: State -> State
-nextFromStack s | (stack s) /= [] = s { currentGroup = g, stack = gs }
+nextFromStack s | (stack s) /= [] = setCurrentGroup (s { stack = gs }) g
                 | otherwise = s
   where (g:gs) = stack s
 

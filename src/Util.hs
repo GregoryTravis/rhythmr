@@ -26,6 +26,8 @@ module Util
 , chomp
 , replace
 , randFromList
+, randFromListPure
+, randFromListPureN
 , clump
 , allPairs
 , pairUp
@@ -36,6 +38,7 @@ module Util
 , rotate
 , rotateMod
 , hist
+, replaceInList
 ) where
 
 import Control.Exception
@@ -157,6 +160,18 @@ randFromList xs = do
   i <- getStdRandom (randomR (0, length xs - 1))
   return $ xs !! i
 
+randFromListPure :: RandomGen g => g -> [a] -> (a, g)
+randFromListPure g as =
+  let (i, g') = randomR (0, length as - 1) g
+   in eesp (length as, i) $ (as !! i, g')
+
+randFromListPureN :: RandomGen g => g -> [a] -> Int -> ([a], g)
+randFromListPureN g as 0 = ([], g)
+randFromListPureN g as n =
+  let (a', g') = eesp ("oy", length as, n) $ randFromListPure g as
+      (as', g'') = randFromListPureN g' as (n-1)
+   in (a':as', g'')
+
 -- Nest elements in groups of n; ok if it doesn't divide evenly
 clump :: Int -> [a] -> [[a]]
 clump n [] = []
@@ -206,3 +221,8 @@ hist xs = zip lens reps
   where grouped = group $ sort xs
         lens = map length grouped
         reps = map head grouped
+
+-- What on earth is wrong with me
+replaceInList :: [a] -> Int -> a -> [a]
+replaceInList (x:xs) 0 x' = x' : xs
+replaceInList (x:xs) n x' = x : replaceInList xs (n-1) x'

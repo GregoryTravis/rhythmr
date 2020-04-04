@@ -17,6 +17,7 @@ import Linear
 import Linear.Matrix (identity)
 import System.Console.ANSI (clearScreen, setCursorPosition)
 import System.Directory (listDirectory)
+import System.Random
 
 import Animate
 import Ascii
@@ -51,13 +52,16 @@ data StateRep =
 
 emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty }
 
+initRand :: StdGen
+initRand = mkStdGen 0
+
 makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
 makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
   return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [],
                    stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing, affinityCycle = 0,
-                   currentHypercubeMat = matRef }
+                   currentHypercubeMat = matRef, rand = initRand }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -91,7 +95,7 @@ initState soundLoader looper = do
   matRef <- newIORef mat
   newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [],
-                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef }
+                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -101,18 +105,20 @@ retCommand c = return c
 -- TODO maybe function type aliases are not good
 keyboardHandler :: State -> Char -> IO (GuiCommand State)
 --keyboardHandler :: KeyboardHandler State
-keyboardHandler s 'r' = do
-  group <- randomGroup s
-  let s' = s { currentGroup = group, currentSong = Nothing }
-  --msp "YOSH"
-  --playCurrent s'
-  setState s'
+--keyboardHandler s 'r' = do
+--  group <- randomGroup s
+--  let s' = s { currentGroup = group, currentSong = Nothing }
+--  --msp "YOSH"
+--  --playCurrent s'
+--  setState s'
 keyboardHandler s 'E' = do s' <- newPool s
                            setState s'
-keyboardHandler s '\ETX' = setState $ like s
-keyboardHandler s '\STX' = setState $ dislike s
-keyboardHandler s 'i' = setState $ like s
-keyboardHandler s 'b' = setState $ dislike s
+keyboardHandler s '\ETX' = setState $ like s Nothing
+keyboardHandler s 'r' = setState $ like s (Just RandomStrategy)
+keyboardHandler s 'i' = setState $ like s (Just IncrementalStrategy)
+keyboardHandler s '\STX' = setState $ dislike s Nothing
+keyboardHandler s 's' = setState $ dislike s (Just SubsetsStrategy)
+keyboardHandler s 'd' = setState $ dislike s (Just DNCStrategy)
 -- Hear the top affinity group
 keyboardHandler s 'A' = do
   case affinities s of [] -> setState s
@@ -122,11 +128,11 @@ keyboardHandler s 'A' = do
 keyboardHandler s 'S' = do
   setState (setSong s)
 keyboardHandler s '\ESC' = retCommand Quit
-keyboardHandler s 'p' = do
-  let s' = nextFromStack $ pushCurrentGroup s
-  --msp ("eh", currentGroup s, stack s)
-  --msp ("eh", currentGroup s', stack s')
-  setState s'
+--keyboardHandler s 'p' = do
+--  let s' = nextFromStack $ pushCurrentGroup s
+--  --msp ("eh", currentGroup s, stack s)
+--  --msp ("eh", currentGroup s', stack s')
+--  setState s'
 --keyboardHandler s ' ' = do
 --  s' <- if stack s == []
 --             then return $ edlog s "Stack empty, yo"
@@ -135,7 +141,7 @@ keyboardHandler s 'p' = do
 --  setState s'
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
-keyboardHandler s 's' = retCommand $ Save "history.ab"
+--keyboardHandler s 's' = retCommand $ Save "history.ab"
 keyboardHandler s 'L' = retCommand $ Load "history.ab"
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
