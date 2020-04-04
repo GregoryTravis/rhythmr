@@ -79,11 +79,17 @@ affinities s = ((map S.toList) . removeDislikes s . components . fromComponents 
 removeDislikes :: State -> [S.Set Loop] -> [S.Set Loop]
 removeDislikes s groups = filter (not . S.null) (map removeEm groups)
   where removeEm :: S.Set Loop -> S.Set Loop
-        removeEm group = foldr (flip differenceIfContained) group dslikes
+        removeEm group = foldr (flip removeOneIfContained) group dslikes
         dslikes = map S.fromList $ S.toList $ dislikes s
 
 loopToNums :: State -> S.Set Loop -> [Int]
 loopToNums s loops' = map fromJust $ map (flip elemIndex (loops s)) $ S.toList loops'
+
+-- If b is a subset of a, remove just one of its elements from a
+removeOneIfContained :: Ord a => S.Set a -> S.Set a -> S.Set a
+removeOneIfContained a b = if b `S.isSubsetOf` a then withoutB else a
+  where withoutB = S.delete someB a
+        someB = head $ S.toList b
 
 -- Remove b from a, but only if b is a subset of a
 differenceIfContained :: Ord a => S.Set a -> S.Set a -> S.Set a
