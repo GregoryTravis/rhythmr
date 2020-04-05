@@ -141,7 +141,7 @@ keyboardHandler s '\ESC' = retCommand Quit
 --  setState s'
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
---keyboardHandler s 's' = retCommand $ Save "history.ab"
+keyboardHandler s '\DC3' = retCommand $ Save "history.ab"
 keyboardHandler s 'L' = retCommand $ Load "history.ab"
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
