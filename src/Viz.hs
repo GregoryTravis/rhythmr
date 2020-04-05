@@ -216,7 +216,7 @@ renderViz t s (Viz pics) = do
   writeIORef (currentHypercubeMat s) mat'
   cursor <- sequenceCursor s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [cursor] ++ anims ++ [hc, strategy]
+  return $ Pictures $ [hc, cursor] ++ anims ++ [strategy]
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
@@ -239,7 +239,7 @@ transformHypercube s mat t = {-eesp debug $-} (applyMatrix mat' makeHypercube, m
         src = mat !* srcOrig
         dest = pointingAtCamera
         dt = 0.1
-        rot = rotateTowards (pi/64) src dest
+        rot = rotateTowards (pi/256) src dest
         mat' = mat !*! rot
         debug = ("TH", srcOrig, src, dest, src `dot` dest, tSrc, tSrc `dot` dest, pt)
           where tSrc :: Pt
@@ -286,16 +286,19 @@ renderPolytope p =
       trans :: V2 Double -> V2 Double
       trans v = orig + scale *^ v
         where orig :: V2 Double
-              orig = V2 (w/4) (-(h/4))
-              V2 w h = fmap fromIntegral windowDim
+              orig = V2 0 0
+        -- where orig :: V2 Double
+        --       orig = V2 (w/4) (-(h/4))
+        --       V2 w h = fmap fromIntegral windowDim
               scale :: Double
               --scale = 2500000 -- 8d
               --scale = 1000 -- 3d
-              scale = scaleByDim M.! numDims
+              scale = (scaleByDim M.! numDims) * 2.5
       centerBox = Translate (w/4) (-(h/4)) $ rectangleWire 10 10
         where V2 w h = fmap fromIntegral windowDim
-      nearColor = makeColor 0 0 0 1
-      farColor = makeColor 0 0 0 0
+      nearColor = makeColor grey grey grey 1
+      farColor = makeColor grey grey grey 0
+      grey = 0.8
       -- centerBox = map Line edges
       --   where edges = toArr $ zip tsq (take 4 (drop 1 (cycle tsq)))
       --         toArr (a, b) = [a, b]
@@ -459,7 +462,7 @@ seqLayOutPositions poses = map lop poses
         seqMargin :: V2 Float
         seqMargin = (seqWindow - seqSize) / 2
         seqWindow :: V2 Float
-        seqWindow = window / 2 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
+        seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
 
 -- TODO really shouldn't duplicate this, but how?
 renderProgress :: State -> Float -> Picture
@@ -467,7 +470,7 @@ renderProgress (State { currentSong = Just (score, loops) }) progress = Translat
   where tx = interp progress 0 1 left right
         V2 _ ty = (-(window / 2)) + seqMargin - room / 2
         V2 left _ = (-(window / 2)) + seqMargin - room / 2
-        V2 right _ = (-seqMargin) + room / 2
+        V2 right _ = (window / 2) - seqMargin + room / 2
         window = fmap fromIntegral $ V2 windowWidth windowHeight
         room :: V2 Float
         room = V2 32.0 27.0
@@ -482,7 +485,7 @@ renderProgress (State { currentSong = Just (score, loops) }) progress = Translat
         seqMargin :: V2 Float
         seqMargin = (seqWindow - seqSize) / 2
         seqWindow :: V2 Float
-        seqWindow = window / 2 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
+        seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
         poses = seqLoopsAndPositions score loops
 renderProgress _ _ = Blank
 

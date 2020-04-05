@@ -189,15 +189,22 @@ playCurrentSong s@(State { currentSong = Nothing }) = return ()
 
 setSong :: State -> State
 setSong s =
-  let score = Score [[Measure (0, 0) NoFX],
+  let score = Score [[Measure (0, 0) (Reverb 85)],
+                     [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
                      [Measure (0, 0) (Reverb 85)],
-                     [Measure (0, 0) NoFX, Measure (0, 1) (Tremolo 10 40)],
-                     [Measure (0, 0) NoFX, Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-                     [Measure (0, 0) NoFX, Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-                     [Measure (1, 0) NoFX, Measure (1, 1) (Tremolo 10 40), Measure (1, 2) MCompand],
-                     [Measure (1, 0) NoFX, Measure (1, 1) (Tremolo 10 40)],
-                     [Measure (1, 0) NoFX],
-                     [Measure (1, 0) NoFX, Measure (1, 1) (Tremolo 10 40), Measure (1, 2) MCompand, Measure (1, 3) revReverb]]
+                     [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
+                     [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
+                     [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
+                     [Measure (1, 0) (Reverb 85)],
+                     [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
+                     [Measure (1, 0) (Reverb 85)],
+                     [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
+                     [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
+                     [Measure (1, 3) revReverb],
+                     [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
+                     [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
+                     [Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb],
+                     [Measure (1, 0) (Reverb 85), Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb]]
       revReverb = FXs [Reverse, Reverb 85, Reverse]
    in s { currentSong = Just (score, someAcceptable s) }
 
