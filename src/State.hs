@@ -43,7 +43,8 @@ data State =
         , currentSong :: Maybe (Score, [[Loop]])
         , affinityCycle :: Int
         , currentHypercubeMat :: IORef Mat
-        , rand :: StdGen }
+        , rand :: StdGen
+        , strategy :: Maybe String }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
@@ -112,7 +113,13 @@ setCurrentGroup :: State -> [Loop] -> State
 setCurrentGroup s group = s { currentGroup = group, currentSong = Nothing }
 
 data LikeStrategy = IncrementalStrategy | RandomStrategy
+  deriving Show
 data DislikeStrategy = SubsetsStrategy | DNCStrategy
+  deriving Show
+
+-- This is just wrong, wrong, wrong
+_strat :: Show a => a -> State -> State
+_strat strat s = s { strategy = Just $ show strat }
 
 like :: State -> Maybe LikeStrategy -> State
 like s strategy | length (currentGroup s) < 2 = doLikeStrategy strategy s 
@@ -124,11 +131,10 @@ dislike s strategy | len >= 1 && len <= 2 = doDislikeStrategy strategy $ s { dis
   where len = length $ currentGroup s
 dislike s strategy | otherwise = doDislikeStrategy strategy s
 
-
 doDislikeStrategy :: Maybe DislikeStrategy -> State -> State
 -- Can't do this with less than 3
 doDislikeStrategy (Just strategy) s | length (currentGroup s) < 3 = doLikeStrategy Nothing s
-doDislikeStrategy (Just strategy) s | otherwise = nextFromStack $ pushStackN s (theStrategy (currentGroup s))
+doDislikeStrategy (Just strategy) s | otherwise = _strat strategy $ nextFromStack $ pushStackN s (theStrategy (currentGroup s))
   where theStrategy = case strategy of SubsetsStrategy -> allSubs
                                        DNCStrategy -> dncs
         -- A sub is the list with one element removed
@@ -145,7 +151,7 @@ doLikeStrategy :: Maybe LikeStrategy -> State -> State
 -- If explicit, do that
 doLikeStrategy (Just strategy) s =
   let (group, s') = doStrategy strategy s
-   in setCurrentGroup s' group
+   in _strat strategy $ setCurrentGroup s' group
   where doStrategy IncrementalStrategy = incrementallyDifferentGroup
         doStrategy RandomStrategy = randomGroup
 -- If not, pop if you can

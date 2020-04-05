@@ -61,7 +61,7 @@ makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = d
   matRef <- newIORef mat
   return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [],
                    stack = [], editorLog = ["Welcome to autobeat"], currentSong = Nothing, affinityCycle = 0,
-                   currentHypercubeMat = matRef, rand = initRand }
+                   currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -95,7 +95,7 @@ initState soundLoader looper = do
   matRef <- newIORef mat
   newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to autobeat"], stack = [],
-                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand }
+                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)

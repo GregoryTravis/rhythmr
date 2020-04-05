@@ -212,10 +212,18 @@ renderViz t s (Viz pics) = do
   mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
       (hc, mat') = renderHypercube s mat t
+      strategy = renderStrategy s
   writeIORef (currentHypercubeMat s) mat'
   cursor <- sequenceCursor s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [cursor] ++ anims ++ [hc]
+  return $ Pictures $ [cursor] ++ anims ++ [hc, strategy]
+
+renderStrategy (State { strategy = Nothing }) = Blank
+renderStrategy (State { strategy = Just strategy }) =
+  let V2 tx ty = fmap fromIntegral $ (fmap (`div` 2) $ V2 (-windowWidth) windowHeight) + margin
+      margin = V2 30 (-45)
+      s = 0.25
+   in Translate tx ty $ Scale s s $ Text strategy
 
 renderHypercube :: State -> Mat -> Float -> (Picture, Mat)
 renderHypercube s mat t =
