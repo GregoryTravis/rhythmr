@@ -65,7 +65,7 @@ writeSound filename sound = do
   massert "writeSound" (numFramesWritten == numFrames)
 
 --clop :: SV.Vector Float -> SV.Vector Float
--- start, end: start and end (seconds)
+-- start, end: start and end (frames)
 snip :: Int -> Int -> Sound -> Sound
 snip start end sound = Sound { samples = newSamples }
   where startFrame = 2 * start
