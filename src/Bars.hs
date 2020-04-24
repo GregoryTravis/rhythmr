@@ -14,6 +14,8 @@ import Sound
 import Spleeter
 import Util
 
+doSpleeter = False
+
 searchAndDownloadFiles :: String -> Int -> IO [FilePath]
 searchAndDownloadFiles searchString count = do
   ids <- search searchString count
@@ -53,10 +55,12 @@ extractLoops filename = do
   let originalLoops = splitIntoLoops original bars
   originalFilenames <- writeSounds originalLoops
   msp originalFilenames
-  spleetered <- spleeter original
-  let spleeteredLoops = splitIntoLoops spleetered bars
-  spleeteredFilenames <- writeSounds spleeteredLoops
-  msp spleeteredFilenames
+  if doSpleeter
+     then do spleetered <- spleeter original
+             let spleeteredLoops = splitIntoLoops spleetered bars
+             spleeteredFilenames <- writeSounds spleeteredLoops
+             msp spleeteredFilenames
+     else return ()
   where writer :: Sound -> String -> IO ()
         writer sound filename = writeSound filename sound
         writeSounds :: [Sound] -> IO [String]
