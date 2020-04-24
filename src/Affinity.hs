@@ -37,7 +37,7 @@ import State
 import Util
 import Viz
 
-poolSize = 64
+poolSize = 8
 
 addClick :: Maybe String
 addClick = Nothing
@@ -166,8 +166,9 @@ completeList :: Eq a => [a] -> (Int -> IO [a]) -> Int -> IO [a]
 completeList soFar getElements total | length soFar == total = return soFar
 completeList soFar getElements total | otherwise = do
   newElems <- getElements (total - length soFar)
-  completeList (nub $ soFar ++ newElems) getElements total
-
+  let newSoFar = nub $ soFar ++ newElems
+  massert "looping in completeList" (length newSoFar > length soFar)
+  completeList newSoFar getElements total
 
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do

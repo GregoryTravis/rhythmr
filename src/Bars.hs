@@ -1,6 +1,7 @@
 module Bars
-  ( bars
-  ) where
+( barsSearch
+, barsYouTubeURL
+) where
 
 import System.Directory
 import System.FilePath.Posix (takeBaseName)
@@ -13,7 +14,8 @@ import Sound
 import Spleeter
 import Util
 
-downloadFiles searchString count = do
+searchAndDownloadFiles :: String -> Int -> IO [FilePath]
+searchAndDownloadFiles searchString count = do
   ids <- search searchString count
   msp "ids"
   msp ids
@@ -26,12 +28,23 @@ downloadFiles searchString count = do
           return $ dest filename
         dir = "tracks/" ++ searchStringDir
         dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
-        searchStringDir = replace ' ' '-' searchString
+        searchStringDir = searchStringToFilename searchString
 
-bars :: String -> Int -> IO ()
-bars searchString numTracks = do
-  filenames <- downloadFiles searchString 8
+searchStringToFilename :: String -> String
+searchStringToFilename s = replace ' ' '-' s
+
+barsSearch :: String -> Int -> IO ()
+barsSearch searchString numTracks = do
+  filenames <- searchAndDownloadFiles searchString 8
   mapM_ extractLoops filenames
+
+barsYouTubeURL :: String -> IO ()
+barsYouTubeURL id = do
+  --let destFilename = "tracks/" ++ id
+  filename <- download id
+  --renameFile filename destFilename
+  --msp destFilename
+  extractLoops filename
 
 extractLoops filename = do
   msp filename

@@ -19,7 +19,8 @@ import Util
 doStuffDefault = ["aff", "2345"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
-doStuff ["bars", searchString, numTracks] = bars searchString (read numTracks)
+doStuff ["barsSearch", searchString, numTracks] = barsSearch searchString (read numTracks)
+doStuff ["barsYouTubeURL", id] = barsYouTubeURL id
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["g"] = gfxMain
 doStuff ["hy"] = hypercubeMain
