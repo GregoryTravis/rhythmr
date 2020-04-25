@@ -155,6 +155,5 @@ contentAddressableWrite label destDir ext fileWriter = do
   hashWithNewline <- readFromProc "md5" ["-q", tmp]
   let hash = chomp hashWithNewline
       newPath = destDir ++ "/" ++ label ++ "-" ++ hash ++ "." ++ ext
-  msp $ ("NEW", newPath)
   renameFile tmp newPath
   return newPath

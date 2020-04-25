@@ -12,6 +12,7 @@ import Data.List (intercalate, transpose, sortOn, elemIndex, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
+import Data.Time.Clock.System (getSystemTime, SystemTime(..))
 import Graphics.Gloss
 import Linear
 import Linear.Matrix (identity)
@@ -186,8 +187,15 @@ playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
   sounds <- mapM (loadLoopSounds (soundLoader s)) loops
   arr <- renderScore score sounds
   mix <- renderArrangement arr
+  writeSong mix
   setSound (looper s) mix
 playCurrentSong s@(State { currentSong = Nothing }) = return ()
+
+writeSong :: Sound -> IO ()
+writeSong s = do
+  MkSystemTime { systemSeconds } <- getSystemTime
+  let filename = "song-" ++ show systemSeconds ++ ".wav"
+  writeSound filename s
 
 setSong :: State -> State
 setSong s =
