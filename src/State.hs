@@ -146,7 +146,7 @@ doDislikeStrategy (Just strategy) s | otherwise = _strat strategy $ nextFromStac
         allSubs (x : xs) = [xs] ++ map (x:) (allSubs xs)
         allSubs [] = []
         dncs :: [Loop] -> [[Loop]]
-        dncs xs = case splitAt (length xs `div` 2) xs of (a, b) -> [a, b]
+        dncs xs = filter ((>= 2) . length) $ case splitAt (length xs `div` 2) xs of (a, b) -> [a, b]
 -- Otherwise, default to DNC
 doDislikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
                             | otherwise = doDislikeStrategy (Just DNCStrategy) s
