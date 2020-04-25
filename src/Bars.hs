@@ -50,7 +50,7 @@ barsYouTubeURL id = do
 
 extractLoops filename = do
   msp filename
-  bars <- fmap (take 8 . drop 10) $ barBeat filename
+  bars <- fmap (take 40 . drop 10) $ barBeat filename
   original <- readSound filename
   let originalLoops = splitIntoLoops original bars
   originalFilenames <- writeSounds originalLoops

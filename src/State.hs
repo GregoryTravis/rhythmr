@@ -3,6 +3,7 @@ module State
   , LikeStrategy(..)
   , DislikeStrategy(..)
   , affinities
+  , skip
   , like
   , dislike
   --, pushCurrentGroup
@@ -120,6 +121,9 @@ data DislikeStrategy = SubsetsStrategy | DNCStrategy
 -- This is just wrong, wrong, wrong
 _strat :: Show a => a -> State -> State
 _strat strat s = s { strategy = Just $ show strat }
+
+skip :: State -> Maybe LikeStrategy -> State
+skip = flip doLikeStrategy
 
 like :: State -> Maybe LikeStrategy -> State
 like s strategy | length (currentGroup s) < 2 = doLikeStrategy strategy s 

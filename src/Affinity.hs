@@ -37,7 +37,7 @@ import State
 import Util
 import Viz
 
-poolSize = 32
+poolSize = 64
 
 addClick :: Maybe String
 addClick = Nothing
@@ -113,6 +113,7 @@ keyboardHandler :: State -> Char -> IO (GuiCommand State)
 --  setState s'
 keyboardHandler s 'E' = do s' <- newPool s
                            setState s'
+keyboardHandler s ' ' = setState $ skip s (Just RandomStrategy)
 keyboardHandler s '\ETX' = setState $ like s Nothing
 keyboardHandler s 'r' = setState $ like s (Just RandomStrategy)
 keyboardHandler s 'i' = setState $ like s (Just IncrementalStrategy)
