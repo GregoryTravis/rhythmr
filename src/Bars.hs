@@ -64,7 +64,8 @@ extractLoops filename = do
   where writer :: Sound -> String -> IO ()
         writer sound filename = writeSound filename sound
         writeSounds :: [Sound] -> IO [String]
-        writeSounds sounds = mapM (contentAddressableWrite "loop" "loops" "wav" . writer) sounds
+        writeSounds sounds = mapM (contentAddressableWrite fileStub "loops" "wav" . writer) sounds
+        fileStub = "loop-" ++ takeBaseName filename
 
 splitIntoLoops :: Sound -> [Int] -> [Sound]
 splitIntoLoops sound bars =
