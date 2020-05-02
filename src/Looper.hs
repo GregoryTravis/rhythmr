@@ -3,6 +3,7 @@ module Looper
 , withPortaudio
 , withLooper
 , setSound
+, getSound
 , getProgress
 ) where
 
@@ -54,6 +55,9 @@ setSound l sound = do
              return ()
   let (Sound { samples = buffer }) = sound
   writeIORef lv (SV.length buffer)
+
+getSound :: Looper -> IO (Maybe Sound)
+getSound (Looper mv _ _) = tryReadMVar mv
 
 loop :: Looper -> IO ()
 loop looper = loop' looper 0

@@ -127,6 +127,9 @@ keyboardHandler s 'A' = do
                        (g:gs) -> do
                                    let s' = s { currentGroup = g }
                                    setState s'
+keyboardHandler s 'W' = do
+  writeCurrentSong s
+  setState s
 keyboardHandler s 'S' = do
   setState (setSong s)
 keyboardHandler s '\ESC' = retCommand Quit
@@ -187,15 +190,17 @@ playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
   sounds <- mapM (loadLoopSounds (soundLoader s)) loops
   arr <- renderScore score sounds
   mix <- renderArrangement arr
-  writeSong mix
   setSound (looper s) mix
 playCurrentSong s@(State { currentSong = Nothing }) = return ()
 
-writeSong :: Sound -> IO ()
-writeSong s = do
-  MkSystemTime { systemSeconds } <- getSystemTime
-  let filename = "song-" ++ show systemSeconds ++ ".wav"
-  writeSound filename s
+writeCurrentSong :: State -> IO ()
+writeCurrentSong s = do
+  mix <- getSound (looper s)
+  case mix of Just mix -> do
+                MkSystemTime { systemSeconds } <- getSystemTime
+                let filename = "song-" ++ show systemSeconds ++ ".wav"
+                writeSound filename mix
+              Nothing -> return ()
 
 setSong :: State -> State
 setSong s =
