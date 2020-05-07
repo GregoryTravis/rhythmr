@@ -4,7 +4,7 @@ Remixr, or, Tinder for Audio Loops
 
 
 <p align="center">
-  <img src="images/screencast.gif">
+  <img src="https://raw.githubusercontent.com/GregoryTravis/autobeat/master/screencast.gif">
 </p>
 
 ## Introduction
