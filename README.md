@@ -1,6 +1,12 @@
 Remixr, or, Tinder for Audio Loops
 ======
 
+
+
+<p align="center">
+  <img src="images/screencast.gif">
+</p>
+
 ## Introduction
 
 Remixr is an interactive system, implemented in Haskell, for creating good-sounding rhythm loops from randomly-acquired audio files. The user iterates through an unending stream of randomly combined music loops, swiping left or right on each one to indicate whether you like them or not. Remixr derives a model of which combinations sounds good, and from that, it produces a complete song by inserting the chosen combinations into a predefined score.

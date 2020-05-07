@@ -59,7 +59,7 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
         return gs
       stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
-  where displayMode = InWindow "Nice Window" (windowWidth, windowHeight) (810, 10)
+  where displayMode = InWindow "Remixr" (windowWidth, windowHeight) (810, 10)
         bgColor = white
 
 execute :: (Read t, Show t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO (History s)
