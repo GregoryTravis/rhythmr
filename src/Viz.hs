@@ -215,7 +215,7 @@ renderViz t s (Viz pics) = do
       strategy = renderStrategy s
   writeIORef (currentHypercubeMat s) mat'
   (tx, cursor) <- sequenceCursor s
-  let seqPics = map (Translate tx 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
+  let seqPics = map (Translate (-tx) 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
   --msp ("renderViz", cursor)
   return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy]
 
