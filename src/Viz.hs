@@ -215,8 +215,9 @@ renderViz t s (Viz pics) = do
       strategy = renderStrategy s
   writeIORef (currentHypercubeMat s) mat'
   cursor <- sequenceCursor s
+  let seqPics = map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [hc, cursor] ++ anims ++ [strategy]
+  return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy]
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
@@ -414,7 +415,7 @@ renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y))) = Translate x y $ rect co
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
-stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ sequenceToPics t oldS s
+stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s -- ++ sequenceToPics t oldS s
 
 loopPlacePics :: State -> [Pic AVal]
 loopPlacePics s@(State { loops }) = map toPic loops
@@ -430,12 +431,11 @@ affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
         marks = map (uncurry toMark) (zip [0..] (currentGroup s))
         toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
 
-sequenceToPics :: Float -> State -> State -> [Pic AVal]
-sequenceToPics t _ (State { currentSong = Nothing }) = []
-sequenceToPics t oldS s =
+sequenceToPics :: Float -> State -> [Pic AVal]
+sequenceToPics t (State { currentSong = Nothing }) = []
+sequenceToPics t s =
   let State { currentSong = Just (score, loops) } = s
-      theSame = currentSong oldS == currentSong s
-   in L.zipWith (toPic theSame) [0..] (endPositions score loops)
+   in L.zipWith (toPic True) [0..] (endPositions score loops)
   where toPic theSame i (loop, pos) = if (esp theSame) then constPic endPic else combine startPic endPic
           where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0)
                 startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0)
