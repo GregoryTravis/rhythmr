@@ -8,7 +8,7 @@ module Affinity
 import Control.Concurrent
 import Control.Monad (replicateM)
 import Data.IORef
-import Data.List (intercalate, transpose, sortOn, elemIndex, nub)
+import Data.List (intercalate, transpose, sortOn, elemIndex, nub, inits)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
@@ -202,39 +202,56 @@ writeCurrentSong s = do
                 writeSound filename mix
               Nothing -> return ()
 
+ramps :: [a] -> [[a]]
+ramps = concat . tail . inits . tail . inits
+
+-- Build a score that happens to match the current affinityCycle affinities
+buildScore :: State -> Score
+buildScore s =
+  let stacks = rotateMod (affinityCycle s) (affinities s)
+      measures = [[Measure (m, p) fx | p <- [0..length (stacks !! m) - 1]] | m <- [0..length stacks - 1]]
+      ramped = concat $ map ramps measures
+      fx = Reverb 85
+   in Score ramped
+
+-- number :: [a] -> [(Int, a)]
+-- number = zip [0..]
+
 setSong :: State -> State
 setSong s =
-  let score = Score [[Measure (0, 0) (Reverb 85)],
-                     [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-                     [Measure (0, 0) (Reverb 85)],
-                     [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-                     [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-                     [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-                     [Measure (1, 0) (Reverb 85)],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-                     [Measure (1, 0) (Reverb 85)],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-                     [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
-                     [Measure (1, 3) revReverb],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
-                     [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
-                     [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-                     [Measure (0, 0) (Reverb 85)],
-                     [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-                     [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-                     [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-                     [Measure (1, 0) (Reverb 85)],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-                     [Measure (1, 0) (Reverb 85)],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-                     [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
-                     [Measure (1, 3) revReverb],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
-                     [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
-                     [Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb],
-                     [Measure (1, 0) (Reverb 85), Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb]]
-      revReverb = FXs [Reverse, Reverb 85, Reverse]
-   in s { currentSong = Just (score, someAcceptable s) }
+  -- let score = Score [[Measure (0, 0) (Reverb 85)],
+  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
+  --                    [Measure (0, 0) (Reverb 85)],
+  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
+  --                    [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
+  --                    [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
+  --                    [Measure (1, 0) (Reverb 85)],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
+  --                    [Measure (1, 0) (Reverb 85)],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
+  --                    [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
+  --                    [Measure (1, 3) revReverb],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
+  --                    [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
+  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
+  --                    [Measure (0, 0) (Reverb 85)],
+  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
+  --                    [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
+  --                    [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
+  --                    [Measure (1, 0) (Reverb 85)],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
+  --                    [Measure (1, 0) (Reverb 85)],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
+  --                    [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
+  --                    [Measure (1, 3) revReverb],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
+  --                    [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
+  --                    [Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb],
+  --                    [Measure (1, 0) (Reverb 85), Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb]]
+      -- revReverb = FXs [Reverse, Reverb 85, Reverse]
+  let score = buildScore s
+      loopses = rotateMod (affinityCycle s) (affinities s)
+   in s { currentSong = Just $ (score, loopses) }
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
 someAcceptable :: State -> [[Loop]]
