@@ -214,8 +214,8 @@ renderViz t s (Viz pics) = do
       (hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
   writeIORef (currentHypercubeMat s) mat'
-  cursor <- sequenceCursor s
-  let seqPics = map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
+  (tx, cursor) <- sequenceCursor s
+  let seqPics = map (Translate tx 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
   --msp ("renderViz", cursor)
   return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy]
 
@@ -324,7 +324,7 @@ fadeLine n a b t0 t1 c0 c1 = Pictures $ zipWith cl colors pairs
         toColor t = mixColors (realToFrac (1 - t)) (realToFrac t) c0 c1
         debug = (n, t0, t1, ts, tts)
 
-sequenceCursor :: State -> IO Picture
+sequenceCursor :: State -> IO (Float, Picture)
 sequenceCursor s@(State { looper }) = do
   progress <- getProgress looper
   --msp ("mp", progress)
@@ -465,8 +465,8 @@ seqLayOutPositions poses = map lop poses
         seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
 
 -- TODO really shouldn't duplicate this, but how?
-renderProgress :: State -> Float -> Picture
-renderProgress (State { currentSong = Just (score, loops) }) progress = Translate tx (ty - 5) $ upTri
+renderProgress :: State -> Float -> (Float, Picture)
+renderProgress (State { currentSong = Just (score, loops) }) progress = (tx, Translate 0 (ty - 5) $ upTri)
   where tx = interp progress 0 1 left right
         V2 _ ty = (-(window / 2)) + seqMargin - room / 2
         V2 left _ = (-(window / 2)) + seqMargin - room / 2
@@ -487,7 +487,7 @@ renderProgress (State { currentSong = Just (score, loops) }) progress = Translat
         seqWindow :: V2 Float
         seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
         poses = seqLoopsAndPositions score loops
-renderProgress _ _ = Blank
+renderProgress _ _ = (0, Blank)
 
 seqLoopsAndPositions :: Score -> [[Loop]] -> [(Loop, V2 Int)]
 seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]
