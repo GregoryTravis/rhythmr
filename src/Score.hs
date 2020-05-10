@@ -26,3 +26,17 @@ renderScore s@(Score mses) sounds = do
         return (singleSoundArrangement loopLengthFrames sound')
   measureses <- mapM (\st -> mapM m2ssa st) mses
   return $ seqArrangement (map parArrangement measureses)
+
+-- -- Separate scores, one for each (Measure (g, i) _) (don't distinguish by fx)
+-- splitScoreByMeasure :: Score -> [Score]
+-- splitScoreByMeasure score = map (justThisMeasure score) (allMeasures score)
+
+-- allMeasures :: Score -> [(Int, Int)]
+-- allMeasures (Score measures) = nubOrd $ map getCoords measures
+--   where getCoords (Measure coords _) = coords
+
+-- -- Replace any measure other than the specified one with silence
+-- justThisMeasure :: (Int, Int) -> Score -> Score
+-- justThisMeasure coords (Score measures) = Score (replaceIfDifferent measures)
+--   where replaceIfDifferent m@(Measure coords' _) | coords == coords' = m
+--         replaceIfDifferent m@(Measure coords fx) = 

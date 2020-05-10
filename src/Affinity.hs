@@ -129,6 +129,7 @@ keyboardHandler s 'A' = do
                                    setState s'
 keyboardHandler s 'W' = do
   writeCurrentSong s
+  writeCurrentSongSeparateTracks s
   setState s
 keyboardHandler s 'S' = do
   setState (setSong s)
@@ -192,6 +193,25 @@ playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
   mix <- renderArrangement arr
   setSound (looper s) mix
 playCurrentSong s@(State { currentSong = Nothing }) = return ()
+
+writeCurrentSongSeparateTracks :: State -> IO ()
+writeCurrentSongSeparateTracks s@(State { currentSong = Just (score, loops) }) = do
+  --sounds <- mapM (loadLoopSounds (soundLoader s)) loops
+  mapM_ (writeJustOneSound s loops score) (zip [0..] (concat loops))
+writeCurrentSongSeparateTracks s@(State { currentSong = Nothing }) = do
+  msp "Nothing to write"
+
+-- Replace all but one of the sounds with silence, and render and write the stem
+writeJustOneSound :: State -> [[Loop]] -> Score -> (Int, Loop) -> IO ()
+writeJustOneSound s loops score (i, loop) = do
+  sound <- case loop of Loop filename -> soundLoader s filename
+  let sounds = map (map replaceDifferent) loops
+      replaceDifferent loop' | loop == loop' = sound
+      replaceDifferent _ | otherwise = silentMeasure
+      filename = "stem-" ++ (show i) ++ ".wav"
+  arr <- renderScore score sounds
+  mix <- renderArrangement arr
+  writeSound filename mix
 
 writeCurrentSong :: State -> IO ()
 writeCurrentSong s = do

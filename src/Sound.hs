@@ -9,6 +9,7 @@ import qualified Data.StorableVector as SV
 --import System.IO
 --import System.Process
 
+import Constants
 import Util
 
 data Sound = Sound { samples :: SV.Vector Float }
@@ -45,6 +46,12 @@ fromSamples pairs =
       vec = SV.pack flattened
       sound = Sound { samples = vec }
    in sound
+
+silence :: Int -> Sound
+silence n = fromSamples $ take n $ repeat (0, 0)
+
+silentMeasure :: Sound
+silentMeasure = silence loopLengthFrames
 
 writeSound :: String -> Sound -> IO ()
 writeSound filename sound = do
