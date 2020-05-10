@@ -21,7 +21,7 @@ renderScore :: Score -> [[Sound]] -> IO Arrangement
 renderScore s@(Score mses) sounds = do
   let m2ssa :: Measure -> IO Arrangement
       m2ssa (Measure (g, i) fx) = do
-        let sound = ((sounds !! g) !! i)
+        let sound = eesp (g, length sounds, i, length (sounds !! g)) ((sounds !! g) !! i)
         sound' <- applyFX fx sound
         return (singleSoundArrangement loopLengthFrames sound')
   measureses <- mapM (\st -> mapM m2ssa st) mses

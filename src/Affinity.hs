@@ -205,14 +205,38 @@ writeCurrentSong s = do
 ramps :: [a] -> [[a]]
 ramps = concat . tail . inits . tail . inits
 
+oneTwoThree :: [a] -> [[a]]
+oneTwoThree xs = dub [[one], [one, two]] ++ dub [[one, three], [one, two, three]]
+  where [one, two, three] = xs
+        dub xs = xs ++ xs
+
+cycles :: [a] -> [[a]]
+cycles xs = xs : cycles (tail (cycle xs))
+
+allFirstThrees :: [a] -> [[a]]
+allFirstThrees xs = take n (map (take 3) (cycles xs))
+  where n = length xs
+
 -- Build a score that happens to match the current affinityCycle affinities
 buildScore :: State -> Score
-buildScore s =
-  let stacks = rotateMod (affinityCycle s) (affinities s)
+buildScore (State { affinityCycle, likes })  =
+  let stacks = rotateMod affinityCycle (S.toList likes)
+      measures :: [[Measure]]
       measures = [[Measure (m, p) fx | p <- [0..length (stacks !! m) - 1]] | m <- [0..length stacks - 1]]
-      ramped = concat $ map ramps measures
+      --ramped = concat $ map ramps measures
       fx = Reverb 85
-   in Score ramped
+   --in Score $ shew $ concat $ concat $ map oneTwoThree $ shew $ map allFirstThrees (eesp (map length stacks, map length measures) (filter ((>= 3) . length) measures))
+   in Score $ concat $ map mini (filter ((>= 3) . length) measures)
+  where shew xs = eesp (map length xs) xs
+        mini :: [a] -> [[a]]
+        mini xs =
+          let --cycled :: [a]
+              cycled = cycle xs
+              --cycles :: [[a]]
+              cycles = map (\n -> drop n cycled) [0..length xs - 1]
+              --firstThrees :: [[a]]
+              firstThrees = map (take 3) cycles
+           in concat $ map oneTwoThree firstThrees
 
 -- number :: [a] -> [(Int, a)]
 -- number = zip [0..]
@@ -250,7 +274,7 @@ setSong s =
   --                    [Measure (1, 0) (Reverb 85), Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb]]
       -- revReverb = FXs [Reverse, Reverb 85, Reverse]
   let score = buildScore s
-      loopses = rotateMod (affinityCycle s) (affinities s)
+      loopses = rotateMod (affinityCycle s) (S.toList $ likes s)
    in s { currentSong = Just $ (score, loopses) }
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
