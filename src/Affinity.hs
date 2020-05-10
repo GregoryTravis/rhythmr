@@ -256,7 +256,8 @@ buildScore (State { affinityCycle, likes })  =
               cycles = map (\n -> drop n cycled) [0..length xs - 1]
               --firstThrees :: [[a]]
               firstThrees = map (take 3) cycles
-           in concat $ map oneTwoThree firstThrees
+              justOneFirstThree = [head firstThrees]
+           in concat $ map oneTwoThree justOneFirstThree
 
 -- number :: [a] -> [(Int, a)]
 -- number = zip [0..]
