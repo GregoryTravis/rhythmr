@@ -22,7 +22,10 @@ memoDir = ".memo"
 data DiskAction a = TakesFile (String -> a -> IO ())
 
 -- Turn a disk action into a memoized function that returns a filename
-diskMemoize :: Show a => String -> DiskAction a -> (a -> IO String)
+diskMemoize :: Show a
+            => String  -- a label, used in the .memo filename
+            -> DiskAction a  -- an action that also takes the memoization filename; it should put its output there
+            -> (a -> IO String)  -- an action taking an argument
 diskMemoize functionName (TakesFile f) args = do
   let key = show (functionName, args)
       hash = md5 key
