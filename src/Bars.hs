@@ -3,6 +3,7 @@ module Bars
 , barsYouTubeURL
 ) where
 
+import Data.List (stripPrefix)
 import System.Directory
 import System.FilePath.Posix (takeBaseName)
 
@@ -40,10 +41,17 @@ barsSearch searchString numTracks = do
   filenames <- searchAndDownloadFiles searchString 8
   mapM_ extractLoops filenames
 
+youtubeUrlPrefix = "https://www.youtube.com/watch?v="
+
+toId :: String -> String
+toId s = case stripPrefix youtubeUrlPrefix s of Just s -> s
+                                                Nothing -> s
+
+-- takes a url or id
 barsYouTubeURL :: String -> IO ()
-barsYouTubeURL id = do
+barsYouTubeURL idOrUrl = do
   --let destFilename = "tracks/" ++ id
-  filename <- download id
+  filename <- download (toId idOrUrl)
   --renameFile filename destFilename
   --msp destFilename
   extractLoops filename
