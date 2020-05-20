@@ -1,0 +1,2 @@
+root=`stack path --local-install-root`
+xn1 $root/bin/autobeat barsYouTubeURL
