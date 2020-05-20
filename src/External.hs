@@ -67,7 +67,7 @@ runProcArr (exe : args) = runProc exe args
 
 withTmp :: String -> (String -> IO a) -> IO a
 withTmp ext action = do
-  withSystemTempFile ("autobeat." ++ ext) callback
+  withSystemTempFile ("rhythmr." ++ ext) callback
   where callback filePath handle = action filePath
 
 -- TODO surely this is a fold

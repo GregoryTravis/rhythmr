@@ -11,7 +11,7 @@ import Util
 
 spleeter :: Sound -> IO Sound
 --spleeter sound = withSystemTempDirectory "spleeter" (spleeter' sound)
---spleeter sound = spleeter' sound "/Users/gmt/autobeat/haha"
+--spleeter sound = spleeter' sound "/Users/gmt/rhythmr/haha"
 spleeter = memoizedSpleeter
 
 spleeter' :: Sound -> FilePath -> IO Sound

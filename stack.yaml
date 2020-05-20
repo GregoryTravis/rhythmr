@@ -23,7 +23,7 @@ resolver: lts-14.18
 # Uncomment to find dead code
 # rebuild-ghc-options: true
 # ghc-options:
-#   autobeat: "-fforce-recomp -fwarn-unused-binds -fwarn-unused-imports"
+#   rhythmr: "-fforce-recomp -fwarn-unused-binds -fwarn-unused-imports"
 
 # ghc-options:
 #   GLUT: -optl-Wl,-framework,GLUT

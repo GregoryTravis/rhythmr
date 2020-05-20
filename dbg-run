@@ -1,2 +1,2 @@
-(stack build --library-profiling --executable-profiling --profile autobeat) && \
-  (stack exec -- .stack-work//install/x86_64-osx/51a99b2081f9b807147a85d091d6cc6effcc590d764dc6fd19721c3da13ad0b8/8.6.5/bin/autobeat +RTS -xc) 2>&1 | tee out
+(stack build --library-profiling --executable-profiling --profile rhythmr) && \
+  (stack exec -- .stack-work//install/x86_64-osx/51a99b2081f9b807147a85d091d6cc6effcc590d764dc6fd19721c3da13ad0b8/8.6.5/bin/rhythmr +RTS -xc) 2>&1 | tee out

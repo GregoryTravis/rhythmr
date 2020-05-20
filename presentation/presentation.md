@@ -1,4 +1,4 @@
-# Autobeat: Like Tinder, But For Def Beats
+# Rhythmr: Like Tinder, But For Def Beats
 
 ---
 

@@ -1,4 +1,4 @@
-name:                autobeat
+name:                rhythmr
 version:             0.1.0.0
 -- synopsis:
 -- description:
@@ -22,7 +22,7 @@ Flag llvm
 
   Default:      False
 
-executable autobeat
+executable rhythmr
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Util, External, Aubio, Sound, Resample, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Arrangement, Mess, Feh, Affinity, Constants, Graph,

@@ -1,4 +1,4 @@
-#stack repl --ghc-options -fobject-code -- autobeat
+#stack repl --ghc-options -fobject-code -- rhythmr
 echo don\'t forget to :l Main
 #stack ghci --ghci-options "-fobject-code -O src/Sound.hs"
 stack ghci --ghci-options "-fobject-code -O src/Gui.hs"

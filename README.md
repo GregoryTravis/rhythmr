@@ -4,7 +4,7 @@ Remixr, or, Tinder for Audio Loops
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/GregoryTravis/autobeat/master/images/screencast.gif">
+  <img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/master/images/screencast.gif">
 </p>
 
 ## Introduction
@@ -17,7 +17,7 @@ Aesthetic choice cannot be automated, but it can be optimized. One way to look a
 
 ## Aesthetic Model
 
-It could be said that Remixr is based on a narrow, Western definition of what sounds good: regular beats, 4/4 time, and so on. And certainly, uniformity and consistency are by no means the only principles guiding what things work well together. Remixr is good for finding things that fit nicely together, but “fitting nicely” is by no means the only possible way to structure music. Sometimes you want things to be weird, and autobeat supports this as well: you, as the user, can simply swipe right on weird things, and see what happens.
+It could be said that Remixr is based on a narrow, Western definition of what sounds good: regular beats, 4/4 time, and so on. And certainly, uniformity and consistency are by no means the only principles guiding what things work well together. Remixr is good for finding things that fit nicely together, but “fitting nicely” is by no means the only possible way to structure music. Sometimes you want things to be weird, and rhythmr supports this as well: you, as the user, can simply swipe right on weird things, and see what happens.
 Model
 
 We say there is an affinity between a set of loops if the user swipes right on that set, or if we can guess that the user would, based on previous choices. We use the notation a ~ b to mean that a and b sound good together: they have affinity.
