@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Zound
 ( zoundMain
 ) where
@@ -9,33 +11,69 @@ import qualified Data.StorableVector as SV
 import Constants
 import Util
 
--- readZound :: String -> IO Zound
--- readZound filename = do
---   (info, Just (buffer :: BV.Buffer Float)) <- SF.readFile filename
---   massert "sections != 1" (sections info == 1) 
---   massert ("channels: " ++ filename) (channels info == 1 || channels info == 2)
---   return $ Zound { samples = stereoize (channels info) $ BV.fromBuffer buffer }
---   where stereoize :: Int -> SV.Vector Float -> SV.Vector Float
---         stereoize 1 fs = SV.interleave [fs, fs]
---         stereoize 2 fs = fs
+-- A Zound is a piece of sound.
+--
+-- More precisely, it is like a function from time (in sample frames) to amplitude
+-- It also defines start and end bounds, which include all nonzero samples,
+-- pluz the first zero sample after the nonzero samples (ie, the usual array
+-- bounds thing).
+--
+-- Types of Zounds:
+--   vector of doubles
+--   translation
+--   stretch
+--   external fx
+--   internal fx (D -> D)
+--
+-- Minimal complete definitino: getBounds, sample
 
--- writeZound :: String -> Zound -> IO ()
--- writeZound filename sound = do
---   let numFrames = (SV.length (samples sound)) `div` 2
---   let info = Info
---         { frames = numFrames
---         , samplerate = 44100
---         , channels = 2
---         , format = Format
---             { headerFormat = HeaderFormatWav
---             , sampleFormat = SampleFormatPcm16
---             , endianFormat = EndianFile
---             }
---         , sections = 1
---         , seekable = True
---         }
---   numFramesWritten <- SF.writeFile info filename (BV.toBuffer (samples sound))
---   massert "writeZound" (numFramesWritten == numFrames)
+{-
+data Bounds = Bounds Int Int
+
+class Zound a where
+  getBounds :: a -> Bounds
+  sample :: t -> Double
+  getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
+
+data Segment = Segment { samples :: SV.Vector Double, offset :: Int }
+instance Zound Segment where
+  getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
+
+data Translation = Translation Int Zound
+
+data Stretch = Stretch Double Zound
+
+data Affine = Affine Double Int Zound
+
+data External = External Processor Zound
+
+data Internal = Internal (Double -> Double) Zound
+
+data Pure = Pure (Int -> Double) Bounds
+
+data Mix = forall a. Zound a => Mix [zound]
+
+-- Assert different bounds; this is complex to implement for every single type
+-- of sub-zound, so just do a fast version for use by renderMix, and for
+-- everything else, do the slow sampling way, and optimize as needed
+data Bounded = Bounded Bounds Zound
+
+zoundToSegment :: Zound a => a -> Segment
+
+-- Output Zound always starts at 0
+renderMix :: Mix -> Zound
+renderMix = trivialRenderMz
+
+-- Just sample through the bounds
+trivialRenderMix :: Mix -> Zound
+
+-- Chunk up, optimize affines, etc
+fastRenderMix :: Mix -> Zound
+fastRenderMix = undefined
+
+-- readZound 
+-- writeZound
+-}
 
 zoundMain = do
   msp "zhi"
