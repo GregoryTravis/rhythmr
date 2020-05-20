@@ -15,8 +15,10 @@ import Looper (withPortaudio)
 import Mess
 import Sound
 import Util
+import Zound
 
-doStuffDefault = ["aff", "2345"]
+--doStuffDefault = ["aff", "2345"]
+doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
 doStuff ["barsSearch", searchString, numTracks] = barsSearch searchString (read numTracks)
@@ -24,6 +26,7 @@ doStuff ["barsYouTubeURL", id] = barsYouTubeURL id
 doStuff ["aff", seed] = affinityMain (read seed)
 doStuff ["g"] = gfxMain
 doStuff ["hy"] = hypercubeMain
+doStuff ["zound"] = zoundMain
 doStuff [] = doStuff doStuffDefault
 
 main = withPortaudio $ do
