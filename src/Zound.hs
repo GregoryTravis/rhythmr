@@ -31,8 +31,11 @@ type Frame = Int
 -- (which would be half the length).
 data Bounds = Bounds Frame Frame
 
-toInts :: Bounds -> [Int]
+toInts :: Bounds -> [Frame]
 toInts (Bounds s e) = [s..e-1]
+
+translateBounds :: Bounds -> Frame -> Bounds
+translateBounds (Bounds s e) dt = Bounds (s + dt) (e + dt)
 
 -- inside :: Bounds -> Frame -> Bool
 -- inside (Bounds s e) t = t >= s && t < e
@@ -40,16 +43,19 @@ toInts (Bounds s e) = [s..e-1]
 data Processor = Processor
 
 data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
-           | Translation Frame Zound
-           | Stretch Double Zound
+           | Translate Frame Zound
+           | Scale Double Zound
            | Affine Double Frame Zound
            | External Processor Zound
            | InternalFx (Double -> Double) Zound
            | PureFx (Frame -> Double) Bounds
+           | Bounded Bounds Zound
            | Mix [Zound]
 
 getBounds :: Zound -> Bounds
 getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
+getBounds (Translate dt z) = translateBounds (getBounds z) dt
+getBounds (Bounded b _) = b
 
 -- Second argument is sample #, not time; if it were time, we'd have to return
 -- two samples, since it's stereo.
@@ -57,6 +63,9 @@ sample :: Zound -> Frame -> Double
 sample z@(Segment { samples }) n
   | n >= 0 && n < SV.length samples = samples `SV.index` n
   | otherwise = 0
+sample (Translate dt z) n = sample z (n - dt)
+sample (Mix zs) n = sum (map (flip sample n) zs)
+sample (Bounded _ z) n = sample z n
 
 -- getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
 -- getVector = undefined
@@ -109,6 +118,6 @@ zoundMain = do
   msp "start"
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
   z <- readZound file
-  let z' = render z
-  writeZound "foo.wav" z'
+  let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
+  writeZound "foo.wav" (render z')
   msp "zhi"
