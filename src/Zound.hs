@@ -3,7 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Zound
-( zoundMain
+( Zound(..)
+, zoundMain
 ) where
 
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
@@ -11,6 +12,7 @@ import Sound.File.Sndfile as SF hiding (hGetContents)
 import qualified Data.StorableVector as SV
 
 import Constants
+import External
 import Util
 
 -- A Zound is a piece of sound.
@@ -46,7 +48,7 @@ data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
            | Translate Frame Zound
            | Scale Double Zound
            | Affine Double Frame Zound
-           | External Processor Zound
+           | ExternalFx Processor Zound
            | InternalFx (Double -> Double) Zound
            | PureFx (Frame -> Double) Bounds
            | Bounded Bounds Zound
@@ -70,20 +72,26 @@ sample (Bounded _ z) n = sample z n
 -- getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
 -- getVector = undefined
 
-render :: Zound -> Zound
-render = trivialRender
-
 -- Just sample through the bounds
-trivialRender :: Zound -> Zound
+-- Not implemented for ExternalFx
+-- Doesn't really need to be in IO but it is so it matches fastRender
+trivialRender :: Zound -> IO Zound
 trivialRender z =
   let bounds = getBounds z
       Bounds s e = bounds
       samples = SV.pack $ map (sample z) (toInts bounds)
-   in Segment { samples, offset = s }
+   in return $ Segment { samples, offset = s }
 
 -- Chunk up, optimize affines, etc
-fastRenderMix :: Zound -> Zound
-fastRenderMix = undefined
+fastRender :: Zound -> IO Zound
+fastRender s@(Segment _ _) = return s
+-- External is now hard-coded to reverb
+fastRender (ExternalFx _ z) = runViaFilesCmd "wav" writeZound readZound commander z
+  where commander = \s d -> ["sox", "-G", s, d] ++ ["reverb", "75"]
+
+render :: Zound -> IO Zound
+--render = trivialRender
+render = fastRender
 
 readZound :: FilePath -> IO Zound
 readZound filename = do
@@ -113,11 +121,16 @@ writeZound filename (Segment { samples }) = do
         }
   numFramesWritten <- SF.writeFile info filename (BV.toBuffer samples)
   massert "writeZound" (numFramesWritten == numFrames)
+writeZound filename z = do
+  z' <- render z
+  writeZound filename z'
 
 zoundMain = do
   msp "start"
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
   z <- readZound file
-  let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  writeZound "foo.wav" (render z')
+  --let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
+  let z' = ExternalFx Processor z
+  rendered <- render z'
+  writeZound "foo.wav" rendered
   msp "zhi"
