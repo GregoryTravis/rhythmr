@@ -1,4 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Zound
 ( zoundMain
@@ -27,53 +29,70 @@ import Util
 --
 -- Minimal complete definitino: getBounds, sample
 
-{-
 data Bounds = Bounds Int Int
 
-class Zound a where
-  getBounds :: a -> Bounds
-  sample :: t -> Double
-  getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
+data Processor = Processor
 
-data Segment = Segment { samples :: SV.Vector Double, offset :: Int }
-instance Zound Segment where
-  getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
+data Zound = Segment { samples :: SV.Vector Double, offset :: Int }
+           | Translation Int Zound
+           | Stretch Double Zound
+           | Affine Double Int Zound
+           | External Processor Zound
+           | InternalFx (Double -> Double) Zound
+           | PureFx (Int -> Double) Bounds
+           | Mix [Zound]
 
-data Translation = Translation Int Zound
+getBounds :: Zound -> Bounds
+getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
 
-data Stretch = Stretch Double Zound
+sample :: t -> Double
+sample = undefined
 
-data Affine = Affine Double Int Zound
+getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
+getVector = undefined
 
-data External = External Processor Zound
-
-data Internal = Internal (Double -> Double) Zound
-
-data Pure = Pure (Int -> Double) Bounds
-
-data Mix = forall a. Zound a => Mix [zound]
-
--- Assert different bounds; this is complex to implement for every single type
--- of sub-zound, so just do a fast version for use by renderMix, and for
--- everything else, do the slow sampling way, and optimize as needed
-data Bounded = Bounded Bounds Zound
-
-zoundToSegment :: Zound a => a -> Segment
-
--- Output Zound always starts at 0
-renderMix :: Mix -> Zound
-renderMix = trivialRenderMz
+render :: Zound -> Zound
+render = trivialRender
 
 -- Just sample through the bounds
-trivialRenderMix :: Mix -> Zound
+trivialRender :: Zound -> Zound
+trivialRender = undefined
 
 -- Chunk up, optimize affines, etc
-fastRenderMix :: Mix -> Zound
+fastRenderMix :: Zound -> Zound
 fastRenderMix = undefined
 
--- readZound 
--- writeZound
--}
+readZound :: FilePath -> IO Zound
+readZound filename = do
+  (info, Just (buffer :: BV.Buffer Float)) <- SF.readFile filename
+  massert "sections != 1" (sections info == 1) 
+  massert ("channels: " ++ filename) (channels info == 1 || channels info == 2)
+  return $ Segment { samples = stereoize (channels info) $ BV.fromBuffer buffer
+                   , offset = 0 }
+  where stereoize :: Int -> SV.Vector Float -> SV.Vector Double
+        stereoize 1 fs = SV.map realToFrac $ SV.interleave [fs, fs]
+        stereoize 2 fs = SV.map realToFrac fs
+
+writeZound :: String -> Zound -> IO ()
+writeZound filename (Segment { samples }) = do
+  let numFrames = (SV.length samples) `div` 2
+  let info = Info
+        { frames = numFrames
+        , samplerate = 44100
+        , channels = 2
+        , format = Format
+            { headerFormat = HeaderFormatWav
+            , sampleFormat = SampleFormatPcm16
+            , endianFormat = EndianFile
+            }
+        , sections = 1
+        , seekable = True
+        }
+  numFramesWritten <- SF.writeFile info filename (BV.toBuffer samples)
+  massert "writeZound" (numFramesWritten == numFrames)
 
 zoundMain = do
+  let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
+  z <- readZound file
+  writeZound "foo.wav" z
   msp "zhi"
