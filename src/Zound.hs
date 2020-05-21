@@ -19,24 +19,20 @@ import Util
 -- It also defines start and end bounds, which include all nonzero samples,
 -- pluz the first zero sample after the nonzero samples (ie, the usual array
 -- bounds thing).
---
--- Types of Zounds:
---   vector of doubles
---   translation
---   stretch
---   external fx
---   internal fx (D -> D)
---
--- Minimal complete definitino: getBounds, sample
 
--- A frame is a unit of time, one sample. Since everything is stereo,
--- one frame corresponds to two samples. TODO: make not everything stereo.
+-- For the sake of simplicity (ie laziness, and not the Haskell kind), most of
+-- this code treats audio as a mono sample, even though in fact it's always
+-- stereo -- we convert mono to stereo when reading. In other words, we treat a
+-- sample frame as a single sample, which is incorrect.
 type Frame = Int
 
+-- Bounds start end
+-- end-start is the length of the sample array, not the number of sample frames
+-- (which would be half the length).
 data Bounds = Bounds Frame Frame
 
--- toInts :: Bounds -> [Int]
--- toInts (Bounds s e) = [s..e-1]
+-- inside :: Bounds -> Frame -> Bool
+-- inside (Bounds s e) t = t >= s && t < e
 
 data Processor = Processor
 
@@ -54,7 +50,7 @@ getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samp
 
 -- Second argument is sample #, not time; if it were time, we'd have to return
 -- two samples, since it's stereo.
-sample :: Zound -> Int -> Double
+sample :: Zound -> Frame -> Double
 sample z@(Segment { samples }) n
   | n >= 0 && n < SV.length samples = samples `SV.index` n
   | otherwise = 0
