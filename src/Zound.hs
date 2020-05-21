@@ -100,6 +100,7 @@ writeZound filename (Segment { samples }) = do
   massert "writeZound" (numFramesWritten == numFrames)
 
 zoundMain = do
+  msp "start"
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
   z <- readZound file
   let z' = render z
