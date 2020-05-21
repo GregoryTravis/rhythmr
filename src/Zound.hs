@@ -29,34 +29,46 @@ import Util
 --
 -- Minimal complete definitino: getBounds, sample
 
-data Bounds = Bounds Int Int
+-- A frame is a unit of time, one sample. Since everything is stereo,
+-- one frame corresponds to two samples. TODO: make not everything stereo.
+type Frame = Int
+
+data Bounds = Bounds Frame Frame
+
+-- toInts :: Bounds -> [Int]
+-- toInts (Bounds s e) = [s..e-1]
 
 data Processor = Processor
 
-data Zound = Segment { samples :: SV.Vector Double, offset :: Int }
-           | Translation Int Zound
+data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
+           | Translation Frame Zound
            | Stretch Double Zound
-           | Affine Double Int Zound
+           | Affine Double Frame Zound
            | External Processor Zound
            | InternalFx (Double -> Double) Zound
-           | PureFx (Int -> Double) Bounds
+           | PureFx (Frame -> Double) Bounds
            | Mix [Zound]
 
 getBounds :: Zound -> Bounds
 getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
 
-sample :: t -> Double
-sample = undefined
+-- Second argument is sample #, not time; if it were time, we'd have to return
+-- two samples, since it's stereo.
+sample :: Zound -> Int -> Double
+sample z@(Segment { samples }) n
+  | n >= 0 && n < SV.length samples = samples `SV.index` n
+  | otherwise = 0
 
-getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
-getVector = undefined
+-- getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
+-- getVector = undefined
 
 render :: Zound -> Zound
 render = trivialRender
 
 -- Just sample through the bounds
 trivialRender :: Zound -> Zound
-trivialRender = undefined
+trivialRender z@(Segment { samples }) = Segment { samples = samples', offset = 0 }
+  where samples' = SV.pack $ map (sample z) [0..SV.length samples - 1]
 
 -- Chunk up, optimize affines, etc
 fastRenderMix :: Zound -> Zound
@@ -94,5 +106,6 @@ writeZound filename (Segment { samples }) = do
 zoundMain = do
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
   z <- readZound file
-  writeZound "foo.wav" z
+  let z' = render z
+  writeZound "foo.wav" z'
   msp "zhi"
