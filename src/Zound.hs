@@ -31,6 +31,9 @@ type Frame = Int
 -- (which would be half the length).
 data Bounds = Bounds Frame Frame
 
+toInts :: Bounds -> [Int]
+toInts (Bounds s e) = [s..e-1]
+
 -- inside :: Bounds -> Frame -> Bool
 -- inside (Bounds s e) t = t >= s && t < e
 
@@ -63,8 +66,11 @@ render = trivialRender
 
 -- Just sample through the bounds
 trivialRender :: Zound -> Zound
-trivialRender z@(Segment { samples }) = Segment { samples = samples', offset = 0 }
-  where samples' = SV.pack $ map (sample z) [0..SV.length samples - 1]
+trivialRender z =
+  let bounds = getBounds z
+      Bounds s e = bounds
+      samples = SV.pack $ map (sample z) (toInts bounds)
+   in Segment { samples, offset = s }
 
 -- Chunk up, optimize affines, etc
 fastRenderMix :: Zound -> Zound
