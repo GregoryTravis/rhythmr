@@ -8,7 +8,9 @@ module Zound
 , zoundMain
 ) where
 
+import Control.Monad.ST
 import qualified Data.StorableVector as SV
+import qualified Data.StorableVector.ST.Strict as MSV
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
 import System.Directory
@@ -35,7 +37,7 @@ type Frame = Int
 -- Bounds start end
 -- start inclusive, end exclusive, of course.
 data Bounds = Bounds Frame Frame
-  deriving Show
+  deriving (Eq, Show)
 
 -- inBounds :: Bounds -> Frame -> Bool
 -- inBounds (Bounds s e) t = s <= t && t < e
@@ -65,6 +67,10 @@ data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
            | PureFx (Frame -> Double) Bounds
            | Bounded Bounds Zound
            | Mix [Zound]
+
+isSegment :: Zound -> Bool
+isSegment (Segment {}) = True
+isSegment _ = False
 
 --instance Show Zound where
 --  --show (Segment { offset }) = "(Segment [] " ++ (show offset) ++ ")"
@@ -120,6 +126,55 @@ fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleSound numFrames
 fastRender (Translate dt z) = do
   z' <- fastRender z
   return $ z' { offset = offset z + dt }
+fastRender (Mix zs) = do
+  zs' <- mapM fastRender zs
+  mixSegments zs'
+
+-- mixNRPs :: Arrangement -> IO Sound
+-- mixNRPs arr = do
+--   let len = arrangementLength arr
+--       mix = SV.replicate (len * 2) 0 :: SV.Vector Double
+--       nrps = case arr of Arrangement nrps -> nrps
+--       mix'' = runST $ guv mix nrps
+--   return Sound { samples = mix'' }
+--   where yeah :: MSV.Vector s Double -> Placement -> ST s ()
+--         yeah mix (NRPlacement sound pos) = {-eesp "mixOnto" $-} mixOnto mix (samples sound) pos
+--         guv :: SV.Vector Double -> [Placement] -> ST s (SV.Vector Double)
+--         guv mix nrps = do
+--           mmix <- MSV.thaw mix
+--           mapM (yeah mmix) nrps
+--           mix' <- MSV.freeze mmix
+--           return mix'
+
+mixSegments :: [Zound] -> IO Zound
+mixSegments [z] = return z
+mixSegments zs = do
+  massert "mixSegments: empty list" (not $ null zs)
+  massert "mixSegments: not a segment" (all isSegment zs)
+  massert "mixSegments: length mismatch" (allEq $ map getBounds zs)
+  let vecs = map samples zs
+      lengthSamples = SV.length (head vecs)
+      offset' = offset (head zs)
+      mix = SV.replicate lengthSamples 0 :: SV.Vector Double
+      addVecsToMix :: SV.Vector Double -> [SV.Vector Double] -> ST s (SV.Vector Double)
+      addVecsToMix mix vecs = do
+        mmix <- MSV.thaw mix
+        mapM (mixOnto mmix) vecs
+        mix' <- MSV.freeze mmix
+        return mix'
+      mix' = runST $ addVecsToMix mix vecs
+  return $ Segment { samples = mix', offset = offset' }
+
+mixOnto :: MSV.Vector s Double -> SV.Vector Double -> ST s ()
+mixOnto mix v = do
+  --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
+  mapM mixSample indices
+  return ()
+  where indices = take (SV.length v) [0..]
+        mixSample i = do
+          mixSample <- MSV.read mix i
+          let vSample = SV.index v i
+          MSV.write mix i (mixSample + vSample)
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -186,9 +241,9 @@ zoundMain = do
       resampler = resampleSound (1 * 44100)
   z <- readZound file
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  let z' = ExternalFx resampler z
+  -- let z' = ExternalFx resampler z
   -- let z' = Scale (4 * 44100) z
-  -- let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
+  let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
   -- let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
   rendered <- render z'
   --msp rendered

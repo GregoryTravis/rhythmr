@@ -41,6 +41,7 @@ module Util
 , rotateMod
 , hist
 , replaceInList
+, allEq
 ) where
 
 import Control.Exception
@@ -241,3 +242,7 @@ hist xs = zip lens reps
 replaceInList :: [a] -> Int -> a -> [a]
 replaceInList (x:xs) 0 x' = x' : xs
 replaceInList (x:xs) n x' = x : replaceInList xs (n-1) x'
+
+allEq :: Eq a => [a] -> Bool
+allEq [] = True
+allEq (x : xs) = all (x==) xs
