@@ -4,7 +4,6 @@
 
 module Zound
 ( Zound(..)
-, zLength
 , render
 , zoundMain
 ) where
@@ -25,21 +24,28 @@ import Util
 -- It also defines start and end bounds, which include all nonzero samples,
 -- pluz the first zero sample after the nonzero samples (ie, the usual array
 -- bounds thing).
-
--- For the sake of simplicity (ie laziness, and not the Haskell kind), most of
--- this code internally treats audio as a mono sample, even though in fact it's always
--- stereo -- we convert mono to stereo when reading. In other words, we treat a
--- sample frame as a single sample, which is incorrect.
+--
+-- Every sound is stereo. Mono sounds are converted to stereo, and anything
+-- else is an error. (TODO)
+--
+-- Time is measured in frames. The length of the sample buffer is twice the
+-- length of the sound in frames.
 type Frame = Int
 
 -- Bounds start end
--- end-start is the length of the sample array, not the number of sample frames
--- (which would be half the length).
+-- start inclusive, end exclusive, of course.
 data Bounds = Bounds Frame Frame
   deriving Show
 
-toInts :: Bounds -> [Frame]
-toInts (Bounds s e) = [s..e-1]
+-- inBounds :: Bounds -> Frame -> Bool
+-- inBounds (Bounds s e) t = s <= t && t < e
+
+-- Return a sequence of sample indices for the given frame range.
+-- Sample indicies for sample n are 2*n and 2*n+1
+toSampleIndices :: Bounds -> [Frame]
+toSampleIndices (Bounds s e) = [s'..e'-1]
+  where s' = s * 2
+        e' = e * 2
 
 getStart (Bounds s e) = s
 getEnd (Bounds s e) = e
@@ -66,26 +72,26 @@ data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
 --  show (Translate _ _) = "T"
 --  show _ = "[Zound]"
 
-zLength :: Zound -> Int
-zLength (Segment { samples }) = assertM "ok" ok n
-  where n = SV.length samples `div` 2
-        ok = isEven $ SV.length samples
-        isEven n = (n `mod` 2) == 0
+-- zLength :: Zound -> Int
+-- zLength = getEnd . getBounds
+-- zLength (Segment { samples }) = assertM "ok" ok n
+--   where n = SV.length samples `div` 2
+--         ok = isEven $ SV.length samples
+--         isEven n = (n `mod` 2) == 0
 
 getBounds :: Zound -> Bounds
-getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
+getBounds (Segment { samples, offset }) = Bounds offset (offset + (SV.length samples `div` 2))
 getBounds (Translate dt z) = translateBounds (getBounds z) dt
 getBounds (Bounded b _) = b
 
--- Second argument is sample #, not time; if it were time, we'd have to return
--- two samples, since it's stereo.
-sample :: Zound -> Frame -> Double
-sample z@(Segment { samples }) n
-  | n >= 0 && n < SV.length samples = samples `SV.index` n
+-- Second argument is sample index, not frame number.
+sample :: Zound -> Int -> Double
+sample z@(Segment { samples }) i
+  | i >= 0 && i < SV.length samples = samples `SV.index` i
   | otherwise = 0
-sample (Translate dt z) n = sample z (n - dt)
-sample (Mix zs) n = sum (map (flip sample n) zs)
-sample (Bounded _ z) n = sample z n
+sample (Translate dt z) i = sample z (i - (dt * 2))
+sample (Mix zs) i = sum (map (flip sample i) zs)
+sample (Bounded _ z) i = sample z i
 
 -- getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
 -- getVector = undefined
@@ -100,7 +106,7 @@ trivialRender :: Zound -> IO Zound
 trivialRender z =
   let bounds = getBounds z
       Bounds s e = bounds
-      samples = SV.pack $ map (sample z) (toInts bounds)
+      samples = SV.pack $ map (sample z) (toSampleIndices bounds)
    in return $ Segment { samples, offset = s }
 
 -- Chunk up, optimize affines, etc
@@ -111,9 +117,9 @@ fastRender (ExternalFx p z) = do
   z' <- fastRender z
   processZound z' p
 fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleSound numFrames) z)
-fastRender (Translate dn z) = do
+fastRender (Translate dt z) = do
   z' <- fastRender z
-  return $ z' { offset = offset z + dn }
+  return $ z' { offset = offset z + dt }
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -164,25 +170,26 @@ writeZound filename (Segment { samples }) = do
         }
   numFramesWritten <- SF.writeFile info filename (BV.toBuffer samples)
   massert "writeZound" (numFramesWritten == numFrames)
-writeZound filename z = do
-  z' <- render z
-  writeZound filename z'
+-- writeZound filename z = do
+--   z' <- render z
+--   writeZound filename z'
 
 resampleSound :: Int -> Processor
-resampleSound destLengthFrames z = soxer ["speed", show speedRatio] z
+resampleSound destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
-        srcLengthFrames = zLength z
+        srcLengthFrames = SV.length samples `div` 2
 
 zoundMain = do
   msp "start"
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
       reverb = soxer ["reverb", "85"]
-      resampler = resampleSound (2 * 44100)
+      resampler = resampleSound (1 * 44100)
   z <- readZound file
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  -- let z' = ExternalFx resampler z
+  let z' = ExternalFx resampler z
   -- let z' = Scale (4 * 44100) z
-  let z' = Translate 88100 $ ExternalFx reverb $ Scale (4 * 44100) z
+  -- let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
+  -- let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
   rendered <- render z'
   --msp rendered
   writeZound "foo.wav" rendered
