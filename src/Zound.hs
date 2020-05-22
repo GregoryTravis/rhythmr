@@ -7,9 +7,11 @@ module Zound
 , zoundMain
 ) where
 
+import qualified Data.StorableVector as SV
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
-import qualified Data.StorableVector as SV
+import System.Directory
+import System.IO.Temp
 
 import Constants
 import External
@@ -36,17 +38,18 @@ data Bounds = Bounds Frame Frame
 toInts :: Bounds -> [Frame]
 toInts (Bounds s e) = [s..e-1]
 
+getStart (Bounds s e) = s
+getEnd (Bounds s e) = e
+
 translateBounds :: Bounds -> Frame -> Bounds
 translateBounds (Bounds s e) dt = Bounds (s + dt) (e + dt)
 
 -- inside :: Bounds -> Frame -> Bool
 -- inside (Bounds s e) t = t >= s && t < e
 
-data Processor = Processor
-
 data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
            | Translate Frame Zound
-           | Scale Double Zound
+           | Scale Frame Zound
            | Affine Double Frame Zound
            | ExternalFx Processor Zound
            | InternalFx (Double -> Double) Zound
@@ -72,6 +75,9 @@ sample (Bounded _ z) n = sample z n
 -- getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
 -- getVector = undefined
 
+-- Given input and output wav files, return an exec-able command + arg list
+type Processor = String -> String -> [String]
+
 -- Just sample through the bounds
 -- Not implemented for ExternalFx
 -- Doesn't really need to be in IO but it is so it matches fastRender
@@ -86,12 +92,29 @@ trivialRender z =
 fastRender :: Zound -> IO Zound
 fastRender s@(Segment _ _) = return s
 -- External is now hard-coded to reverb
-fastRender (ExternalFx _ z) = runViaFilesCmd "wav" writeZound readZound commander z
-  where commander = \s d -> ["sox", "-G", s, d] ++ ["reverb", "75"]
+fastRender (ExternalFx p z) = processZound z p
+--fastRender (Scale numFrames z) = resampleSound numFrames z
+
+processZound :: Zound -> Processor -> IO Zound
+processZound z commander = runViaFilesCmd "wav" writeZound readZound commander z
+
+-- soxZound :: Zound -> [String] -> Zound
+-- soxZound z args = processZound cmd
+--   where cmd s d = ["sox", "-G", s, d] ++ args
+soxer :: [String] -> Processor
+soxer soxArgs s d = ["sox", "-G", s, d] ++ soxArgs
 
 render :: Zound -> IO Zound
 --render = trivialRender
 render = fastRender
+
+-- -- Factor out with external fx?
+-- resampleSound :: Int -> Zound -> IO Zound
+-- resampleSound destLengthFrames z = do
+--   runViaFilesCmd "wav" writeZound readZound resample z
+--   where resample src dest = ["sox", "-G", src, dest, "speed", show speedRatio]
+--         speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
+--         srcLengthFrames = numFrames sound
 
 readZound :: FilePath -> IO Zound
 readZound filename = do
@@ -128,9 +151,11 @@ writeZound filename z = do
 zoundMain = do
   msp "start"
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
+      reverb = soxer ["reverb", "85"]
   z <- readZound file
-  --let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  let z' = ExternalFx Processor z
+  -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
+  let z' = ExternalFx reverb z
+  -- let z' = Scale (getEnd (getBounds z) * 2) z
   rendered <- render z'
   writeZound "foo.wav" rendered
   msp "zhi"

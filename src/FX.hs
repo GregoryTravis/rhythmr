@@ -4,6 +4,7 @@ module FX
 
 import Constants
 import Data.List (intercalate)
+import External
 import Sound
 import Util
 
