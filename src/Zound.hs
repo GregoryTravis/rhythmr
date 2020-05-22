@@ -4,6 +4,8 @@
 
 module Zound
 ( Zound(..)
+, zLength
+, render
 , zoundMain
 ) where
 
@@ -25,7 +27,7 @@ import Util
 -- bounds thing).
 
 -- For the sake of simplicity (ie laziness, and not the Haskell kind), most of
--- this code treats audio as a mono sample, even though in fact it's always
+-- this code internally treats audio as a mono sample, even though in fact it's always
 -- stereo -- we convert mono to stereo when reading. In other words, we treat a
 -- sample frame as a single sample, which is incorrect.
 type Frame = Int
@@ -56,6 +58,12 @@ data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
            | PureFx (Frame -> Double) Bounds
            | Bounded Bounds Zound
            | Mix [Zound]
+
+zLength :: Zound -> Int
+zLength (Segment { samples }) = assertM "ok" ok n
+  where n = SV.length samples `div` 2
+        ok = isEven $ SV.length samples
+        isEven n = (n `mod` 2) == 0
 
 getBounds :: Zound -> Bounds
 getBounds (Segment { samples, offset }) = Bounds offset (offset + SV.length samples)
@@ -151,13 +159,7 @@ writeZound filename z = do
 resampleSound :: Int -> Processor
 resampleSound destLengthFrames z = soxer ["speed", show speedRatio] z
   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
-        srcLengthFrames = numStereoFrames z
-
-numStereoFrames :: Zound -> Int
-numStereoFrames (Segment { samples }) = assertM "ok" ok n
-  where n = SV.length samples `div` 2
-        ok = isEven $ SV.length samples
-        isEven n = (n `mod` 2) == 0
+        srcLengthFrames = zLength z
 
 zoundMain = do
   msp "start"
