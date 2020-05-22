@@ -71,7 +71,7 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Mix [Zound]
 
 instance Show Zound where
-  show s@(Segment {}) = show (getBounds s)
+  show s@(Segment {}) = "[" ++ show (getBounds s, offset s) ++ "]"
   show (Translate _ _) = "Translate"
   show (Scale _ _) = "Scale"
   show (Affine _ _ _) = "Affine"
@@ -138,7 +138,7 @@ fastRender (ExternalFx p z) = do
 fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleSound numFrames) z)
 fastRender (Translate dt z) = do
   z' <- fastRender z
-  return $ z' { offset = offset z + dt }
+  return $ z' { offset = offset z' + dt }
 fastRender (Mix zs) = do
   zs' <- mapM fastRender zs
   mixSegments zs'
@@ -256,8 +256,9 @@ zoundMain = do
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
   -- let z' = ExternalFx resampler z
   -- let z' = Scale (4 * 44100) z
-  let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
+  -- let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
   -- let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
+  let z' = Mix [z, z, z]
   rendered <- render z'
   --msp rendered
   writeZound "foo.wav" rendered
