@@ -76,7 +76,7 @@ sample (Bounded _ z) n = sample z n
 -- getVector = undefined
 
 -- Given input and output wav files, return an exec-able command + arg list
-type Processor = String -> String -> [String]
+type Processor = Zound -> String -> String -> [String]
 
 -- Just sample through the bounds
 -- Not implemented for ExternalFx
@@ -96,13 +96,13 @@ fastRender (ExternalFx p z) = processZound z p
 --fastRender (Scale numFrames z) = resampleSound numFrames z
 
 processZound :: Zound -> Processor -> IO Zound
-processZound z commander = runViaFilesCmd "wav" writeZound readZound commander z
+processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
 
 -- soxZound :: Zound -> [String] -> Zound
 -- soxZound z args = processZound cmd
 --   where cmd s d = ["sox", "-G", s, d] ++ args
 soxer :: [String] -> Processor
-soxer soxArgs s d = ["sox", "-G", s, d] ++ soxArgs
+soxer soxArgs _ s d = ["sox", "-G", s, d] ++ soxArgs
 
 render :: Zound -> IO Zound
 --render = trivialRender
@@ -148,13 +148,25 @@ writeZound filename z = do
   z' <- render z
   writeZound filename z'
 
+resampleSound :: Int -> Processor
+resampleSound destLengthFrames z = soxer ["speed", show speedRatio] z
+  where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
+        srcLengthFrames = numStereoFrames z
+
+numStereoFrames :: Zound -> Int
+numStereoFrames (Segment { samples }) = assertM "ok" ok n
+  where n = SV.length samples `div` 2
+        ok = isEven $ SV.length samples
+        isEven n = (n `mod` 2) == 0
+
 zoundMain = do
   msp "start"
   let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
       reverb = soxer ["reverb", "85"]
+      resampler = resampleSound (2 * 44100)
   z <- readZound file
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  let z' = ExternalFx reverb z
+  let z' = ExternalFx resampler z
   -- let z' = Scale (getEnd (getBounds z) * 2) z
   rendered <- render z'
   writeZound "foo.wav" rendered
