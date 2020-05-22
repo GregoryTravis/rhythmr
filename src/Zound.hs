@@ -34,6 +34,8 @@ import Util
 -- length of the sound in frames.
 type Frame = Int
 
+type Samples = SV.Vector Double
+
 -- Bounds start end
 -- start inclusive, end exclusive, of course.
 data Bounds = Bounds Frame Frame
@@ -58,7 +60,7 @@ translateBounds (Bounds s e) dt = Bounds (s + dt) (e + dt)
 -- inside :: Bounds -> Frame -> Bool
 -- inside (Bounds s e) t = t >= s && t < e
 
-data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
+data Zound = Segment { samples :: Samples, offset :: Frame }
            | Translate Frame Zound
            | Scale Frame Zound
            | Affine Double Frame Zound
@@ -67,6 +69,17 @@ data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
            | PureFx (Frame -> Double) Bounds
            | Bounded Bounds Zound
            | Mix [Zound]
+
+instance Show Zound where
+  show s@(Segment {}) = show (getBounds s)
+  show (Translate _ _) = "Translate"
+  show (Scale _ _) = "Scale"
+  show (Affine _ _ _) = "Affine"
+  show (ExternalFx _ _) = "ExternalFx"
+  show (InternalFx _ _) = "InternalFx"
+  show (PureFx _ _) = "PureFx"
+  show (Bounded _ _) = "Bounded"
+  show (Mix _ ) = "Mix"
 
 isSegment :: Zound -> Bool
 isSegment (Segment {}) = True
@@ -99,7 +112,7 @@ sample (Translate dt z) i = sample z (i - (dt * 2))
 sample (Mix zs) i = sum (map (flip sample i) zs)
 sample (Bounded _ z) i = sample z i
 
--- getVector :: Bounds -> SV.Vector Double  -- TODO write default definition
+-- getVector :: Bounds -> Samples  -- TODO write default definition
 -- getVector = undefined
 
 -- Given input and output wav files, return an exec-able command + arg list
@@ -133,13 +146,13 @@ fastRender (Mix zs) = do
 -- mixNRPs :: Arrangement -> IO Sound
 -- mixNRPs arr = do
 --   let len = arrangementLength arr
---       mix = SV.replicate (len * 2) 0 :: SV.Vector Double
+--       mix = SV.replicate (len * 2) 0 :: Samples
 --       nrps = case arr of Arrangement nrps -> nrps
 --       mix'' = runST $ guv mix nrps
 --   return Sound { samples = mix'' }
 --   where yeah :: MSV.Vector s Double -> Placement -> ST s ()
 --         yeah mix (NRPlacement sound pos) = {-eesp "mixOnto" $-} mixOnto mix (samples sound) pos
---         guv :: SV.Vector Double -> [Placement] -> ST s (SV.Vector Double)
+--         guv :: Samples -> [Placement] -> ST s (Samples)
 --         guv mix nrps = do
 --           mmix <- MSV.thaw mix
 --           mapM (yeah mmix) nrps
@@ -155,8 +168,8 @@ mixSegments zs = do
   let vecs = map samples zs
       lengthSamples = SV.length (head vecs)
       offset' = offset (head zs)
-      mix = SV.replicate lengthSamples 0 :: SV.Vector Double
-      addVecsToMix :: SV.Vector Double -> [SV.Vector Double] -> ST s (SV.Vector Double)
+      mix = SV.replicate lengthSamples 0 :: Samples
+      addVecsToMix :: Samples -> [Samples] -> ST s (Samples)
       addVecsToMix mix vecs = do
         mmix <- MSV.thaw mix
         mapM (mixOnto mmix) vecs
@@ -165,7 +178,7 @@ mixSegments zs = do
       mix' = runST $ addVecsToMix mix vecs
   return $ Segment { samples = mix', offset = offset' }
 
-mixOnto :: MSV.Vector s Double -> SV.Vector Double -> ST s ()
+mixOnto :: MSV.Vector s Double -> Samples -> ST s ()
 mixOnto mix v = do
   --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
   mapM mixSample indices
@@ -204,7 +217,7 @@ readZound filename = do
   massert ("channels: " ++ filename) (channels info == 1 || channels info == 2)
   return $ Segment { samples = stereoize (channels info) $ BV.fromBuffer buffer
                    , offset = 0 }
-  where stereoize :: Int -> SV.Vector Float -> SV.Vector Double
+  where stereoize :: Int -> SV.Vector Float -> Samples
         stereoize 1 fs = SV.map realToFrac $ SV.interleave [fs, fs]
         stereoize 2 fs = SV.map realToFrac fs
 
