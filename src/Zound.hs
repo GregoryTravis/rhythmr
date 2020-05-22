@@ -101,7 +101,7 @@ fastRender :: Zound -> IO Zound
 fastRender s@(Segment _ _) = return s
 -- External is now hard-coded to reverb
 fastRender (ExternalFx p z) = processZound z p
---fastRender (Scale numFrames z) = resampleSound numFrames z
+fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleSound numFrames) z)
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -168,8 +168,8 @@ zoundMain = do
       resampler = resampleSound (2 * 44100)
   z <- readZound file
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  let z' = ExternalFx resampler z
-  -- let z' = Scale (getEnd (getBounds z) * 2) z
+  -- let z' = ExternalFx resampler z
+  let z' = Scale (4 * 44100) z
   rendered <- render z'
   writeZound "foo.wav" rendered
   msp "zhi"
