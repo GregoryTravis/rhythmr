@@ -36,6 +36,7 @@ type Frame = Int
 -- end-start is the length of the sample array, not the number of sample frames
 -- (which would be half the length).
 data Bounds = Bounds Frame Frame
+  deriving Show
 
 toInts :: Bounds -> [Frame]
 toInts (Bounds s e) = [s..e-1]
@@ -58,6 +59,12 @@ data Zound = Segment { samples :: SV.Vector Double, offset :: Frame }
            | PureFx (Frame -> Double) Bounds
            | Bounded Bounds Zound
            | Mix [Zound]
+
+--instance Show Zound where
+--  --show (Segment { offset }) = "(Segment [] " ++ (show offset) ++ ")"
+--  show (Segment a b) = "SSS" ++ (show b)
+--  show (Translate _ _) = "T"
+--  show _ = "[Zound]"
 
 zLength :: Zound -> Int
 zLength (Segment { samples }) = assertM "ok" ok n
@@ -100,8 +107,13 @@ trivialRender z =
 fastRender :: Zound -> IO Zound
 fastRender s@(Segment _ _) = return s
 -- External is now hard-coded to reverb
-fastRender (ExternalFx p z) = processZound z p
+fastRender (ExternalFx p z) = do
+  z' <- fastRender z
+  processZound z' p
 fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleSound numFrames) z)
+fastRender (Translate dn z) = do
+  z' <- fastRender z
+  return $ z' { offset = offset z + dn }
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -169,7 +181,9 @@ zoundMain = do
   z <- readZound file
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
   -- let z' = ExternalFx resampler z
-  let z' = Scale (4 * 44100) z
+  -- let z' = Scale (4 * 44100) z
+  let z' = Translate 88100 $ ExternalFx reverb $ Scale (4 * 44100) z
   rendered <- render z'
+  --msp rendered
   writeZound "foo.wav" rendered
   msp "zhi"
