@@ -12,6 +12,7 @@ import Data.List (intercalate, transpose, sortOn, elemIndex, nub, inits)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
+import qualified Data.StorableVector as SV
 import Data.Time.Clock.System (getSystemTime, SystemTime(..))
 import Graphics.Gloss
 import Linear
@@ -37,6 +38,8 @@ import Sound
 import State
 import Util
 import Viz
+import Zound hiding (samples)
+import qualified Zound as Z
 
 poolSize = 64
 
@@ -181,10 +184,17 @@ respondToStateChange s s' = do
   --resetTerm
   putStrLn $ displayer s'
   if currentSong s' /= currentSong s && currentSong s' /= Nothing
-     then playCurrentSong s'
+     then time "playCurrentSong" $ playCurrentSong' s'
      else if currentGroup s' /= currentGroup s && currentGroup s' /= []
             then playCurrent s'
             else return ()
+
+playCurrentSong' :: State -> IO ()
+playCurrentSong' s = do
+  song <- buildSong' s
+  mix <- time "zrender" $ strictRender song
+  msp ("mix", mix)
+  time "zsetsound" $ setSound (looper s) (zoundToSound mix)
 
 playCurrentSong :: State -> IO ()
 playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
@@ -236,6 +246,40 @@ cycles xs = xs : cycles (tail (cycle xs))
 allFirstThrees :: [a] -> [[a]]
 allFirstThrees xs = take n (map (take 3) (cycles xs))
   where n = length xs
+
+soundToZound :: Sound -> Zound
+soundToZound (Sound { samples }) = Segment { Z.samples = samples', offset = 0 }
+  where samples' = SV.map realToFrac samples
+zoundToSound :: Zound -> Sound
+zoundToSound (Segment { Z.samples = samples, offset = 0 }) = Sound { samples = samples' }
+  where samples' = SV.map realToFrac samples
+
+buildSong' :: State -> IO Zound
+buildSong' s@(State { affinityCycle, likes, soundLoader }) = do
+  let stacks :: [[Loop]]
+      stacks = rotateMod affinityCycle (S.toList likes)
+      loopGrid :: [[Loop]]
+      loopGrid = concat (map mini stacks)
+      filenameGrid :: [[String]]
+      filenameGrid = map (map loopFilename) loopGrid
+      rah :: IO [[Sound]]
+      rah =  mapM (mapM soundLoader) filenameGrid
+  soundGrid <- ((mapM (mapM soundLoader) filenameGrid) :: IO [[Sound]])
+  let zoundGrid :: [[Zound]]
+      zoundGrid = map (map soundToZound) soundGrid
+      mix :: Zound
+      mix = renderGrid zoundGrid bpm
+  return mix
+  where mini :: [a] -> [[a]]
+        mini xs =
+          let --cycled :: [a]
+              cycled = cycle xs
+              --cycles :: [[a]]
+              cycles = map (\n -> drop n cycled) [0..length xs - 1]
+              --firstThrees :: [[a]]
+              firstThrees = map (take 3) cycles
+              justOneFirstThree = [head firstThrees]
+           in concat $ map oneTwoThree justOneFirstThree
 
 -- Build a score that happens to match the current affinityCycle affinities
 buildScore :: State -> Score

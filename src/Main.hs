@@ -17,8 +17,8 @@ import Sound
 import Util
 import Zound
 
---doStuffDefault = ["aff", "2345"]
-doStuffDefault = ["zound"]
+doStuffDefault = ["aff", "2345"]
+--doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
 doStuff ["barsSearch", searchString, numTracks] = barsSearch searchString (read numTracks)

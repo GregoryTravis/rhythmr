@@ -5,6 +5,8 @@
 module Zound
 ( Zound(..)
 , render
+, renderGrid
+, strictRender
 , zoundMain
 ) where
 
@@ -81,7 +83,7 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Mix [Zound]
 
 instance Show Zound where
-  show s@(Segment {}) = "[" ++ show (getBounds s, offset s) ++ "]"
+  show s@(Segment {}) = "[Segment " ++ show (getBounds s, offset s) ++ "]"
   show (Translate _ _) = "Translate"
   show (Scale _ _) = "Scale"
   show (Affine _ _ _) = "Affine"
@@ -112,6 +114,8 @@ getBounds :: Zound -> Bounds
 getBounds (Segment { samples, offset }) = Bounds offset (offset + (SV.length samples `div` 2))
 getBounds (Translate dt z) = translateBounds (getBounds z) dt
 getBounds (Bounded b _) = b
+getBounds (Mix zs) = boundingBox (map getBounds zs)
+--getBounds (ExternalFx _ z) = getBounds z
 
 -- Second argument is sample index, not frame number.
 sample :: Zound -> Int -> Double
@@ -184,7 +188,8 @@ mixSegments zs = do
         MSV.freeze mutableMixBuffer
       mixSegmentOnto mutableMixBuffer (Segment { samples, offset }) = do
         mixOnto mutableMixBuffer samples offset
-  return $ Segment { samples = mixBuffer', offset = getEnd allBounds }
+  msp ("mixSegments", length zs, allBounds)
+  return $ Segment { samples = mixBuffer', offset = getStart allBounds }
 
 mixOnto :: MSV.Vector s Double -> Samples -> Int -> ST s ()
 mixOnto mix v offset = do
@@ -210,6 +215,13 @@ soxer soxArgs _ s d = ["sox", "-G", s, d] ++ soxArgs
 render :: Zound -> IO Zound
 --render = trivialRender
 render = fastRender
+
+-- I still don't understand how to force thunks
+strictRender :: Zound -> IO Zound
+strictRender z = do
+  z' <- render z
+  msp $ SV.length (samples z')
+  return z'
 
 -- -- Factor out with external fx?
 -- resampleSound :: Int -> Zound -> IO Zound
@@ -265,7 +277,8 @@ renderGrid zses bpm =
       toLength z = Scale numFrames z
       placeMeasuresInTime zses = zipWith moveToMeasure zses [0..]
       moveToMeasure zs n = map (Translate (n * numFrames)) zs
-   in eesp ("ha", numFrames) $ Mix (concat zses')
+      mix = Mix (concat zses')
+   in eesp ("ha", numFrames) $ mix
 
 zoundMain = do
   msp "start"
