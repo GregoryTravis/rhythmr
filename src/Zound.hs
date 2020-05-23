@@ -60,6 +60,16 @@ translateBounds (Bounds s e) dt = Bounds (s + dt) (e + dt)
 -- inside :: Bounds -> Frame -> Bool
 -- inside (Bounds s e) t = t >= s && t < e
 
+boundsUnion :: Bounds -> Bounds -> Bounds
+boundsUnion (Bounds s e) (Bounds s' e') = Bounds (min s s') (max e e')
+
+boundingBox :: [Bounds] -> Bounds
+boundingBox [] = error "boundingBox: empty list"
+boundingBox bs = foldr1 boundsUnion bs
+
+boundsLength :: Bounds -> Frame
+boundsLength (Bounds s e) = e - s
+
 data Zound = Segment { samples :: Samples, offset :: Frame }
            | Translate Frame Zound
            | Scale Frame Zound
@@ -161,33 +171,31 @@ fastRender (Mix zs) = do
 
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z
+mixSegments [] = error "mixSegments: empty list"
 mixSegments zs = do
-  massert "mixSegments: empty list" (not $ null zs)
   massert "mixSegments: not a segment" (all isSegment zs)
-  massert "mixSegments: length mismatch" (allEq $ map getBounds zs)
-  let vecs = map samples zs
-      lengthSamples = SV.length (head vecs)
-      offset' = offset (head zs)
-      mix = SV.replicate lengthSamples 0 :: Samples
-      addVecsToMix :: Samples -> [Samples] -> ST s (Samples)
-      addVecsToMix mix vecs = do
-        mmix <- MSV.thaw mix
-        mapM (mixOnto mmix) vecs
-        mix' <- MSV.freeze mmix
-        return mix'
-      mix' = runST $ addVecsToMix mix vecs
-  return $ Segment { samples = mix', offset = offset' }
+  let allBounds = boundingBox (map getBounds zs)
+      mixLength = boundsLength allBounds
+      mixBuffer = SV.replicate (mixLength * 2) 0 :: Samples
+      mixBuffer' = runST addAll
+      addAll = do
+        mutableMixBuffer <- MSV.thaw mixBuffer
+        mapM (mixSegmentOnto mutableMixBuffer) zs
+        MSV.freeze mutableMixBuffer
+      mixSegmentOnto mutableMixBuffer (Segment { samples, offset }) = do
+        mixOnto mutableMixBuffer samples offset
+  return $ Segment { samples = mixBuffer', offset = getEnd allBounds }
 
-mixOnto :: MSV.Vector s Double -> Samples -> ST s ()
-mixOnto mix v = do
+mixOnto :: MSV.Vector s Double -> Samples -> Int -> ST s ()
+mixOnto mix v offset = do
   --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
   mapM mixSample indices
   return ()
   where indices = take (SV.length v) [0..]
         mixSample i = do
-          mixSample <- MSV.read mix i
+          mixSample <- MSV.read mix (i + offset)
           let vSample = SV.index v i
-          MSV.write mix i (mixSample + vSample)
+          MSV.write mix (i + offset) (mixSample + vSample)
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -257,8 +265,8 @@ zoundMain = do
   -- let z' = ExternalFx resampler z
   -- let z' = Scale (4 * 44100) z
   -- let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
-  -- let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
-  let z' = Mix [z, z, z]
+  let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
+  -- let z' = Mix [z, z, z]
   rendered <- render z'
   --msp rendered
   writeZound "foo.wav" rendered
