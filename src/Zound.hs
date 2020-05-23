@@ -8,6 +8,8 @@ module Zound
 , renderGrid
 , strictRender
 , zoundMain
+, readZound
+, writeZound
 ) where
 
 import Control.Monad.ST
@@ -179,7 +181,8 @@ mixSegments [] = error "mixSegments: empty list"
 mixSegments zs = do
   massert "mixSegments: not a segment" (all isSegment zs)
   let allBounds = boundingBox (map getBounds zs)
-      mixLength = boundsLength allBounds
+      --mixLength = boundsLength allBounds
+      mixLength = getEnd allBounds
       mixBuffer = SV.replicate (mixLength * 2) 0 :: Samples
       mixBuffer' = runST addAll
       addAll = do
