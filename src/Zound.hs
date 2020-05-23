@@ -192,10 +192,11 @@ mixOnto mix v offset = do
   mapM mixSample indices
   return ()
   where indices = take (SV.length v) [0..]
+        offsetSamples = offset * 2
         mixSample i = do
-          mixSample <- MSV.read mix (i + offset)
+          mixSample <- MSV.read mix (i + offsetSamples)
           let vSample = SV.index v i
-          MSV.write mix (i + offset) (mixSample + vSample)
+          MSV.write mix (i + offsetSamples) (mixSample + vSample)
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -255,18 +256,37 @@ resampleSound destLengthFrames z@(Segment { samples }) = soxer ["speed", show sp
   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
         srcLengthFrames = SV.length samples `div` 2
 
+-- Lay out a sequence of stacks, resampled to the given bpm. Does not render.
+renderGrid :: [[Zound]] -> Int -> Zound
+renderGrid zses bpm =
+  let numFrames = toLoopLengthFrames bpm
+      zses' = placeMeasuresInTime (sameLength zses)
+      sameLength zses = map (map toLength) zses
+      toLength z = Scale numFrames z
+      placeMeasuresInTime zses = zipWith moveToMeasure zses [0..]
+      moveToMeasure zs n = map (Translate (n * numFrames)) zs
+   in eesp ("ha", numFrames) $ Mix (concat zses')
+
 zoundMain = do
   msp "start"
-  let file = "loops/loop-download-6dc53e275e7b0552f632fc628de4d8b5-7738ccbb63cce757a1b2cadd823ea35c.wav"
+  let file = "orig-loops/loop-09de23642a52b0ec4f7d5a655cd55421.wav"
+      file2 = "orig-loops/loop-0d9b22ad63a501dfdb123b3c9f6e36bf.wav"
       reverb = soxer ["reverb", "85"]
+      reverser = soxer ["reverse"]
       resampler = resampleSound (1 * 44100)
   z <- readZound file
+  z2 <- readZound file2
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
   -- let z' = ExternalFx resampler z
   -- let z' = Scale (4 * 44100) z
   -- let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
-  let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
+  -- let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
   -- let z' = Mix [z, z, z]
+  let -- grid = [[z], [z2], [z], [z2]]
+      rz = ExternalFx reverser z
+      rz2 = ExternalFx reverser z2
+      grid = [[z], [z2], [rz], [rz2], [z, rz], [z2, rz2], [z, rz2], [rz, z2]]
+      z' = renderGrid grid 120
   rendered <- render z'
   --msp rendered
   writeZound "foo.wav" rendered

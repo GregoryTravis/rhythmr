@@ -1,8 +1,16 @@
 module Constants where
 
+bpm :: Int
 bpm = 120
+meter :: Int
 meter = 4
-loopLengthSeconds = (60.0 / fromInteger bpm) * meter
+toLoopLengthSeconds :: Int -> Double
+toLoopLengthSeconds bpm = (60.0 / fromIntegral bpm) * (fromIntegral meter)
+loopLengthSeconds :: Double
+loopLengthSeconds = toLoopLengthSeconds bpm
+standardSR :: Int
 standardSR = 44100
+toLoopLengthFrames :: Int -> Int
+toLoopLengthFrames bpm = floor $ (fromIntegral standardSR) * (toLoopLengthSeconds bpm)
 loopLengthFrames :: Int
-loopLengthFrames = floor $ (fromInteger standardSR) * loopLengthSeconds
+loopLengthFrames = toLoopLengthFrames bpm
