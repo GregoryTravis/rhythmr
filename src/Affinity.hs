@@ -129,7 +129,7 @@ keyboardHandler s 'A' = do
                                    let s' = s { currentGroup = g }
                                    setState s'
 keyboardHandler s 'W' = do
-  --writeCurrentSong s
+  writeCurrentSong s
   writeCurrentSongSeparateTracks' s
   setState s
 keyboardHandler s 'S' = do
@@ -202,6 +202,15 @@ playCurrentSong' s@(State { currentSong = Just loops }) = do
 --   mix <- renderArrangement arr
 --   setZound (looper s) mix
 -- playCurrentSong s@(State { currentSong = Nothing }) = return ()
+
+writeCurrentSong :: State -> IO ()
+writeCurrentSong s = do
+  let loopGrid = buildlLoopGrid s
+  z <- renderLoopGrid s loopGrid
+  mix <- render z
+  MkSystemTime { systemSeconds } <- getSystemTime
+  let filename = "song-" ++ show systemSeconds ++ ".wav"
+  writeZound filename mix
 
 writeCurrentSongSeparateTracks' :: State -> IO ()
 writeCurrentSongSeparateTracks' s = do
