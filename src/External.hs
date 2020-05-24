@@ -63,7 +63,7 @@ runProc exe args = do
   return ()
 
 runProcArr :: [String] -> IO ()
-runProcArr (exe : args) = runProc exe args
+runProcArr (exe : args) = {- eesp (exe, args) $ -} runProc exe args
 
 withTmp :: String -> (String -> IO a) -> IO a
 withTmp ext action = do
