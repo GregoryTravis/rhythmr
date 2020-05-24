@@ -1,7 +1,8 @@
 module Loop
 ( Loop(..)
 , loopFilename
-, getHash ) where
+, getHash
+, getSourceTrackHash ) where
 
 import Data.List.Split (splitOn)
 import System.FilePath.Posix (dropExtension, takeBaseName)
@@ -14,5 +15,11 @@ newtype Loop = Loop String
 loopFilename :: Loop -> String
 loopFilename (Loop f) = f
 
+parseFilename :: Loop -> [String]
+parseFilename (Loop filename) = splitOn "-" $ dropExtension filename
+
 getHash :: Loop -> String
-getHash (Loop filename) = case (splitOn "-" $ dropExtension filename) of [_, _, _, hash] -> hash
+getHash = (!! 3) . parseFilename
+
+getSourceTrackHash :: Loop -> String
+getSourceTrackHash = (!! 2) . parseFilename

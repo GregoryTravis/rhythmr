@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Util
 ( assert
 , assertM
@@ -42,6 +44,7 @@ module Util
 , hist
 , replaceInList
 , allEq
+, groupUsing
 ) where
 
 import Control.Exception
@@ -246,3 +249,19 @@ replaceInList (x:xs) n x' = x : replaceInList xs (n-1) x'
 allEq :: Eq a => [a] -> Bool
 allEq [] = True
 allEq (x : xs) = all (x==) xs
+
+-- Group elements via a key (b) produced by the function
+-- I want to call this groupBy but that is something else
+groupUsing :: forall a b. Ord b => (a -> b) -> [a] -> [[a]]
+groupUsing f xs = 
+  let addIt :: a -> M.Map b [a] -> M.Map b [a]
+      addIt x m =
+        let k :: b
+            k = f x
+         in case M.lookup k m of Nothing -> M.insert k [x] m
+                                 Just xs -> M.insert k (x:xs) m
+      m :: M.Map b [a]
+      m = foldr addIt M.empty xs
+      groups :: [[a]]
+      groups = M.elems m
+   in groups

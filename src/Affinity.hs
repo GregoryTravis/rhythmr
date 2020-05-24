@@ -9,7 +9,7 @@ import Control.Concurrent
 import Control.Monad (replicateM, zipWithM_)
 import Data.Containers.ListUtils (nubOrd)
 import Data.IORef
-import Data.List (intercalate, transpose, sortOn, elemIndex, nub, inits)
+import Data.List (intercalate, intersect, transpose, sortOn, elemIndex, nub, inits)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
@@ -283,14 +283,18 @@ buildlLoopGrid s@(State { affinityCycle, likes }) =
               justOneFirstThree = [head firstThrees]
            in concat $ map oneTwoThree justOneFirstThree
 
--- For each individual loop, build a loop grid with everything but that one removed
+groupBySourceTrack :: [Loop] -> [[Loop]]
+groupBySourceTrack = groupUsing getSourceTrackHash
+
+-- Group loops by source track, then render each group separately
 buildStemLoopGrids :: State -> [[[Loop]]]
 buildStemLoopGrids s =
   let loopGrid = buildlLoopGrid s
       loops = nubOrd (concat loopGrid)
-   in map (onlyThisOne loopGrid) loops
-  where onlyThisOne :: [[Loop]] -> Loop -> [[Loop]]
-        onlyThisOne loopGrid loop = map (filter (loop ==)) loopGrid
+      sourceTrackGroups = groupBySourceTrack loops
+   in map (onlyThese loopGrid) sourceTrackGroups
+  where onlyThese :: [[Loop]] -> [Loop] -> [[Loop]]
+        onlyThese loopGrid loops = map (intersect loops) loopGrid
 
 renderStems :: State -> IO [Zound]
 renderStems s = do
