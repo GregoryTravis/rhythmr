@@ -5,19 +5,19 @@ module FX
 import Constants
 import Data.List (intercalate)
 import External
-import Sound
+import Zound
 import Util
 
 data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int | Phaser | Pitch Int | Reverb Int
                | Reverse | FXs [FX] | Tremolo Int Int
   deriving (Eq, Show)
 
---ssRun :: (String -> String -> [String]) -> (Sound -> IO Sound)
-ssRun :: [String] -> (Sound -> IO Sound)
-ssRun subcommand sound = runViaFilesCmd "wav" writeSound readSound commander sound
+--ssRun :: (String -> String -> [String]) -> (Zound -> IO Zound)
+ssRun :: [String] -> (Zound -> IO Zound)
+ssRun subcommand sound = runViaFilesCmd "wav" writeZound readZound commander sound
   where commander = \s d -> ["sox", "-G", s, d] ++ subcommand
 
-applyFX :: FX -> Sound -> IO Sound
+applyFX :: FX -> Zound -> IO Zound
 
 applyFX NoFX = return
 

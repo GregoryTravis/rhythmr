@@ -26,8 +26,7 @@ import System.Random
 import Hypercube
 import Loop
 import Looper
-import Score
-import Sound
+import Zound
 import Util
 
 editorLogLength = 10
@@ -38,10 +37,10 @@ data State =
         , dislikes :: S.Set [Loop]
         , currentGroup :: [Loop]
         , looper :: Looper
-        , soundLoader :: String -> IO Sound
+        , soundLoader :: String -> IO Zound
         , editorLog :: [String]
         , stack :: [[Loop]]
-        , currentSong :: Maybe (Score, [[Loop]])
+        , currentSong :: Maybe [[Loop]]
         , affinityCycle :: Int
         , currentHypercubeMat :: IORef Mat
         , rand :: StdGen

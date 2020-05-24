@@ -6,10 +6,10 @@ module Analysis
 import Data.List.Split (chunksOf)
 import qualified Data.StorableVector as SV
 
-import Sound
+import Zound
 
 -- TODO: also use right channel
---rms :: Int -> Sound -> [(Double)]
+--rms :: Int -> Zound -> [(Double)]
 rms frameSize sound = zip times $ map rmsFrame (groupIntoFrames leftChannel)
   where leftChannel = map realToFrac $ SV.unpack $ (SV.deinterleave 2 (samples sound)) !! 0
         rmsFrame frame = sqrt (avg (map (**2) frame))

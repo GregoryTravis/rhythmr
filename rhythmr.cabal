@@ -25,8 +25,8 @@ Flag llvm
 executable rhythmr
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Util, External, Aubio, Sound, Resample, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Arrangement, Mess, Feh, Affinity, Constants, Graph,
-                       Looper, Zipper, FX, Score, Dice, Gui, FPS, State, Ascii, Bars, Viz, Diag, History, SaveLoad, Loop, Animate, Gfx, Hypercube, Zound
+  other-modules:       Util, External, Aubio, Resample, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Affinity, Constants, Graph,
+                       Looper, Zipper, FX, Gui, FPS, State, Ascii, Bars, Viz, Diag, History, SaveLoad, Loop, Animate, Gfx, Hypercube, Zound
   --ghc-options:         -threaded -rtsopts "-with-rtsopts=-N"
 
   ghc-options:

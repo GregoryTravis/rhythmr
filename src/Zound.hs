@@ -4,12 +4,16 @@
 
 module Zound
 ( Zound(..)
+, FSamples
 , render
 , renderGrid
 , strictRender
 , zoundMain
 , readZound
 , writeZound
+, numFrames
+, samplesAsFloats
+, snip
 ) where
 
 import Control.Monad.ST
@@ -39,6 +43,7 @@ import Util
 type Frame = Int
 
 type Samples = SV.Vector Double
+type FSamples = SV.Vector Float
 
 -- Bounds start end
 -- start inclusive, end exclusive, of course.
@@ -85,7 +90,7 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Mix [Zound]
 
 instance Show Zound where
-  show s@(Segment {}) = "[Segment " ++ show (getBounds s, offset s) ++ "]"
+  show z@(Segment {}) = "[Segment " ++ show (getBounds z, offset z) ++ "]"
   show (Translate _ _) = "Translate"
   show (Scale _ _) = "Scale"
   show (Affine _ _ _) = "Affine"
@@ -95,25 +100,18 @@ instance Show Zound where
   show (Bounded _ _) = "Bounded"
   show (Mix _ ) = "Mix"
 
+samplesAsFloats :: Zound -> FSamples
+samplesAsFloats = (SV.map realToFrac) . samples
+
 isSegment :: Zound -> Bool
 isSegment (Segment {}) = True
 isSegment _ = False
 
---instance Show Zound where
---  --show (Segment { offset }) = "(Segment [] " ++ (show offset) ++ ")"
---  show (Segment a b) = "SSS" ++ (show b)
---  show (Translate _ _) = "T"
---  show _ = "[Zound]"
-
--- zLength :: Zound -> Int
--- zLength = getEnd . getBounds
--- zLength (Segment { samples }) = assertM "ok" ok n
---   where n = SV.length samples `div` 2
---         ok = isEven $ SV.length samples
---         isEven n = (n `mod` 2) == 0
+numFrames :: Zound -> Int
+numFrames (Segment { samples }) = SV.length samples `div` 2
 
 getBounds :: Zound -> Bounds
-getBounds (Segment { samples, offset }) = Bounds offset (offset + (SV.length samples `div` 2))
+getBounds z@(Segment { samples, offset }) = Bounds offset (offset + numFrames z)
 getBounds (Translate dt z) = translateBounds (getBounds z) dt
 getBounds (Bounded b _) = b
 getBounds (Mix zs) = boundingBox (map getBounds zs)
@@ -121,7 +119,7 @@ getBounds (Mix zs) = boundingBox (map getBounds zs)
 
 -- Second argument is sample index, not frame number.
 sample :: Zound -> Int -> Double
-sample z@(Segment { samples }) i
+sample (Segment { samples }) i
   | i >= 0 && i < SV.length samples = samples `SV.index` i
   | otherwise = 0
 sample (Translate dt z) i = sample z (i - (dt * 2))
@@ -146,12 +144,12 @@ trivialRender z =
 
 -- Chunk up, optimize affines, etc
 fastRender :: Zound -> IO Zound
-fastRender s@(Segment _ _) = return s
+fastRender z@(Segment _ _) = return z
 -- External is now hard-coded to reverb
 fastRender (ExternalFx p z) = do
   z' <- fastRender z
   processZound z' p
-fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleSound numFrames) z)
+fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleZound numFrames) z)
 fastRender (Translate dt z) = do
   z' <- fastRender z
   return $ z' { offset = offset z' + dt }
@@ -159,13 +157,13 @@ fastRender (Mix zs) = do
   zs' <- mapM fastRender zs
   mixSegments zs'
 
--- mixNRPs :: Arrangement -> IO Sound
+-- mixNRPs :: Arrangement -> IO Zound
 -- mixNRPs arr = do
 --   let len = arrangementLength arr
 --       mix = SV.replicate (len * 2) 0 :: Samples
 --       nrps = case arr of Arrangement nrps -> nrps
 --       mix'' = runST $ guv mix nrps
---   return Sound { samples = mix'' }
+--   return Zound { samples = mix'' }
 --   where yeah :: MSV.Vector s Double -> Placement -> ST s ()
 --         yeah mix (NRPlacement sound pos) = {-eesp "mixOnto" $-} mixOnto mix (samples sound) pos
 --         guv :: Samples -> [Placement] -> ST s (Samples)
@@ -227,8 +225,8 @@ strictRender z = do
   return z'
 
 -- -- Factor out with external fx?
--- resampleSound :: Int -> Zound -> IO Zound
--- resampleSound destLengthFrames z = do
+-- resampleZound :: Int -> Zound -> IO Zound
+-- resampleZound destLengthFrames z = do
 --   runViaFilesCmd "wav" writeZound readZound resample z
 --   where resample src dest = ["sox", "-G", src, dest, "speed", show speedRatio]
 --         speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
@@ -246,10 +244,9 @@ readZound filename = do
         stereoize 2 fs = SV.map realToFrac fs
 
 writeZound :: String -> Zound -> IO ()
-writeZound filename (Segment { samples }) = do
-  let numFrames = (SV.length samples) `div` 2
+writeZound filename z@(Segment { samples }) = do
   let info = Info
-        { frames = numFrames
+        { frames = numFrames z
         , samplerate = 44100
         , channels = 2
         , format = Format
@@ -261,15 +258,15 @@ writeZound filename (Segment { samples }) = do
         , seekable = True
         }
   numFramesWritten <- SF.writeFile info filename (BV.toBuffer samples)
-  massert "writeZound" (numFramesWritten == numFrames)
+  massert "writeZound" (numFramesWritten == numFrames z)
 -- writeZound filename z = do
 --   z' <- render z
 --   writeZound filename z'
 
-resampleSound :: Int -> Processor
-resampleSound destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
+resampleZound :: Int -> Processor
+resampleZound destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
-        srcLengthFrames = SV.length samples `div` 2
+        srcLengthFrames = numFrames z
 
 -- Lay out a sequence of stacks, resampled to the given bpm. Does not render.
 renderGrid :: [[Zound]] -> Int -> Zound
@@ -283,13 +280,26 @@ renderGrid zses bpm =
       mix = Mix (concat zses')
    in eesp ("ha", numFrames) $ mix
 
+-- start is the first sample, end is the sample after the last sample
+snip :: Frame -> Frame -> Zound -> Zound
+snip start end (Segment { samples, offset }) =
+  let start' = start - offset
+      end' = end - offset
+      offset' = start'
+      length = SV.length samples
+      startIndex = start' * 2
+      endIndex = end' * 2
+      ok = startIndex < endIndex && 0 <= startIndex && endIndex <= length
+      samples' = SV.take (endIndex - startIndex) (SV.drop startIndex samples)
+   in Segment { samples = samples', offset = offset' }
+
 zoundMain = do
   msp "start"
   let file = "orig-loops/loop-09de23642a52b0ec4f7d5a655cd55421.wav"
       file2 = "orig-loops/loop-0d9b22ad63a501dfdb123b3c9f6e36bf.wav"
       reverb = soxer ["reverb", "85"]
       reverser = soxer ["reverse"]
-      resampler = resampleSound (1 * 44100)
+      resampler = resampleZound (1 * 44100)
   z <- readZound file
   z2 <- readZound file2
   -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z

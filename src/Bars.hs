@@ -11,7 +11,7 @@ import Aubio
 import Download
 import External (contentAddressableWrite)
 import Search
-import Sound
+import Zound
 import Spleeter
 import Util
 
@@ -59,22 +59,22 @@ barsYouTubeURL idOrUrl = do
 extractLoops filename = do
   msp filename
   bars <- fmap (take 40 . drop 10) $ barBeat filename
-  original <- readSound filename
+  original <- readZound filename
   let originalLoops = splitIntoLoops original bars
-  originalFilenames <- writeSounds originalLoops
+  originalFilenames <- writeZounds originalLoops
   msp originalFilenames
   if doSpleeter
      then do spleetered <- spleeter original
              let spleeteredLoops = splitIntoLoops spleetered bars
-             spleeteredFilenames <- writeSounds spleeteredLoops
+             spleeteredFilenames <- writeZounds spleeteredLoops
              msp spleeteredFilenames
      else return ()
-  where writer :: Sound -> String -> IO ()
-        writer sound filename = writeSound filename sound
-        writeSounds :: [Sound] -> IO [String]
-        writeSounds sounds = mapM (contentAddressableWrite fileStub "loops" "wav" . writer) sounds
+  where writer :: Zound -> String -> IO ()
+        writer sound filename = writeZound filename sound
+        writeZounds :: [Zound] -> IO [String]
+        writeZounds sounds = mapM (contentAddressableWrite fileStub "loops" "wav" . writer) sounds
         fileStub = "loop-" ++ takeBaseName filename
 
-splitIntoLoops :: Sound -> [Int] -> [Sound]
+splitIntoLoops :: Zound -> [Int] -> [Zound]
 splitIntoLoops sound bars =
   map (\(s, e) -> snip s e sound) (zip bars (drop 1 bars))

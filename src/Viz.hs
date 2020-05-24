@@ -29,7 +29,6 @@ import Gui
 import Hypercube
 import Loop
 import Looper
-import Score
 import State
 import Util
 
@@ -434,14 +433,14 @@ affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
 sequenceToPics :: Float -> State -> [Pic AVal]
 sequenceToPics t (State { currentSong = Nothing }) = []
 sequenceToPics t s =
-  let State { currentSong = Just (score, loops) } = s
-   in L.zipWith (toPic True) [0..] (endPositions score loops)
+  let State { currentSong = Just loops } = s
+   in L.zipWith (toPic True) [0..] (endPositions loops)
   where toPic theSame i (loop, pos) = if (esp theSame) then constPic endPic else combine startPic endPic
           where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0)
                 startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0)
                 startPos = aps M.! loop
         combine p p' = updatePic (t+2*duration) (t+3*duration) (constPic p) (constPic p')
-        endPositions score loops = (seqLayOutPositions $ seqLoopsAndPositions score loops)
+        endPositions loops = (seqLayOutPositions $ seqLoopsAndPositions loops)
         aps = affinityPositions s
 
 seqLayOutPositions :: [(Loop, V2 Int)] -> [(Loop, V2 Float)]
@@ -466,7 +465,7 @@ seqLayOutPositions poses = map lop poses
 
 -- TODO really shouldn't duplicate this, but how?
 renderProgress :: State -> Float -> (Float, Picture)
-renderProgress (State { currentSong = Just (score, loops) }) progress = (tx, Translate 0 (ty - 5) $ upTri)
+renderProgress (State { currentSong = Just loops }) progress = (tx, Translate 0 (ty - 5) $ upTri)
   where tx = interp progress 0 1 left right
         V2 _ ty = (-(window / 2)) + seqMargin - room / 2
         V2 left _ = (-(window / 2)) + seqMargin - room / 2
@@ -486,15 +485,17 @@ renderProgress (State { currentSong = Just (score, loops) }) progress = (tx, Tra
         seqMargin = (seqWindow - seqSize) / 2
         seqWindow :: V2 Float
         seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
-        poses = seqLoopsAndPositions score loops
+        poses = seqLoopsAndPositions loops
 renderProgress _ _ = (0, Blank)
 
-seqLoopsAndPositions :: Score -> [[Loop]] -> [(Loop, V2 Int)]
-seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]
-  where col :: [Measure] -> Int -> [(Loop, V2 Int)]
-        col measures x = zipWith (one x) measures [0..]
-        one :: Int -> Measure -> Int -> (Loop, V2 Int)
-        one x (Measure (g, i) _) y = ((loops !! g) !! i, V2 x y)
+seqLoopsAndPositions :: [[Loop]] -> [(Loop, V2 Int)]
+seqLoopsAndPositions loopses =
+  [(loop, V2 x y) | (loops', x) <- zip loopses [0..], (loop, y) <- zip loops' [0..]]
+-- seqLoopsAndPositions (Score measureses) loops = concat $ zipWith col measureses [0..]
+--   where col :: [Measure] -> Int -> [(Loop, V2 Int)]
+--         col measures x = zipWith (one x) measures [0..]
+--         one :: Int -> Measure -> Int -> (Loop, V2 Int)
+--         one x (Measure (g, i) _) y = ((loops !! g) !! i, V2 x y)
 
 reportViz :: Viz -> Viz
 reportViz = id

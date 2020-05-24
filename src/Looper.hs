@@ -2,8 +2,7 @@ module Looper
 ( Looper
 , withPortaudio
 , withLooper
-, setSound
-, getSound
+, setZound
 , getProgress
 ) where
 
@@ -17,7 +16,7 @@ import Data.StorableVector.Base as SVB
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
-import Sound
+import Zound
 import Util
 
 foreign import ccall "init_audio" init_audio :: IO ()
@@ -26,7 +25,7 @@ foreign import ccall "term_audio" term_audio :: IO ()
 
 granularity = 64
 
-data Looper = Looper (MVar Sound) (IORef Int) (IORef Int)
+data Looper = Looper (MVar FSamples) (IORef Int) (IORef Int)
 
 withPortaudio :: IO a -> IO a
 withPortaudio action = do
@@ -43,28 +42,25 @@ withLooper action = do
   let cleanup = killThread threadId
   (action looper) `finally` cleanup
 
-setSound :: Looper -> Sound -> IO ()
-setSound l sound = do
+setZound :: Looper -> Zound -> IO ()
+setZound l sound = do
   --msp ("set", SV.length (samples sound))
   -- Dum way to make sure the sound is evaluated before putting it in the mvar
   let (Looper sv _ lv) = (samples sound) `seq` l
+      samplesF = samplesAsFloats sound
   empty <- isEmptyMVar sv
   if empty
-     then putMVar sv sound
-     else do swapMVar sv sound
+     then putMVar sv samplesF
+     else do swapMVar sv samplesF
              return ()
-  let (Sound { samples = buffer }) = sound
-  writeIORef lv (SV.length buffer)
-
-getSound :: Looper -> IO (Maybe Sound)
-getSound (Looper mv _ _) = tryReadMVar mv
+  writeIORef lv (numFrames sound * 2)
 
 loop :: Looper -> IO ()
 loop looper = loop' looper 0
 loop' :: Looper -> Int -> IO ()
 loop' l@(Looper sv iv _) currentIndex = do
   --msp currentIndex
-  Sound { samples = buffer } <- readMVar sv
+  buffer <- readMVar sv
   let grain = SV.take granularity (SV.drop currentIndex buffer)
       grainLength = SV.length grain
       nextCurrentIndex = (currentIndex + (grainLength * 1)) `mod` (SV.length buffer)
@@ -75,13 +71,13 @@ loop' l@(Looper sv iv _) currentIndex = do
 
 -- returns 0..1
 getProgress :: Looper -> IO Float
-getProgress (Looper sv iv lv) = do
+getProgress (Looper _ iv lv) = do
   currentIndex <- readIORef iv
   length <- readIORef lv
   return $ fromIntegral currentIndex / fromIntegral length
 
   -- soundMaybe <- tryTakeMVar sv
-  -- let prog (Sound { samples = buffer }) =
+  -- let prog (Zound { samples = buffer }) =
   --       let numGrains = SV.length buffer
   --        in fromIntegral currentIndex / fromIntegral numGrains
   -- return $ case soundMaybe of Just sound -> Just $ prog sound

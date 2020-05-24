@@ -24,9 +24,7 @@ import System.Random
 
 import Animate
 import Ascii
-import Arrangement
 import Constants
-import Dice
 import FX
 import Gui
 import Hypercube
@@ -34,8 +32,7 @@ import Loop
 import Looper
 import Memoize (memoizeIO)
 import SaveLoad
-import Score
-import Sound
+import Zound
 import State
 import Util
 import Viz
@@ -60,7 +57,7 @@ emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.em
 initRand :: StdGen
 initRand = mkStdGen 0
 
-makeLoader :: (String -> IO Sound) -> Looper -> Loader State StateRep
+makeLoader :: (String -> IO Zound) -> Looper -> Loader State StateRep
 makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
@@ -74,13 +71,13 @@ makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = d
 saver :: State -> StateRep
 saver (State { loops, likes, dislikes }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes })
 
--- loadLoops :: (String -> IO Sound) -> IO [Sound]
+-- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
 --   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
 --   mapM soundReader filenames
 
-loadLoopSounds ::(String -> IO Sound) -> [Loop] -> IO [Sound] 
-loadLoopSounds soundLoader loops = mapM soundLoader (map fn loops)
+loadLoopZounds ::(String -> IO Zound) -> [Loop] -> IO [Zound] 
+loadLoopZounds soundLoader loops = mapM soundLoader (map fn loops)
   where fn (Loop filename) = filename
 
 loadRandomLoops :: Int -> IO [Loop]
@@ -94,7 +91,7 @@ loadLoops = do
   filenames <- fmap (map ("loops/" ++)) $ fmap (take poolSize) $ listDirectory "loops"
   return $ map Loop filenames
 
-initState :: (String -> IO Sound) -> Looper -> IO State
+initState :: (String -> IO Zound) -> Looper -> IO State
 initState soundLoader looper = do
   let mat = identity :: Mat
   matRef <- newIORef mat
@@ -191,19 +188,20 @@ respondToStateChange s s' = do
             else return ()
 
 playCurrentSong' :: State -> IO ()
-playCurrentSong' s = do
-  song <- buildSong' s
+playCurrentSong' (State { currentSong = Nothing }) = return ()
+playCurrentSong' s@(State { currentSong = Just loops }) = do
+  song <- renderLoopGrid s loops
   mix <- time "zrender" $ strictRender song
   msp ("mix", mix)
-  time "zsetsound" $ setSound (looper s) (zoundToSound mix)
+  time "zsetsound" $ setZound (looper s) mix
 
-playCurrentSong :: State -> IO ()
-playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
-  sounds <- mapM (loadLoopSounds (soundLoader s)) loops
-  arr <- renderScore score sounds
-  mix <- renderArrangement arr
-  setSound (looper s) mix
-playCurrentSong s@(State { currentSong = Nothing }) = return ()
+-- playCurrentSong :: State -> IO ()
+-- playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
+--   sounds <- mapM (loadLoopZounds (soundLoader s)) loops
+--   arr <- renderScore score sounds
+--   mix <- renderArrangement arr
+--   setZound (looper s) mix
+-- playCurrentSong s@(State { currentSong = Nothing }) = return ()
 
 writeCurrentSongSeparateTracks' :: State -> IO ()
 writeCurrentSongSeparateTracks' s = do
@@ -215,33 +213,33 @@ writeCurrentSongSeparateTracks' s = do
             writeZound filename z
             where filename = "stem-" ++ (show i) ++ ".wav"
 
-writeCurrentSongSeparateTracks :: State -> IO ()
-writeCurrentSongSeparateTracks s@(State { currentSong = Just (score, loops) }) = do
-  --sounds <- mapM (loadLoopSounds (soundLoader s)) loops
-  mapM_ (writeJustOneSound s loops score) (zip [0..] (concat loops))
-writeCurrentSongSeparateTracks s@(State { currentSong = Nothing }) = do
-  msp "Nothing to write"
+--writeCurrentSongSeparateTracks :: State -> IO ()
+--writeCurrentSongSeparateTracks s@(State { currentSong = Just (score, loops) }) = do
+--  --sounds <- mapM (loadLoopZounds (soundLoader s)) loops
+--  mapM_ (writeJustOneZound s loops score) (zip [0..] (concat loops))
+--writeCurrentSongSeparateTracks s@(State { currentSong = Nothing }) = do
+--  msp "Nothing to write"
 
--- Replace all but one of the sounds with silence, and render and write the stem
-writeJustOneSound :: State -> [[Loop]] -> Score -> (Int, Loop) -> IO ()
-writeJustOneSound s loops score (i, loop) = do
-  sound <- case loop of Loop filename -> soundLoader s filename
-  let sounds = map (map replaceDifferent) loops
-      replaceDifferent loop' | loop == loop' = sound
-      replaceDifferent _ | otherwise = silentMeasure
-      filename = "stem-" ++ (show i) ++ ".wav"
-  arr <- renderScore score sounds
-  mix <- renderArrangement arr
-  writeSound filename mix
+-- -- Replace all but one of the sounds with silence, and render and write the stem
+-- writeJustOneZound :: State -> [[Loop]] -> Score -> (Int, Loop) -> IO ()
+-- writeJustOneZound s loops score (i, loop) = do
+--   sound <- case loop of Loop filename -> soundLoader s filename
+--   let sounds = map (map replaceDifferent) loops
+--       replaceDifferent loop' | loop == loop' = sound
+--       replaceDifferent _ | otherwise = silentMeasure
+--       filename = "stem-" ++ (show i) ++ ".wav"
+--   arr <- renderScore score sounds
+--   mix <- renderArrangement arr
+--   writeZound filename mix
 
-writeCurrentSong :: State -> IO ()
-writeCurrentSong s = do
-  mix <- getSound (looper s)
-  case mix of Just mix -> do
-                MkSystemTime { systemSeconds } <- getSystemTime
-                let filename = "song-" ++ show systemSeconds ++ ".wav"
-                writeSound filename mix
-              Nothing -> return ()
+-- writeCurrentSong :: State -> IO ()
+-- writeCurrentSong s = do
+--   mix <- getZound (looper s)
+--   case mix of Just mix -> do
+--                 MkSystemTime { systemSeconds } <- getSystemTime
+--                 let filename = "song-" ++ show systemSeconds ++ ".wav"
+--                 writeZound filename mix
+--               Nothing -> return ()
 
 ramps :: [a] -> [[a]]
 ramps = concat . tail . inits . tail . inits
@@ -257,16 +255,6 @@ cycles xs = xs : cycles (tail (cycle xs))
 allFirstThrees :: [a] -> [[a]]
 allFirstThrees xs = take n (map (take 3) (cycles xs))
   where n = length xs
-
-soundToZound :: Sound -> Zound
-soundToZound (Sound { samples }) = Segment { Z.samples = samples', offset = 0 }
-  where samples' = SV.map realToFrac samples
-zoundToSound :: Zound -> Sound
-zoundToSound (Segment { Z.samples = samples, offset = 0 }) = Sound { samples = samples' }
-  where samples' = SV.map realToFrac samples
-
-buildSong' :: State -> IO Zound
-buildSong' s = renderLoopGrid s (buildlLoopGrid s)
 
 buildlLoopGrid :: State -> [[Loop]]
 buildlLoopGrid s@(State { affinityCycle, likes }) =
@@ -308,75 +296,40 @@ renderLoopGrid s@(State { soundLoader }) loopGrid = do
   msp ("loopgrid", numLoops)
   let filenameGrid :: [[String]]
       filenameGrid = map (map loopFilename) loopGrid
-      rah :: IO [[Sound]]
+      rah :: IO [[Zound]]
       rah =  mapM (mapM soundLoader) filenameGrid
-  soundGrid <- ((mapM (mapM soundLoader) filenameGrid) :: IO [[Sound]])
-  let zoundGrid :: [[Zound]]
-      zoundGrid = map (map soundToZound) soundGrid
-      mix :: Zound
+  zoundGrid <- ((mapM (mapM soundLoader) filenameGrid) :: IO [[Zound]])
+  let mix :: Zound
       mix = renderGrid zoundGrid bpm
   return mix
 
--- Build a score that happens to match the current affinityCycle affinities
-buildScore :: State -> Score
-buildScore (State { affinityCycle, likes })  =
-  let stacks = rotateMod affinityCycle (S.toList likes)
-      measures :: [[Measure]]
-      measures = [[Measure (m, p) fx | p <- [0..length (stacks !! m) - 1]] | m <- [0..length stacks - 1]]
-      --ramped = concat $ map ramps measures
-      fx = Reverb 85
-   --in Score $ shew $ concat $ concat $ map oneTwoThree $ shew $ map allFirstThrees (eesp (map length stacks, map length measures) (filter ((>= 3) . length) measures))
-   in Score $ concat $ map mini (filter ((>= 3) . length) measures)
-  where shew xs = eesp (map length xs) xs
-        mini :: [a] -> [[a]]
-        mini xs =
-          let --cycled :: [a]
-              cycled = cycle xs
-              --cycles :: [[a]]
-              cycles = map (\n -> drop n cycled) [0..length xs - 1]
-              --firstThrees :: [[a]]
-              firstThrees = map (take 3) cycles
-              justOneFirstThree = [head firstThrees]
-           in concat $ map oneTwoThree justOneFirstThree
+---- Build a score that happens to match the current affinityCycle affinities
+--buildScore :: State -> Score
+--buildScore (State { affinityCycle, likes })  =
+--  let stacks = rotateMod affinityCycle (S.toList likes)
+--      measures :: [[Measure]]
+--      measures = [[Measure (m, p) fx | p <- [0..length (stacks !! m) - 1]] | m <- [0..length stacks - 1]]
+--      --ramped = concat $ map ramps measures
+--      fx = Reverb 85
+--   --in Score $ shew $ concat $ concat $ map oneTwoThree $ shew $ map allFirstThrees (eesp (map length stacks, map length measures) (filter ((>= 3) . length) measures))
+--   in Score $ concat $ map mini (filter ((>= 3) . length) measures)
+--  where shew xs = eesp (map length xs) xs
+--        mini :: [a] -> [[a]]
+--        mini xs =
+--          let --cycled :: [a]
+--              cycled = cycle xs
+--              --cycles :: [[a]]
+--              cycles = map (\n -> drop n cycled) [0..length xs - 1]
+--              --firstThrees :: [[a]]
+--              firstThrees = map (take 3) cycles
+--              justOneFirstThree = [head firstThrees]
+--           in concat $ map oneTwoThree justOneFirstThree
 
 -- number :: [a] -> [(Int, a)]
 -- number = zip [0..]
 
 setSong :: State -> State
-setSong s =
-  -- let score = Score [[Measure (0, 0) (Reverb 85)],
-  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-  --                    [Measure (0, 0) (Reverb 85)],
-  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-  --                    [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-  --                    [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-  --                    [Measure (1, 0) (Reverb 85)],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-  --                    [Measure (1, 0) (Reverb 85)],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-  --                    [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
-  --                    [Measure (1, 3) revReverb],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
-  --                    [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
-  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-  --                    [Measure (0, 0) (Reverb 85)],
-  --                    [Measure (0, 0) (Reverb 85), Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand],
-  --                    [Measure (0, 1) (Tremolo 10 40), Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-  --                    [Measure (0, 2) MCompand, Measure (0, 3) revReverb],
-  --                    [Measure (1, 0) (Reverb 85)],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-  --                    [Measure (1, 0) (Reverb 85)],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 1) (Tremolo 10 40)],
-  --                    [Measure (1, 2) MCompand, Measure (1, 3) revReverb],
-  --                    [Measure (1, 3) revReverb],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 3) revReverb],
-  --                    [Measure (1, 1) (Reverb 85), Measure (1, 3) revReverb],
-  --                    [Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb],
-  --                    [Measure (1, 0) (Reverb 85), Measure (1, 2) (Reverb 85), Measure (1, 3) revReverb]]
-      -- revReverb = FXs [Reverse, Reverb 85, Reverse]
-  let score = buildScore s
-      loopses = rotateMod (affinityCycle s) (S.toList $ likes s)
-   in s { currentSong = Just $ (score, loopses) }
+setSong s = s { currentSong = Just $ buildlLoopGrid s }
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
 someAcceptable :: State -> [[Loop]]
@@ -386,28 +339,28 @@ someAcceptable s = take 2 $ reverse $ rotateMod ac $ filter atLeastFour $ affini
 
 --playSong :: State -> IO ()
 --playSong s = do
---  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
+--  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readZound filename
 --                                 Nothing -> return []
---  let clickTrackArr = parArrangement (map (singleSoundArrangement loopLengthFrames) clickTrack)
+--  let clickTrackArr = parArrangement (map (singleZoundArrangement loopLengthFrames) clickTrack)
 --  -- let sis = currentGroup s -- should be affinity group or something / 68
---  --     someSounds = map ((sounds s) !!) sis
---  someSounds <- loadLoopSounds (soundLoader s) (currentGroup s)
+--  --     someZounds = map ((sounds s) !!) sis
+--  someZounds <- loadLoopZounds (soundLoader s) (currentGroup s)
 --  let score = Score [[Measure 0 NoFX],
 --                     [Measure 0 (Reverb 85)],
 --                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40)],
 --                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand],
 --                     [Measure 0 NoFX, Measure 1 (Tremolo 10 40), Measure 2 MCompand, Measure 3 revReverb]]
 --      revReverb = FXs [Reverse, Reverb 85, Reverse]
---  --arr <- renderScore score someSounds
---  let sound = (someSounds !! 0)
---      snd = singleSoundArrangement loopLengthFrames sound
---      doub = double (singleSoundArrangement loopLengthFrames sound)
---      halv = halve (singleSoundArrangement loopLengthFrames sound)
---      soundArr = singleSoundArrangement loopLengthFrames sound
---      sound2 = (someSounds !! 1)
---      soundArr2 = singleSoundArrangement loopLengthFrames sound2
+--  --arr <- renderScore score someZounds
+--  let sound = (someZounds !! 0)
+--      snd = singleZoundArrangement loopLengthFrames sound
+--      doub = double (singleZoundArrangement loopLengthFrames sound)
+--      halv = halve (singleZoundArrangement loopLengthFrames sound)
+--      soundArr = singleZoundArrangement loopLengthFrames sound
+--      sound2 = (someZounds !! 1)
+--      soundArr2 = singleZoundArrangement loopLengthFrames sound2
 --  doubS <- renderArrangement doub
---  -- let quad = double (singleSoundArrangement loopLengthFrames doubS)
+--  -- let quad = double (singleZoundArrangement loopLengthFrames doubS)
 --  --     arr = seqArrangement [snd, doub, halv, parArrangement [snd, doub], parArrangement [snd, doub, halv]]
 --  --let arr = rev (eqDice soundArr 8)
 --  arr <- chopOut (eqDice soundArr 16) 0.5
@@ -421,30 +374,26 @@ someAcceptable s = take 2 $ reverse $ rotateMod ac $ filter atLeastFour $ affini
 --                                            arr, (parArrangement [arr, soundArr2]), (parArrangement [arr, soundArr2])]
 --  -- let arr' = arr
 
---  --let arr = seqArrangement (map (singleSoundArrangement loopLengthFrames) [sound, sound'])
+--  --let arr = seqArrangement (map (singleZoundArrangement loopLengthFrames) [sound, sound'])
 --  -- let acc = acceptable s
---  --     accSounds = map (map ((sounds s) !!)) acc
---  --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleSoundArrangement loopLengthFrames) ss)) accSounds
+--  --     accZounds = map (map ((sounds s) !!)) acc
+--  --     arr = seqArrangement $ map dub $ map (\ss -> parArrangement (map (singleZoundArrangement loopLengthFrames) ss)) accZounds
 --  --songMix <- renderArrangement $ parArrangement [arr', clickTrackArr]
 --  songMix <- renderArrangement arr'
---  setSound (looper s) songMix
+--  setZound (looper s) songMix
 --  where dub x = seqArrangement [x, x]
 --        --addClickMaybe arr = parArrangement [arr, clickTrackArr]
---        -- addClickMaybe arr = case addClick of (Just s) -> parArrangement [arr, (singleSoundArrangement loopLengthFrames s)]
+--        -- addClickMaybe arr = case addClick of (Just s) -> parArrangement [arr, (singleZoundArrangement loopLengthFrames s)]
 --        --                                      Nothing -> arr
   
 playCurrent :: State -> IO ()
 playCurrent s = do
-  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readSound filename
+  clickTrack <- case addClick of Just filename -> fmap (:[]) $ readZound filename
                                  Nothing -> return []
-  ss <- loadLoopSounds (soundLoader s) (currentGroup s)
-  let -- ss :: [Sound]
-      -- ss = map ((sounds s) !!) (currentGroup s)
-      arr :: Arrangement
-      arr = parArrangement (map (singleSoundArrangement loopLengthFrames) (clickTrack ++ ss))
-  mix <- renderArrangement arr
-  --msp "setting sound"
-  setSound (looper s) mix
+  ss <- loadLoopZounds (soundLoader s) (currentGroup s)
+  let z = renderGrid [ss] bpm
+  mix <- render z
+  setZound (looper s) mix
 
 -- This one only picks from the set of loops that aren't part of a like
 -- randomGroup s = do
@@ -491,7 +440,7 @@ displayer s = intercalate "\n" lines
 affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
-                    soundLoader <- memoizeIO readSound
+                    soundLoader <- memoizeIO readZound
                     let loader = makeLoader soundLoader looper
                     s <- initState soundLoader looper
                     guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
