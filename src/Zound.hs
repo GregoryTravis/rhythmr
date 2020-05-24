@@ -14,6 +14,7 @@ module Zound
 , numFrames
 , samplesAsFloats
 , snip
+, normalize
 ) where
 
 import Control.Monad.ST
@@ -244,7 +245,8 @@ readZound filename = do
         stereoize 2 fs = SV.map realToFrac fs
 
 writeZound :: String -> Zound -> IO ()
-writeZound filename z@(Segment { samples }) = do
+writeZound filename z = do
+  let Segment { samples } = normalize z
   let info = Info
         { frames = numFrames z
         , samplerate = 44100
@@ -292,6 +294,13 @@ snip start end (Segment { samples, offset }) =
       ok = startIndex < endIndex && 0 <= startIndex && endIndex <= length
       samples' = SV.take (endIndex - startIndex) (SV.drop startIndex samples)
    in Segment { samples = samples', offset = offset' }
+
+applyToSamples :: (Samples -> Samples) -> Zound -> Zound
+applyToSamples f sound = sound { samples = f (samples sound) }
+
+normalize :: Zound -> Zound
+normalize z = applyToSamples (SV.map (/mx)) z
+  where mx = max 0.005 $ SV.maximum (samples (applyToSamples (SV.map abs) z))
 
 zoundMain = do
   msp "start"
