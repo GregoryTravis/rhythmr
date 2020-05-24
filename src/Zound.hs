@@ -10,6 +10,7 @@ module Zound
 , strictRender
 , zoundMain
 , readZound
+, readZoundZeroCrossings
 , writeZound
 , numFrames
 , samplesAsFloats
@@ -269,6 +270,36 @@ resampleZound :: Int -> Processor
 resampleZound destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
         srcLengthFrames = numFrames z
+
+-- Find the first and last zero-crossing and clip to those.
+-- If they aren't very close to the end, we print a warning
+clipToZeroCrossings :: Zound -> Zound
+clipToZeroCrossings z = check z $ z { samples = samples' }
+  where samples' = ensureEven $ SV.reverse (clipFront (SV.reverse (clipFront (samples z))))
+        -- Print a warning if we removed a substantial amount
+        check before after =
+          let blen = SV.length (samples before)
+              alen = SV.length (samples after)
+              warning = "WARNING zc clip loss " ++ (show blen) ++ " " ++ (show alen)
+           in if (blen - alen) >= tooMuch
+                 then eesp warning after
+                 else eesp (blen-alen, blen, alen) after
+        ensureEven :: Samples -> Samples
+        ensureEven ss | isEven $ SV.length ss = ss
+                      | otherwise = SV.tail ss
+        isEven x = (x `mod` 2) == 0
+tooMuch = 50 :: Int
+
+clipFront :: Samples -> Samples
+clipFront ss = do
+  let startSign = sign $ SV.head ss
+      sign x = x > 0
+   in SV.dropWhile ((== startSign) . sign) ss 
+
+readZoundZeroCrossings :: String -> IO Zound
+readZoundZeroCrossings s = do
+  z <- readZound s
+  return $ clipToZeroCrossings z
 
 -- Lay out a sequence of stacks, resampled to the given bpm. Does not render.
 renderGrid :: [[Zound]] -> Int -> Zound
