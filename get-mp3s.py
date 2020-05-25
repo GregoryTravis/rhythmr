@@ -63,17 +63,19 @@ def main():
             pageToken = pageToken
     )
     searchResponse = request.execute()
+    #print(json.dumps(searchResponse))
 
     videoResponses = []
     for item in searchResponse['items']:
-        id = item['id']['videoId']
-        request = youtube.videos().list(
-                part = "snippet,contentDetails",
-                id = id
-        )
-        videoResponse = request.execute()
-        videoResponses += [videoResponse]
-        #print(json.dumps(response))
+        if item['id']['kind'] == "youtube#video":
+            id = item['id']['videoId']
+            request = youtube.videos().list(
+                    part = "snippet,contentDetails",
+                    id = id
+            )
+            videoResponse = request.execute()
+            videoResponses += [videoResponse]
+            #print(json.dumps(response))
 
     response = { 'search': searchResponse, 'videos': videoResponses }
 

@@ -1,10 +1,12 @@
 module Bars
 ( barsSearch
 , barsYouTubeURL
+, barsFile
 ) where
 
 import Data.List (stripPrefix)
 import System.Directory
+import System.Directory.Recursive
 import System.FilePath.Posix (takeBaseName)
 
 import Aubio
@@ -17,8 +19,9 @@ import Util
 
 doSpleeter = False
 
-searchAndDownloadFiles :: String -> Int -> IO [FilePath]
-searchAndDownloadFiles searchString count = do
+searchAndDownloadFiles :: String -> String -> Int -> IO [FilePath]
+searchAndDownloadFiles collection searchString count = do
+  createDirectoryIfMissing False collection
   ids <- search searchString count
   msp "ids"
   msp ids
@@ -26,19 +29,13 @@ searchAndDownloadFiles searchString count = do
   mapM save filenames
   where save filename = do
           msp ("copy", filename, dest filename)
-          createDirectoryIfMissing True dir
           copyFile filename (dest filename)
           return $ dest filename
-        dir = "tracks/" ++ searchStringDir
-        dest filename = dir ++ "/" ++ (takeBaseName filename) ++ ".wav"
-        searchStringDir = searchStringToFilename searchString
+        dest filename = collection ++ "/" ++ (takeBaseName filename) ++ ".wav"
 
-searchStringToFilename :: String -> String
-searchStringToFilename s = replace ' ' '-' s
-
-barsSearch :: String -> Int -> IO ()
-barsSearch searchString numTracks = do
-  filenames <- searchAndDownloadFiles searchString 8
+barsSearch :: String -> String -> Int -> IO ()
+barsSearch collection searchString numTracks = do
+  filenames <- searchAndDownloadFiles collection searchString 8
   mapM_ extractLoops filenames
 
 youtubeUrlPrefix = "https://www.youtube.com/watch?v="
@@ -55,6 +52,13 @@ barsYouTubeURL idOrUrl = do
   --renameFile filename destFilename
   --msp destFilename
   extractLoops filename
+
+barsFile :: String -> IO ()
+barsFile filename = do
+  isDir <- doesDirectoryExist filename
+  files <- if isDir then getDirRecursive filename
+                    else return [filename]
+  mapM_ extractLoops files
 
 extractLoops filename = do
   msp filename

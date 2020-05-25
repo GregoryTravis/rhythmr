@@ -50,6 +50,7 @@ executable rhythmr
                        diagrams-lib,
                        diagrams-svg,
                        directory,
+                       dir-traverse,
                        filepath,
                        --GLFW-b,
                        -- This works
