@@ -11,6 +11,7 @@ module Zound
 , zoundMain
 , readZound
 , readZoundZeroCrossings
+, readZoundFadeEnds
 , writeZound
 , numFrames
 , samplesAsFloats
@@ -86,8 +87,7 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Scale Frame Zound
            | Affine Double Frame Zound
            | ExternalFx Processor Zound
-           | InternalFx (Double -> Double) Zound
-           | PureFx (Frame -> Double) Bounds
+           | InternalFx (Int -> Double -> Double) Zound
            | Bounded Bounds Zound
            | Mix [Zound]
 
@@ -98,7 +98,6 @@ instance Show Zound where
   show (Affine _ _ _) = "Affine"
   show (ExternalFx _ _) = "ExternalFx"
   show (InternalFx _ _) = "InternalFx"
-  show (PureFx _ _) = "PureFx"
   show (Bounded _ _) = "Bounded"
   show (Mix _ ) = "Mix"
 
@@ -118,6 +117,7 @@ getBounds (Translate dt z) = translateBounds (getBounds z) dt
 getBounds (Bounded b _) = b
 getBounds (Mix zs) = boundingBox (map getBounds zs)
 --getBounds (ExternalFx _ z) = getBounds z
+getBounds (InternalFx f z) = getBounds z
 
 -- Second argument is sample index, not frame number.
 sample :: Zound -> Int -> Double
@@ -127,6 +127,7 @@ sample (Segment { samples }) i
 sample (Translate dt z) i = sample z (i - (dt * 2))
 sample (Mix zs) i = sum (map (flip sample i) zs)
 sample (Bounded _ z) i = sample z i
+sample (InternalFx f z) i = f i (sample z i)
 
 -- getVector :: Bounds -> Samples  -- TODO write default definition
 -- getVector = undefined
@@ -147,7 +148,6 @@ trivialRender z =
 -- Chunk up, optimize affines, etc
 fastRender :: Zound -> IO Zound
 fastRender z@(Segment _ _) = return z
--- External is now hard-coded to reverb
 fastRender (ExternalFx p z) = do
   z' <- fastRender z
   processZound z' p
@@ -158,22 +158,7 @@ fastRender (Translate dt z) = do
 fastRender (Mix zs) = do
   zs' <- mapM fastRender zs
   mixSegments zs'
-
--- mixNRPs :: Arrangement -> IO Zound
--- mixNRPs arr = do
---   let len = arrangementLength arr
---       mix = SV.replicate (len * 2) 0 :: Samples
---       nrps = case arr of Arrangement nrps -> nrps
---       mix'' = runST $ guv mix nrps
---   return Zound { samples = mix'' }
---   where yeah :: MSV.Vector s Double -> Placement -> ST s ()
---         yeah mix (NRPlacement sound pos) = {-eesp "mixOnto" $-} mixOnto mix (samples sound) pos
---         guv :: Samples -> [Placement] -> ST s (Samples)
---         guv mix nrps = do
---           mmix <- MSV.thaw mix
---           mapM (yeah mmix) nrps
---           mix' <- MSV.freeze mmix
---           return mix'
+fastRender z@(InternalFx _ _) = trivialRender z
 
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z
@@ -296,10 +281,31 @@ clipFront ss = do
       sign x = x > 0
    in SV.dropWhile ((== startSign) . sign) ss 
 
+-- This doesn't really help with popping at the ends of loops, so we use
+-- fadeEnds instead.
 readZoundZeroCrossings :: String -> IO Zound
 readZoundZeroCrossings s = do
   z <- readZound s
   return $ clipToZeroCrossings z
+
+fadeEnds :: Zound -> Zound
+fadeEnds z = InternalFx f z
+  where f i s | i < fadeLength = s * (interp 0 (fadeLength-1) 0 1 i)
+              | i >= len - fadeLength = s * (interp (len - fadeLength) (len - 1) 1 0 i)
+              | otherwise = s
+        len = SV.length (samples z)
+        fadeLength = 220  -- 2.5ms
+        interp :: Int -> Int -> Double -> Double -> Int -> Double
+        interp i j x y a = ((1 - k) * x) + (k * y)
+          where k = (aa - ii) / (jj - ii)
+                aa = fromIntegral a
+                ii = fromIntegral i
+                jj = fromIntegral j
+
+readZoundFadeEnds :: String -> IO Zound
+readZoundFadeEnds s = do
+  z <- readZound s
+  return $ fadeEnds z
 
 -- Lay out a sequence of stacks, resampled to the given bpm. Does not render.
 renderGrid :: [[Zound]] -> Int -> Zound
@@ -335,25 +341,10 @@ normalize z = applyToSamples (SV.map (/mx)) z
 
 zoundMain = do
   msp "start"
-  let file = "orig-loops/loop-09de23642a52b0ec4f7d5a655cd55421.wav"
-      file2 = "orig-loops/loop-0d9b22ad63a501dfdb123b3c9f6e36bf.wav"
-      reverb = soxer ["reverb", "85"]
-      reverser = soxer ["reverse"]
-      resampler = resampleZound (1 * 44100)
-  z <- readZound file
-  z2 <- readZound file2
-  -- let z' = Bounded (Bounds 0 800000) $ Translate (2 * 2 * 44100) z
-  -- let z' = ExternalFx resampler z
-  -- let z' = Scale (4 * 44100) z
-  -- let z' = Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z
-  -- let z' = Mix [z, Translate 44100 $ ExternalFx reverb $ Scale (4 * 44100) z]
-  -- let z' = Mix [z, z, z]
-  let -- grid = [[z], [z2], [z], [z2]]
-      rz = ExternalFx reverser z
-      rz2 = ExternalFx reverser z2
-      grid = [[z], [z2], [rz], [rz2], [z, rz], [z2, rz2], [z, rz2], [rz, z2]]
+  let file = "loops/loop-download-57803dd2f53e0df8575cbcd4404b748d-2f51032daba140d5df8775f70bf232ea.wav"
+  z <- readZoundFadeEnds file
+  let grid = [[z], [z], [z], [z]]
       z' = renderGrid grid 120
   rendered <- render z'
-  --msp rendered
   writeZound "foo.wav" rendered
   msp "zhi"

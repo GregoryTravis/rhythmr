@@ -453,7 +453,7 @@ displayer s = intercalate "\n" lines
 affinityMain :: Int -> IO ()
 affinityMain seed = do
   withLooper $ \looper -> do
-                    soundLoader <- memoizeIO readZound
+                    soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader soundLoader looper
                     s <- initState soundLoader looper
                     guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
