@@ -6,7 +6,7 @@ module Analysis
 import Data.List.Split (chunksOf)
 import qualified Data.StorableVector as SV
 
-import Zound
+import Zounds
 
 -- TODO: also use right channel
 --rms :: Int -> Zound -> [(Double)]

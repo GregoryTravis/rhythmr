@@ -5,7 +5,7 @@ module FX
 import Constants
 import Data.List (intercalate)
 import External
-import Zound
+import Zounds
 import Util
 
 data FX = NoFX | Highpass Int | Lowpass Int | Chorus | Band Int Int | NoiseGate | Squelch | Echo Int | Flange | MCompand | Overdrive Int Int | Phaser | Pitch Int | Reverb Int

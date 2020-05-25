@@ -11,7 +11,7 @@ import Gfx
 import Hypercube
 import Looper (withPortaudio)
 import Util
-import Zound
+import Zounds
 
 doStuffDefault = ["aff", "2345"]
 --doStuffDefault = ["zound"]

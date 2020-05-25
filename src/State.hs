@@ -26,7 +26,7 @@ import System.Random
 import Hypercube
 import Loop
 import Looper
-import Zound
+import Zounds
 import Util
 
 editorLogLength = 10

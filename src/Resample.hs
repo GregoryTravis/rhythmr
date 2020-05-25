@@ -4,7 +4,7 @@ import System.Directory
 import System.IO.Temp
 
 import External
-import Zound
+import Zounds
 import Util
 
 resampleZound :: Int -> Zound -> IO Zound

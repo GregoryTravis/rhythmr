@@ -16,7 +16,7 @@ import Data.StorableVector.Base as SVB
 import Foreign.ForeignPtr
 import Foreign.Ptr
 
-import Zound
+import Zounds
 import Util
 
 foreign import ccall "init_audio" init_audio :: IO ()

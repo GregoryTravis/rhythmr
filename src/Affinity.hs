@@ -32,12 +32,11 @@ import Loop
 import Looper
 import Memoize (memoizeIO)
 import SaveLoad
-import Zound
+import Zounds
 import State
 import Util
 import Viz
-import Zound hiding (samples)
-import qualified Zound as Z
+import qualified Zounds as Z
 
 poolSize = 64
 

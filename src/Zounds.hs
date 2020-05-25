@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Zound
+module Zounds
 ( Zound(..)
 , FSamples
 , render

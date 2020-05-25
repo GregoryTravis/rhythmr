@@ -11,7 +11,7 @@ import Aubio
 import Download
 import External (contentAddressableWrite)
 import Search
-import Zound
+import Zounds
 import Spleeter
 import Util
 

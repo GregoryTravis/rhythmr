@@ -6,7 +6,7 @@ import System.IO.Temp
 
 import External
 import Memoize
-import Zound
+import Zounds
 import Util
 
 spleeter :: Zound -> IO Zound
