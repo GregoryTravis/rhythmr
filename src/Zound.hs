@@ -88,6 +88,7 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Affine Double Frame Zound
            | ExternalFx Processor Zound
            | InternalFx (Int -> Double -> Double) Zound
+           | MonoSynth (Frame -> Double) Bounds
            | Bounded Bounds Zound
            | Mix [Zound]
 
@@ -118,6 +119,7 @@ getBounds (Bounded b _) = b
 getBounds (Mix zs) = boundingBox (map getBounds zs)
 --getBounds (ExternalFx _ z) = getBounds z
 getBounds (InternalFx f z) = getBounds z
+getBounds (MonoSynth f b) = b
 
 -- Second argument is sample index, not frame number.
 sample :: Zound -> Int -> Double
@@ -128,6 +130,7 @@ sample (Translate dt z) i = sample z (i - (dt * 2))
 sample (Mix zs) i = sum (map (flip sample i) zs)
 sample (Bounded _ z) i = sample z i
 sample (InternalFx f z) i = f i (sample z i)
+sample (MonoSynth f _) i = f (i `div` 2)
 
 -- getVector :: Bounds -> Samples  -- TODO write default definition
 -- getVector = undefined
@@ -159,6 +162,7 @@ fastRender (Mix zs) = do
   zs' <- mapM fastRender zs
   mixSegments zs'
 fastRender z@(InternalFx _ _) = trivialRender z
+fastRender z@(MonoSynth _ _) = trivialRender z
 
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z
@@ -339,10 +343,16 @@ normalize :: Zound -> Zound
 normalize z = applyToSamples (SV.map (/mx)) z
   where mx = max 0.005 $ SV.maximum (samples (applyToSamples (SV.map abs) z))
 
+sineWave :: Double -> Frame -> Zound
+sineWave hz len = MonoSynth f (Bounds 0 len)
+  where f x = sin (fromIntegral x * k)
+        k = 2 * pi * (hz / 44100.0)
+
 zoundMain = do
   msp "start"
-  let file = "loops/loop-download-57803dd2f53e0df8575cbcd4404b748d-2f51032daba140d5df8775f70bf232ea.wav"
-  z <- readZoundFadeEnds file
+  -- let file = "loops/loop-download-57803dd2f53e0df8575cbcd4404b748d-2f51032daba140d5df8775f70bf232ea.wav"
+  -- z <- readZoundFadeEnds file
+  let z = sineWave 440 88200
   let grid = [[z], [z], [z], [z]]
       z' = renderGrid grid 120
   rendered <- render z'
