@@ -264,13 +264,19 @@ allFirstThrees :: [a] -> [[a]]
 allFirstThrees xs = take n (map (take 3) (cycles xs))
   where n = length xs
 
+desiredLengthLoops =
+  let loopsPerMinute = (fromIntegral bpm / fromIntegral meter)
+      loopsPerSecond = loopsPerMinute / 60.0
+      loops = floor (fromIntegral desiredLength * loopsPerSecond)
+   in loops
+
 buildlLoopGrid :: State -> [[Loop]]
 buildlLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
       stacks = rotateMod affinityCycle (S.toList likes)
       loopGrid :: [[Loop]]
       loopGrid = concat (map mini stacks)
-   in loopGrid
+   in eesp (length loopGrid, length $ take desiredLengthLoops loopGrid) $ take desiredLengthLoops loopGrid
   where mini :: [a] -> [[a]]
         mini xs =
           let --cycled :: [a]

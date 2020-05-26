@@ -14,3 +14,5 @@ toLoopLengthFrames :: Int -> Int
 toLoopLengthFrames bpm = floor $ (fromIntegral standardSR) * (toLoopLengthSeconds bpm)
 loopLengthFrames :: Int
 loopLengthFrames = toLoopLengthFrames bpm
+desiredLength :: Int
+desiredLength = (3 * 60) + 40

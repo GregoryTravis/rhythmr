@@ -354,7 +354,7 @@ zoundMain = do
   -- z <- readZoundFadeEnds file
   let z = sineWave 440 88200
   let grid = [[z], [z], [z], [z]]
-      z' = renderGrid grid 120
+      z' = renderGrid grid bpm
   rendered <- render z'
   writeZound "foo.wav" rendered
   msp "zhi"
