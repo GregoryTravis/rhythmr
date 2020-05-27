@@ -21,7 +21,8 @@ doSpleeter = False
 
 searchAndDownloadFiles :: String -> String -> Int -> IO [FilePath]
 searchAndDownloadFiles collection searchString count = do
-  ids <- search searchString count
+  -- The take here is because we can get more than we asked for
+  ids <- fmap (take count) $ search searchString count
   msp ("ids", ids)
   filenames <- mapM download ids
   return filenames
