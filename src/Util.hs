@@ -29,6 +29,8 @@ module Util
 , predSplit
 , chomp
 , replace
+, weightedRandFromLists
+, weightedRandFromList
 , randFromList
 , randFromListPure
 , randFromListPureN
@@ -174,9 +176,28 @@ chomp s =
 replace a b (x : xs) | a == x = b : (replace a b xs)
 replace a b [] = []
 
+-- Sample from lists, weighting the chance of using each list by its weight
+weightedRandFromLists :: [(Double, [a])] -> IO a
+weightedRandFromLists weightedLists = do
+  list <- weightedRandFromList weightedLists
+  randFromList list
+
+-- Pick an element from a weighted list, respecting the weights
+weightedRandFromList :: [(Double, a)] -> IO a
+weightedRandFromList weightedElems = do
+  let weightSum = sum (map fst weightedElems)
+  n <- getStdRandom (randomR (0, weightSum))
+  msp ("oy", map fst weightedElems, n)
+  return $ pick weightedElems n
+    where pick :: [(Double, a)] -> Double -> a
+          pick [] n = error "Bad pickList"
+          pick ((w, x) : etc) n | n <= w = x
+                                | otherwise = pick etc (n - w)
+
 randFromList :: [a] -> IO a
 randFromList xs = do
   i <- getStdRandom (randomR (0, length xs - 1))
+  msp ("ORF", i >= length xs, i, length xs)
   return $ xs !! i
 
 randFromListPure :: RandomGen g => g -> [a] -> (a, g)

@@ -46,29 +46,30 @@ addClick = Nothing
 
 -- Suitable for persisting
 data StateRep = 
-  StateRep { repLoops :: [Loop]
+  StateRep { repCollections :: [(Double, String)]
+           , repLoops :: [Loop]
            , repLikes :: S.Set [Loop]
            , repDislikes :: S.Set [Loop] }
   deriving (Read, Show)
 
-emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty }
+emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty, repCollections = [] }
 
 initRand :: StdGen
 initRand = mkStdGen 0
 
 makeLoader :: (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes }) = do
+makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
   return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [],
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
-                   currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
+                   currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
 
 saver :: State -> StateRep
-saver (State { loops, likes, dislikes }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes })
+saver (State { loops, likes, dislikes, collections }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections })
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
@@ -79,23 +80,32 @@ loadLoopZounds ::(String -> IO Zound) -> [Loop] -> IO [Zound]
 loadLoopZounds soundLoader loops = mapM soundLoader (map fn loops)
   where fn (Loop filename) = filename
 
-loadRandomLoops :: Int -> IO [Loop]
-loadRandomLoops n = do
-  allFilenames <- fmap (map ("loops/" ++)) $ listDirectory "loops"
-  filenames <- replicateM n (randFromList allFilenames)
+-- (a -> m b) -> t a -> m (t b)
+-- (a -> IO b) -> [a] -> IO [b]
+-- Given a weighted list of dirs, return the dirs' contents, with the same weights
+scanCollections :: [(Double, String)] -> IO [(Double, [String])]
+scanCollections collections = mapM scan collections
+  where scan :: (Double, String) -> IO (Double, [String])
+        scan (w, dir) = do
+          basenames <- listDirectory dir
+          let paths :: [FilePath]
+              paths = map ((dir ++ "/") ++) basenames
+          return (w, paths)
+
+loadRandomLoops :: State -> Int -> IO [Loop]
+loadRandomLoops s n = do
+  weightedFileLists <- scanCollections (collections s)
+  filenames <- replicateM n (weightedRandFromLists weightedFileLists)
+  msp ("HAHA", filenames)
   return $ map Loop filenames
 
-loadLoops :: IO [Loop]
-loadLoops = do
-  filenames <- fmap (map ("loops/" ++)) $ fmap (take poolSize) $ listDirectory "loops"
-  return $ map Loop filenames
-
-initState :: (String -> IO Zound) -> Looper -> IO State
-initState soundLoader looper = do
+initState :: (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
+initState soundLoader looper collections = do
   let mat = identity :: Mat
   matRef <- newIORef mat
   newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
+                    collections,
                     currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
 
 -- setState s = return (Just s, DoNothing)
@@ -162,7 +172,7 @@ newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
       loopsToKeep = concat (S.toList likes ++ S.toList dislikes)
-  newLoops <- completeList loopsToKeep loadRandomLoops poolSize
+  newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
 -- Complete a list by adding enough elements to reach the given total. Since
@@ -455,12 +465,12 @@ displayer s = intercalate "\n" lines
 --   result <- kh s c
 --   case result of SetState s' -> do respondToStateChange
 
-affinityMain :: Int -> IO ()
-affinityMain seed = do
+affinityMain :: Int -> [(Double, String)] -> IO ()
+affinityMain seed collections = do
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader soundLoader looper
-                    s <- initState soundLoader looper
+                    s <- initState soundLoader looper collections
                     guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
