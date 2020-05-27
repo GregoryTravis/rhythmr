@@ -16,3 +16,6 @@ spleeter
 pretrained_models
 *.ab
 *.ids
+files
+songs
+.DS_Store
