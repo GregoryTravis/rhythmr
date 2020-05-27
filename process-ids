@@ -1,2 +1,2 @@
 root=`stack path --local-install-root`
-xn1 $root/bin/rhythmr barsYouTubeURL
+xn1 $root/bin/rhythmr barsId
