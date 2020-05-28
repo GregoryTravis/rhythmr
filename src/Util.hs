@@ -75,6 +75,7 @@ eesp s a = unsafePerformIO $ do
   hFlush stdout
   return a
 
+fesp :: Show b => (a -> b) -> a -> a
 fesp f a = unsafePerformIO $ do
   putStrLn $ evalString $ show $ f a
   return a

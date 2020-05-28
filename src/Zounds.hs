@@ -5,6 +5,7 @@
 module Zounds
 ( Zound(..)
 , FSamples
+, durationSeconds
 , render
 , renderGrid
 , strictRender
@@ -101,6 +102,9 @@ instance Show Zound where
   show (InternalFx _ _) = "InternalFx"
   show (Bounded _ _) = "Bounded"
   show (Mix _ ) = "Mix"
+
+durationSeconds :: Zound -> Double
+durationSeconds z = fromIntegral (getEnd $ getBounds z) / fromIntegral standardSR
 
 samplesAsFloats :: Zound -> FSamples
 samplesAsFloats = (SV.map realToFrac) . samples

@@ -20,7 +20,7 @@ doStuffDefault = ["aff", "2345", "aaa", "2", "bbb", "1"]
 doStuff ["barsSearch", collection, searchString, numTracks] = barsSearch collection searchString (read numTracks)
 doStuff ["barsId", collection, id] = barsId collection id
 doStuff ["barsFile", collection, filename] = barsFile collection filename
-doStuff ("aff" : seed : collections) = affinityMain (read seed) (parse collections)
+doStuff ("aff" : collections) = affinityMain 2345 (parse collections)
   where parse :: [String] -> [(Double, String)]
         parse [] = []
         parse (c : w : etc) = (read w, c) : parse etc

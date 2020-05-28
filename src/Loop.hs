@@ -16,7 +16,7 @@ loopFilename :: Loop -> String
 loopFilename (Loop f) = f
 
 parseFilename :: Loop -> [String]
-parseFilename (Loop filename) = splitOn "-" $ dropExtension filename
+parseFilename (Loop filename) = splitOn "-" $ takeBaseName $ dropExtension filename
 
 getHash :: Loop -> String
 getHash = (!! 3) . parseFilename

@@ -4,6 +4,8 @@ import qualified Data.Map as M
 
 import Util
 
+parseDuration :: String -> Int
+parseDuration "P0D" = 0
 parseDuration ds = sum (map calc (zipUp $ removePT $ (predSplit isDigit ds)))
   where zipUp (a : b : xs) = (a, b) : zipUp xs
         zipUp [] = []

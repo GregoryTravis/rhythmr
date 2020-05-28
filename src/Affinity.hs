@@ -126,8 +126,8 @@ keyboardHandler s 'E' = do s' <- newPool s
                            setState s'
 keyboardHandler s ' ' = setState $ skip s (Just RandomStrategy)
 keyboardHandler s '\ETX' = setState $ like s Nothing
-keyboardHandler s 'r' = setState $ like s (Just RandomStrategy)
-keyboardHandler s 'i' = setState $ like s (Just IncrementalStrategy)
+keyboardHandler s 'r' = setState $ skip s (Just RandomStrategy)
+keyboardHandler s 'i' = setState $ skip s (Just IncrementalStrategy)
 keyboardHandler s '\STX' = setState $ dislike s Nothing
 keyboardHandler s 's' = setState $ dislike s (Just SubsetsStrategy)
 keyboardHandler s 'd' = setState $ dislike s (Just DNCStrategy)
@@ -201,7 +201,7 @@ playCurrentSong' (State { currentSong = Nothing }) = return ()
 playCurrentSong' s@(State { currentSong = Just loops }) = do
   song <- renderLoopGrid s loops
   mix <- time "zrender" $ strictRender song
-  msp ("mix", mix)
+  msp ("mix", durationSeconds mix)
   time "zsetsound" $ setZound (looper s) mix
 
 -- playCurrentSong :: State -> IO ()
@@ -299,7 +299,8 @@ buildlLoopGrid s@(State { affinityCycle, likes }) =
            in concat $ map oneTwoThree justOneFirstThree
 
 groupBySourceTrack :: [Loop] -> [[Loop]]
-groupBySourceTrack = groupUsing getSourceTrackHash
+--groupBySourceTrack = groupUsing getSourceTrackHash
+groupBySourceTrack xs = eesp ("gosh", map getSourceTrackHash xs) $ groupUsing getSourceTrackHash xs
 
 -- Group loops by source track, then render each group separately
 buildStemLoopGrids :: State -> [[[Loop]]]
