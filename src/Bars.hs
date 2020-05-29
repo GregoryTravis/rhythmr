@@ -60,8 +60,11 @@ barsIdFile collection filenames = do
   let ids = concat (map lines fileContentses)
   mapM_ (barsId collection) ids
 
-barsFile :: String -> String -> IO ()
-barsFile collection filename = do
+barsFile :: String -> [String] -> IO ()
+barsFile collection filenames = mapM_ (barsFile1 collection) filenames
+
+barsFile1 :: String -> String -> IO ()
+barsFile1 collection filename = do
   isDir <- doesDirectoryExist filename
   files <- if isDir then getDirRecursive filename
                     else return [filename]
