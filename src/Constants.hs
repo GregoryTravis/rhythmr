@@ -1,7 +1,7 @@
 module Constants where
 
 bpm :: Int
-bpm = 120
+bpm = 100
 
 meter :: Int
 meter = 4
@@ -22,7 +22,7 @@ loopLengthFrames :: Int
 loopLengthFrames = toLoopLengthFrames bpm
 
 desiredLength :: Int
-desiredLength = (3 * 60) + 22
+desiredLength = (2 * 60) + 45
 
 desiredLengthLoops :: Int
 desiredLengthLoops =

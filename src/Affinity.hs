@@ -138,8 +138,8 @@ keyboardHandler s 'A' = do
                                    let s' = s { currentGroup = g }
                                    setState s'
 keyboardHandler s 'W' = do
-  -- writeCurrentSong s
-  -- writeCurrentSongSeparateTracks' s
+  writeCurrentSong s
+  writeCurrentSongSeparateTracks' s
   writeClick
   setState s
 keyboardHandler s 'S' = do
