@@ -138,8 +138,9 @@ keyboardHandler s 'A' = do
                                    let s' = s { currentGroup = g }
                                    setState s'
 keyboardHandler s 'W' = do
-  writeCurrentSong s
-  writeCurrentSongSeparateTracks' s
+  -- writeCurrentSong s
+  -- writeCurrentSongSeparateTracks' s
+  writeClick
   setState s
 keyboardHandler s 'S' = do
   setState (setSong s)
@@ -201,7 +202,7 @@ playCurrentSong' (State { currentSong = Nothing }) = return ()
 playCurrentSong' s@(State { currentSong = Just loops }) = do
   song <- renderLoopGrid s loops
   mix <- time "zrender" $ strictRender song
-  msp ("mix", durationSeconds mix)
+  msp ("mix", durationSeconds mix, desiredLength)
   time "zsetsound" $ setZound (looper s) mix
 
 -- playCurrentSong :: State -> IO ()
@@ -230,6 +231,13 @@ writeCurrentSongSeparateTracks' s = do
             msp $ "stem " ++ filename
             writeZound filename z
             where filename = "stem-" ++ (show i) ++ ".wav"
+
+writeClick :: IO ()
+writeClick = do
+  clik <- readZound "wavs/clik.wav"
+  let z = renderGrid (take desiredLengthLoops (repeat [clik])) bpm
+  mix <- render z
+  writeZound "click.wav" mix
 
 --writeCurrentSongSeparateTracks :: State -> IO ()
 --writeCurrentSongSeparateTracks s@(State { currentSong = Just (score, loops) }) = do
@@ -273,12 +281,6 @@ cycles xs = xs : cycles (tail (cycle xs))
 allFirstThrees :: [a] -> [[a]]
 allFirstThrees xs = take n (map (take 3) (cycles xs))
   where n = length xs
-
-desiredLengthLoops =
-  let loopsPerMinute = (fromIntegral bpm / fromIntegral meter)
-      loopsPerSecond = loopsPerMinute / 60.0
-      loops = floor (fromIntegral desiredLength * loopsPerSecond)
-   in loops
 
 buildlLoopGrid :: State -> [[Loop]]
 buildlLoopGrid s@(State { affinityCycle, likes }) =
