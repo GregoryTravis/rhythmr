@@ -1,6 +1,7 @@
 module Bars
 ( barsSearch
 , barsId
+, barsIdFile
 , barsFile
 ) where
 
@@ -52,6 +53,12 @@ barsId collection idOrUrl = do
   --renameFile filename destFilename
   --msp destFilename
   extractLoops collection filename
+
+barsIdFile :: String -> [String] -> IO ()
+barsIdFile collection filenames = do
+  fileContentses <- mapM readFile filenames
+  let ids = concat (map lines fileContentses)
+  mapM_ (barsId collection) ids
 
 barsFile :: String -> String -> IO ()
 barsFile collection filename = do
