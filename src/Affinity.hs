@@ -24,6 +24,7 @@ import System.Random
 
 import Animate
 import Ascii
+import Chew
 import Constants
 import FX
 import Gui
@@ -144,6 +145,9 @@ keyboardHandler s 'W' = do
   setState s
 keyboardHandler s 'S' = do
   setState (setSong s)
+keyboardHandler s 'J' = do
+  someChew s
+  setState s
 keyboardHandler s '\ESC' = retCommand Quit
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
@@ -196,6 +200,12 @@ respondToStateChange s s' = do
      else if currentGroup s' /= currentGroup s && currentGroup s' /= []
             then playCurrent s'
             else return ()
+
+someChew :: State -> IO ()
+someChew s@(State { likes }) = do
+  mix <- chew s
+  msp ("mix", durationSeconds mix)
+  time "zsetsound" $ setZound (looper s) mix
 
 playCurrentSong' :: State -> IO ()
 playCurrentSong' (State { currentSong = Nothing }) = return ()
@@ -322,7 +332,7 @@ renderStems s = do
   mapM (renderLoopGrid s) loopGrids
 
 renderLoopGrid :: State -> [[Loop]] -> IO Zound
-renderLoopGrid s@(State { soundLoader }) loopGrid = do
+renderLoopGrid (State { soundLoader }) loopGrid = do
   let numLoops = length (nubOrd (concat loopGrid))
   msp ("loopgrid", numLoops)
   let filenameGrid :: [[String]]
