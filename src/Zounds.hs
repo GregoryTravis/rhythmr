@@ -4,7 +4,10 @@
 
 module Zounds
 ( Zound(..)
+, Frame
 , FSamples
+, Bounds(..)
+, getBounds
 , durationSeconds
 , render
 , renderGrid
