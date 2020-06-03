@@ -36,16 +36,15 @@ loadGrid s loopGrid = do
       rah =  mapM (mapM (soundLoader s)) filenameGrid
   rah
 
-renderZGrid :: [[Zound]] -> IO Zound
-renderZGrid zoundGrid = do
-  let mix :: Zound
-      mix = renderGrid zoundGrid bpm
-  return mix
+renderZGrid :: [[Zound]] -> Zound
+renderZGrid zoundGrid = renderGrid zoundGrid bpm
+
+--dice :: Zound -> Zound
 
 chew :: State -> IO Zound
 chew s = do
   zg <- loadGrid s (S.toList (likes s))
   let [a, b] = zg !! 0
-  song <- renderZGrid [[a], [b]]
+  let song = renderZGrid [[a], [b]]
   mix <- time "zrender" $ strictRender song
   return mix
