@@ -8,6 +8,8 @@ module Zounds
 , FSamples
 , Bounds(..)
 , getBounds
+, getStart
+, getEnd
 , durationSeconds
 , render
 , renderGrid
@@ -15,10 +17,12 @@ module Zounds
 , zoundMain
 , readZound
 , readZoundZeroCrossings
+, resampleZoundProcessor
 , readZoundFadeEnds
 , writeZound
 , numFrames
 , samplesAsFloats
+, toZero
 , snip
 , normalize
 ) where
@@ -56,6 +60,9 @@ type FSamples = SV.Vector Float
 -- start inclusive, end exclusive, of course.
 data Bounds = Bounds Frame Frame
   deriving (Eq, Show)
+
+niceShowBounds :: Bounds -> String
+niceShowBounds (Bounds s e) = "[" ++ (show s) ++ ", " ++ (show e) ++ "]"
 
 -- inBounds :: Bounds -> Frame -> Bool
 -- inBounds (Bounds s e) t = s <= t && t < e
@@ -97,14 +104,15 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Mix [Zound]
 
 instance Show Zound where
-  show z@(Segment {}) = "[Segment " ++ show (getBounds z, offset z) ++ "]"
-  show (Translate _ _) = "Translate"
-  show (Scale _ _) = "Scale"
-  show (Affine _ _ _) = "Affine"
-  show (ExternalFx _ _) = "ExternalFx"
-  show (InternalFx _ _) = "InternalFx"
-  show (Bounded _ _) = "Bounded"
-  show (Mix _ ) = "Mix"
+  show z = show' z ++ " " ++ (niceShowBounds (getBounds z))
+    where show' (Segment {}) = "[...]"
+          show' (Translate dt z) = "(Translate " ++ (show dt) ++ " " ++ (show z) ++ ")"
+          show' (Scale s z) = "(Scale " ++ (show s) ++ " " ++ (show z) ++ ")"
+          show' (ExternalFx _ z) = "(ExternalFx " ++ (show z) ++ ")"
+          show' (InternalFx _ z) = "(InternalFx " ++ (show z) ++ ")"
+          show' (MonoSynth _ _) = "(MonoSynth)"
+          show' (Bounded b z) = "(Bounded " ++ (niceShowBounds b) ++ " " ++ (show z) ++ ")"
+          show' (Mix zs) = "(Mix " ++ show zs ++ ")"
 
 durationSeconds :: Zound -> Double
 durationSeconds z = fromIntegral (getEnd $ getBounds z) / fromIntegral standardSR
@@ -161,7 +169,7 @@ fastRender z@(Segment _ _) = return z
 fastRender (ExternalFx p z) = do
   z' <- fastRender z
   processZound z' p
-fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleZound numFrames) z)
+fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleZoundProcessor numFrames) z)
 fastRender (Translate dt z) = do
   z' <- fastRender z
   return $ z' { offset = offset z' + dt }
@@ -262,8 +270,8 @@ writeZound filename z = do
 --   z' <- render z
 --   writeZound filename z'
 
-resampleZound :: Int -> Processor
-resampleZound destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
+resampleZoundProcessor :: Frame -> Processor
+resampleZoundProcessor destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
         srcLengthFrames = numFrames z
 
@@ -329,6 +337,11 @@ renderGrid zses bpm =
       moveToMeasure zs n = map (Translate (n * numFrames)) zs
       mix = Mix (concat zses')
    in eesp ("ha", numFrames) $ mix
+
+toZero :: Zound -> Zound
+toZero z =
+  let Bounds s e = getBounds z
+   in Translate (-s) z
 
 -- start is the first sample, end is the sample after the last sample
 snip :: Frame -> Frame -> Zound -> Zound
