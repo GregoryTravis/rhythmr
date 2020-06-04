@@ -62,7 +62,9 @@ data Bounds = Bounds Frame Frame
   deriving (Eq, Show)
 
 niceShowBounds :: Bounds -> String
-niceShowBounds (Bounds s e) = "[" ++ (show s) ++ ", " ++ (show e) ++ "]"
+niceShowBounds (Bounds s e) = "[" ++ (show s') ++ ", " ++ (show e') ++ "]"
+  where s' = fromIntegral s / fromIntegral loopLengthFrames
+        e' = fromIntegral e / fromIntegral loopLengthFrames
 
 -- inBounds :: Bounds -> Frame -> Bool
 -- inBounds (Bounds s e) t = s <= t && t < e

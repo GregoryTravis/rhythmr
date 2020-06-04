@@ -45,7 +45,10 @@ loadGrid s loopGrid = do
   mapM (mapM render) ugh'
 
 renderZGrid :: [[Zound]] -> Zound
-renderZGrid zoundGrid = renderGrid zoundGrid bpm
+renderZGrid zses =
+  let offsets = take (length zses) (map (* loopLengthFrames) [0..])
+      stacks = map Mix zses
+   in Mix $ zipWith Translate offsets stacks
 
 -- Chop into n pieces and translate all to origin
 dice :: Int -> Zound -> [Zound]
@@ -58,7 +61,7 @@ dice n z =
       starts = take n points
       ends = drop 1 points
       pieces = zipWith (\s e -> snip s e z) starts ends
-   in eesp ("oy", s, e, points, starts, ends) $ map toZero pieces
+   in map toZero pieces
 
 isAtOrigin :: Zound -> Bool
 isAtOrigin z = getStart (getBounds z) == 0
@@ -77,15 +80,36 @@ seqZounds zs | areAtOrigin zs =
         translateList dt (z : zs) = (Translate dt z) : translateList (dt + getEnd (getBounds z)) zs
         translateList dt [] = []
 
+-- Apply a transform to the zound starts
+mapStarts :: (Frame -> Frame) -> [Zound] -> [Zound]
+mapStarts f zs = map update zs
+  where update z = Translate dt z
+          where s = getStart (getBounds z)
+                dt = (f s) - s
+
+-- stretch the start-points of the sound relative to the origin
+scaleSeq :: Double -> Zound -> Zound
+scaleSeq scale (Mix zs) = Mix $ mapStarts (floor . (* scale) . fromIntegral) zs
+
 chew :: State -> IO Zound
 chew s = do
   likes <- loadGrid s (S.toList (likes s))
-  let [a, b] = likes !! 0
+  let [a, b] = take 2 $ last likes
   msp a
   msp b
-  let a' = seqZounds (reverse (dice 4 a))
+  let a' = seqZounds (reverse (dice 4 b))
   msp a'
+  let a'' = seqZounds (reverse (dice 8 b))
+  msp a''
+  let fast = scaleSeq 0.5 $ seqZounds $ (dice 4 b) ++ (dice 4 b)
+  msp "b"
+  msp b
+  msp "fast"
+  msp fast
+  let reseq = scaleSeq 0.5 $ seqZounds $ dice 4 b
   --let da = Mix $ reverse $ dice 2 a
-  let song = renderZGrid [[a], [a], [a'], [a']]
+  --let song = renderZGrid [[b], [b], [a'], [a'], [a''], [a''], [b, a'], [b, a'], [b, a''], [b, a'']]
+  let song = renderZGrid [[b], [b], [fast], [fast]]
+  -- let song = renderZGrid [[b], [b], [reseq], [reseq]]
   mix <- time "zrender" $ strictRender song
   return mix
