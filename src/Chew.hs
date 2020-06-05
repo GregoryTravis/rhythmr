@@ -4,6 +4,7 @@ module Chew
 ( chew ) where
 
 import Data.Containers.ListUtils (nubOrd)
+import Data.List (sortOn)
 import qualified Data.Set as S
 
 import Constants
@@ -109,30 +110,54 @@ chopOut n keepers z = Mix $ zipWith keepOrSilence [0..n-1] (slice n z)
 addClick :: Zound -> [[Zound]] -> [[Zound]]
 addClick clik = map (++ [clik])
 
+chopOuts :: [(Int, [Int])]
+chopOuts =
+  [ (4, [0, 2])
+  , (8, [0, 2, 4, 6])
+  , (4, [1, 3])
+  , (8, [1, 3, 5, 7])
+  , (4, [0, 3])
+  , (8, [0, 5])
+  , (8, [3, 7, 8])
+  ]
+
+-- Use the first loop intact; chop out the rest
+wackyStack :: [Zound] -> Zound
+wackyStack [] = error "empty wackyStack"
+wackyStack (z:zs) = Mix $ [z] ++ zipWith co chopOuts zs
+  where co (n, keepers) z = chopOut n keepers z
+
+-- Rotate the stack a few times
+wackyStacks :: [Zound] -> [Zound]
+wackyStacks zs = map wackyStack $ map (flip rotate zs) [0..n-1]
+  where n = 3
+
 chew :: State -> IO Zound
 chew s = do
   clik <- readZound "wavs/clik.wav"
-  likes <- loadGrid s (S.toList (likes s))
-  let [a, b] = take 2 $ last likes
-  let a' = seqZounds (reverse (dice 4 b))
-  let a'' = seqZounds (reverse (dice 8 b))
-  let faster n = sameBounds $ \b -> scaleSeq 0.5 $ seqZounds $ (dice n b) ++ (dice n b)
-  --let fast = scaleSeq 0.5 $ seqZounds $ (dice 4 b) ++ (dice 4 b)
-  let fast = faster 4 b
-  let fast' = faster 8 b
-  let reseq = scaleSeq 0.5 $ seqZounds $ dice 4 b
-  --let da = Mix $ reverse $ dice 2 a
-  --let song = renderZGrid [[b], [b], [a'], [a'], [a''], [a''], [b, a'], [b, a'], [b, a''], [b, a'']]
-  --let song = renderZGrid [[b], [b], [fast], [fast], [fast'], [fast']]
-  let sla = Mix $ slice 4 a
-  let csla = chopOut 4 [0, 2] a
-  let csla' = chopOut 4 [1, 3] a
-  msp "s"
-  msp sla
-  msp csla
-  msp csla'
-  let grid = [[a], [a], [csla], [csla], [csla'], [csla'], [b], [b, csla], [b], [b, csla']]
-  -- let grid = [[csla], [csla], [csla'], [csla'], [a], [a]]
+  likes' <- loadGrid s (S.toList (likes s))
+  let likes = reverse $ sortOn length likes'
+  let grid = map (:[]) $ concat (map wackyStacks likes)
+  --let [a, b] = take 2 $ last likes
+  --let a' = seqZounds (reverse (dice 4 b))
+  --let a'' = seqZounds (reverse (dice 8 b))
+  --let faster n = sameBounds $ \b -> scaleSeq 0.5 $ seqZounds $ (dice n b) ++ (dice n b)
+  ----let fast = scaleSeq 0.5 $ seqZounds $ (dice 4 b) ++ (dice 4 b)
+  --let fast = faster 4 b
+  --let fast' = faster 8 b
+  --let reseq = scaleSeq 0.5 $ seqZounds $ dice 4 b
+  ----let da = Mix $ reverse $ dice 2 a
+  ----let song = renderZGrid [[b], [b], [a'], [a'], [a''], [a''], [b, a'], [b, a'], [b, a''], [b, a'']]
+  ----let song = renderZGrid [[b], [b], [fast], [fast], [fast'], [fast']]
+  --let sla = Mix $ slice 4 a
+  --let csla = chopOut 4 [0, 2] a
+  --let csla' = chopOut 4 [1, 3] a
+  --msp "s"
+  --msp sla
+  --msp csla
+  --msp csla'
+  --let grid = [[a], [a], [csla], [csla], [csla'], [csla'], [b], [b, csla], [b], [b, csla']]
+  ---- let grid = [[csla], [csla], [csla'], [csla'], [a], [a]]
   let song = renderZGrid $ addClick clik grid
   -- let song = renderZGrid [[b], [b], [reseq], [reseq]]
   mix <- time "zrender" $ strictRender song

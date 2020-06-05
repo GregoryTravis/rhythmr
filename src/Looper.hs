@@ -64,6 +64,9 @@ loop' l@(Looper sv iv _) currentIndex = do
   let grain = SV.take granularity (SV.drop currentIndex buffer)
       grainLength = SV.length grain
       nextCurrentIndex = (currentIndex + (grainLength * 1)) `mod` (SV.length buffer)
+ if nextCurrentIndex < currentIndex
+    then msp "loop restarting"
+    else return ()
   writeAudioAllAtOnce grain
   writeIORef iv currentIndex
   --msp ("wrote", currentIndex)
