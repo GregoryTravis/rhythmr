@@ -103,6 +103,7 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | InternalFx (Int -> Double -> Double) Zound
            | MonoSynth (Frame -> Double) Bounds
            | Bounded Bounds Zound
+           | Silence Bounds
            | Mix [Zound]
 
 instance Show Zound where
@@ -114,6 +115,7 @@ instance Show Zound where
           show' (InternalFx _ z) = "(InternalFx " ++ (show z) ++ ")"
           show' (MonoSynth _ _) = "(MonoSynth)"
           show' (Bounded b z) = "(Bounded " ++ (niceShowBounds b) ++ " " ++ (show z) ++ ")"
+          show' (Silence b) = "(Silence)"
           show' (Mix zs) = "(Mix " ++ show zs ++ ")"
 
 durationSeconds :: Zound -> Double
@@ -137,6 +139,7 @@ getBounds (Mix zs) = boundingBox (map getBounds zs)
 --getBounds (ExternalFx _ z) = getBounds z
 getBounds (InternalFx f z) = getBounds z
 getBounds (MonoSynth f b) = b
+getBounds (Silence b) = b
 
 -- Second argument is sample index, not frame number.
 sample :: Zound -> Int -> Double
@@ -148,6 +151,7 @@ sample (Mix zs) i = sum (map (flip sample i) zs)
 sample (Bounded _ z) i = sample z i
 sample (InternalFx f z) i = f i (sample z i)
 sample (MonoSynth f _) i = f (i `div` 2)
+sample (Silence _) _ = 0
 
 -- getVector :: Bounds -> Samples  -- TODO write default definition
 -- getVector = undefined
@@ -180,6 +184,10 @@ fastRender (Mix zs) = do
   mixSegments zs'
 fastRender z@(InternalFx _ _) = trivialRender z
 fastRender z@(MonoSynth _ _) = trivialRender z
+-- TODO slow
+fastRender z@(Silence _) = trivialRender z
+-- TODO slow
+fastRender z@(Bounded _ _) = trivialRender z
 
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z

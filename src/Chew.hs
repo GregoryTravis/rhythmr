@@ -91,6 +91,9 @@ mapStarts f zs = map update zs
 scaleSeq :: Double -> Zound -> Zound
 scaleSeq scale (Mix zs) = Mix $ mapStarts (floor . (* scale) . fromIntegral) zs
 
+sameBounds :: (Zound -> Zound) -> (Zound -> Zound)
+sameBounds f z = Bounded (getBounds z) (f z)
+
 chew :: State -> IO Zound
 chew s = do
   likes <- loadGrid s (S.toList (likes s))
@@ -101,7 +104,10 @@ chew s = do
   msp a'
   let a'' = seqZounds (reverse (dice 8 b))
   msp a''
-  let fast = scaleSeq 0.5 $ seqZounds $ (dice 4 b) ++ (dice 4 b)
+  let faster n = sameBounds $ \b -> scaleSeq 0.5 $ seqZounds $ (dice n b) ++ (dice n b)
+  --let fast = scaleSeq 0.5 $ seqZounds $ (dice 4 b) ++ (dice 4 b)
+  let fast = faster 4 b
+  let fast' = faster 8 b
   msp "b"
   msp b
   msp "fast"
@@ -109,7 +115,7 @@ chew s = do
   let reseq = scaleSeq 0.5 $ seqZounds $ dice 4 b
   --let da = Mix $ reverse $ dice 2 a
   --let song = renderZGrid [[b], [b], [a'], [a'], [a''], [a''], [b, a'], [b, a'], [b, a''], [b, a'']]
-  let song = renderZGrid [[b], [b], [fast], [fast]]
+  let song = renderZGrid [[b], [b], [fast], [fast], [fast'], [fast']]
   -- let song = renderZGrid [[b], [b], [reseq], [reseq]]
   mix <- time "zrender" $ strictRender song
   return mix
