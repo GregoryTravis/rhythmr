@@ -55,7 +55,7 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
            else do respondToStateChange (cur h) (cur h')
                    return $ GuiState h' t (stateToViz (cur h) v (cur h') t)
       eventHandler e gs = do
-        msp $ "?? " ++ (show e)
+        --msp $ "?? " ++ (show e)
         return gs
       stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration

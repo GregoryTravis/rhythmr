@@ -51,8 +51,8 @@ renderZGrid zses =
    in Mix $ zipWith Translate offsets stacks
 
 -- Chop into n pieces and translate all to origin
-dice :: Int -> Zound -> [Zound]
-dice n z =
+slice :: Int -> Zound -> [Zound]
+slice n z =
   let Bounds s e = getBounds z
       interp :: Double -> Frame
       interp x = floor $ ((1.0 - x) * fromIntegral s) + (x * fromIntegral e)
@@ -61,7 +61,11 @@ dice n z =
       starts = take n points
       ends = drop 1 points
       pieces = zipWith (\s e -> snip s e z) starts ends
-   in map toZero pieces
+   in pieces
+
+-- Chop into n pieces and translate all to origin
+dice :: Int -> Zound -> [Zound]
+dice n z = map toZero (slice n z)
 
 isAtOrigin :: Zound -> Bool
 isAtOrigin z = getStart (getBounds z) == 0
@@ -94,28 +98,42 @@ scaleSeq scale (Mix zs) = Mix $ mapStarts (floor . (* scale) . fromIntegral) zs
 sameBounds :: (Zound -> Zound) -> (Zound -> Zound)
 sameBounds f z = Bounded (getBounds z) (f z)
 
+chopOut :: Int -> [Int] -> Zound -> Zound
+chopOut n keepers z = Mix $ zipWith keepOrSilence [0..n-1] (slice n z)
+  where keepOrSilence i sz | elem i keepers = sz
+        keepOrSilence i sz | otherwise = Silence (getBounds sz)
+       
+-- chopOut n keepers z = Mix (map (pieces !!) keepers)
+--   where pieces = slice n z
+
+addClick :: Zound -> [[Zound]] -> [[Zound]]
+addClick clik = map (++ [clik])
+
 chew :: State -> IO Zound
 chew s = do
+  clik <- readZound "wavs/clik.wav"
   likes <- loadGrid s (S.toList (likes s))
   let [a, b] = take 2 $ last likes
-  msp a
-  msp b
   let a' = seqZounds (reverse (dice 4 b))
-  msp a'
   let a'' = seqZounds (reverse (dice 8 b))
-  msp a''
   let faster n = sameBounds $ \b -> scaleSeq 0.5 $ seqZounds $ (dice n b) ++ (dice n b)
   --let fast = scaleSeq 0.5 $ seqZounds $ (dice 4 b) ++ (dice 4 b)
   let fast = faster 4 b
   let fast' = faster 8 b
-  msp "b"
-  msp b
-  msp "fast"
-  msp fast
   let reseq = scaleSeq 0.5 $ seqZounds $ dice 4 b
   --let da = Mix $ reverse $ dice 2 a
   --let song = renderZGrid [[b], [b], [a'], [a'], [a''], [a''], [b, a'], [b, a'], [b, a''], [b, a'']]
-  let song = renderZGrid [[b], [b], [fast], [fast], [fast'], [fast']]
+  --let song = renderZGrid [[b], [b], [fast], [fast], [fast'], [fast']]
+  let sla = Mix $ slice 4 a
+  let csla = chopOut 4 [0, 2] a
+  let csla' = chopOut 4 [1, 3] a
+  msp "s"
+  msp sla
+  msp csla
+  msp csla'
+  let grid = [[a], [a], [csla], [csla], [csla'], [csla'], [b], [b, csla], [b], [b, csla']]
+  -- let grid = [[csla], [csla], [csla'], [csla'], [a], [a]]
+  let song = renderZGrid $ addClick clik grid
   -- let song = renderZGrid [[b], [b], [reseq], [reseq]]
   mix <- time "zrender" $ strictRender song
   return mix
