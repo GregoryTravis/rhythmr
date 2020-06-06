@@ -1,0 +1,1 @@
+stack build --profile && stack exec --profile -- rhythmr $* +RTS -p

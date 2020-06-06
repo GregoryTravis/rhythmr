@@ -124,7 +124,7 @@ chopOuts =
 -- Use the first loop intact; chop out the rest
 wackyStack :: [Zound] -> Zound
 wackyStack [] = error "empty wackyStack"
-wackyStack (z:zs) = Mix $ [z] ++ zipWith co chopOuts zs
+wackyStack (z:zs) = Mix $ [z] ++ zipWith co (cycle chopOuts) zs
   where co (n, keepers) z = chopOut n keepers z
 
 -- Rotate the stack a few times
@@ -135,7 +135,9 @@ wackyStacks zs = map wackyStack $ map (flip rotate zs) [0..n-1]
 chew :: State -> IO Zound
 chew s = do
   clik <- readZound "wavs/clik.wav"
-  likes' <- loadGrid s (S.toList (likes s))
+  --let loops = S.toList (likes s)
+  let loops = affinities s
+  likes' <- loadGrid s loops
   let likes = reverse $ sortOn length likes'
   let grid = map (:[]) $ concat (map wackyStacks likes)
   --let [a, b] = take 2 $ last likes

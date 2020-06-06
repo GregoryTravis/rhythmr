@@ -176,7 +176,8 @@ keyboardHandler s key = do
 newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
-      loopsToKeep = concat (S.toList likes ++ S.toList dislikes)
+      loopsToKeep = concat (S.toList likes) -- ++ S.toList dislikes)
+  msp ("eep", poolSize, length loopsToKeep)
   newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
@@ -194,7 +195,7 @@ completeList soFar getElements total | otherwise = do
 respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
   --resetTerm
-  putStrLn $ displayer s'
+  --putStrLn $ displayer s'
   if currentSong s' /= currentSong s && currentSong s' /= Nothing
      then time "playCurrentSong" $ playCurrentSong' s'
      else if currentGroup s' /= currentGroup s && currentGroup s' /= []
