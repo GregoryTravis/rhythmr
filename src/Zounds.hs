@@ -211,8 +211,7 @@ mixSegments zs = do
 mixOnto :: MSV.Vector s Double -> Samples -> Int -> ST s ()
 mixOnto mix v offset = do
   --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
-  msp ("mixOnto", offset)
-  mapM mixSample indices
+  eesp ("mixOnto", offset) $ mapM mixSample indices
   return ()
   where indices = take (SV.length v) [0..]
         offsetSamples = offset * 2

@@ -23,12 +23,14 @@ import Graphics.Gloss.Data.Picture
 import Linear
 import Linear.V (fromVector)
 import System.Exit (exitSuccess)
+import System.IO.Unsafe (unsafePerformIO)
 
 import Animate
 import Gui
 import Hypercube
 import Loop
 import Looper
+import Memoize
 import State
 import Util
 
@@ -331,8 +333,8 @@ sequenceCursor s@(State { looper }) = do
   --msp $ ("cs", case s of State { currentSong } -> currentSong)
   return $ renderProgress s progress
 
-loopColor :: Loop -> Color
-loopColor loop =
+loopColor' :: Loop -> Color
+loopColor' loop =
   let hash = getHash loop
       ri = read ("0x" ++ (take 2 hash)) :: Int
       gi = read ("0x" ++ (take 2 $ drop 2 hash)) :: Int
@@ -341,6 +343,7 @@ loopColor loop =
       g = fromIntegral gi / 256.0
       b = fromIntegral bi / 256.0
    in makeColor r g b 1.0
+loopColor = unsafePerformIO (memoizePure loopColor')
 
 rectWidth :: Float
 rectWidth = 25

@@ -2,7 +2,8 @@ module Memoize
 ( DiskAction(..)
 , diskMemoize
 , returnsString
-, memoizeIO ) where
+, memoizeIO
+, memoizePure ) where
 
 import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.ByteString.Base16 as B16
@@ -12,6 +13,7 @@ import qualified Data.Map.Strict as MS
 import Data.ByteString.UTF8 as BSU (fromString)
 import System.Directory
 import System.IO.Temp
+import System.IO.Unsafe (unsafePerformIO)
 
 import Util
 
@@ -53,6 +55,19 @@ returnsString f = TakesFile tf
           b <- f a
           --msp $ ("write it", filename, (show b))
           writeFile filename b
+
+memoizePure :: Ord a => (a -> b) -> IO (a -> b)
+memoizePure f = do
+  ioref <- newIORef MS.empty
+  let memoizedF = \a -> unsafePerformIO $ do
+        cache <- readIORef ioref
+        -- case MS.lookup a cache of Just b -> msp "cache hit"
+        --                           Nothing -> msp "cache miss"
+        case MS.lookup a cache of Just b -> return b
+                                  Nothing -> do let b = f a
+                                                writeIORef ioref $ MS.insert a b cache
+                                                return b
+  return memoizedF
 
 memoizeIO :: Ord a => (a -> IO b) -> IO (a -> IO b)
 memoizeIO f = do

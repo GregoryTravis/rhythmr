@@ -161,4 +161,5 @@ chew s = do
   let song = renderZGrid $ addClick clik grid
   -- let song = renderZGrid [[b], [b], [reseq], [reseq]]
   mix <- time "zrender" $ strictRender song
+  writeZound "chew.wav" mix
   return mix
