@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -7,6 +8,7 @@ module Affinity
 
 import Control.Concurrent
 import Control.Monad (replicateM, zipWithM_)
+import Data.Binary
 import Data.Containers.ListUtils (nubOrd)
 import Data.IORef
 import Data.List (intercalate, intersect, transpose, sortOn, elemIndex, nub, inits)
@@ -15,6 +17,7 @@ import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import qualified Data.StorableVector as SV
 import Data.Time.Clock.System (getSystemTime, SystemTime(..))
+import GHC.Generics (Generic)
 import Graphics.Gloss
 import Linear
 import Linear.Matrix (identity)
@@ -51,7 +54,9 @@ data StateRep =
            , repLoops :: [Loop]
            , repLikes :: S.Set [Loop]
            , repDislikes :: S.Set [Loop] }
-  deriving (Read, Show)
+  deriving (Read, Show, Generic)
+
+instance Binary StateRep
 
 emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty, repCollections = [] }
 

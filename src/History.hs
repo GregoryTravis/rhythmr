@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module History
 ( History
 , start
@@ -9,13 +11,17 @@ module History
 , cur
 , runEm ) where
 
+import Data.Binary
+import GHC.Generics (Generic)
 --import Data.Traversable
 
 import Util
 import qualified Zipper as Z
 
 data History s = History (Z.Zipper s)
-  deriving (Eq, Read, Show)
+  deriving (Eq, Read, Show, Generic)
+
+instance Binary s => Binary (History s)
 
 instance Functor History where
   fmap f (History z) = History (f <$> z)

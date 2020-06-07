@@ -12,6 +12,7 @@ import Control.Concurrent (forkIO, threadDelay, killThread)
 import Control.Concurrent.STM.TChan
 import Control.Exception (finally)
 import Control.Monad.STM (atomically)
+import Data.Binary
 import Data.Time.Clock (NominalDiffTime, diffUTCTime)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime, SystemTime)
 --import GHC.Float (float2Float)
@@ -36,7 +37,7 @@ data GuiState s v = GuiState (History s) Float v
 data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t) => s -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
+guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
                                              (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
 guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange =
   let initWorld = GuiState (start s) 0 (stateToViz s initViz s 0)
@@ -62,7 +63,7 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
   where displayMode = InWindow "Remixr" (windowWidth, windowHeight) (810, 10)
         bgColor = white
 
-execute :: (Read t, Show t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO (History s)
+execute :: (Read t, Show t, Binary t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO (History s)
 execute command h saver loader =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h

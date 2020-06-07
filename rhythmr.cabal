@@ -42,6 +42,7 @@ executable rhythmr
                        aeson,
                        ansi-terminal >= 0.9,
                        base16-bytestring,
+                       binary,
                        bytestring,
                        containers,
                        cryptohash-md5,

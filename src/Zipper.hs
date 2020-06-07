@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Zipper
 ( Zipper
 , makeZipper
@@ -13,12 +15,16 @@ module Zipper
 , fromList
 , runEm ) where
 
+import Data.Binary
+import GHC.Generics (Generic)
 -- import Data.Foldable
 -- import Data.Traversable
 
 -- Zipper top current bottom; top is reversed
 data Zipper a = Zipper [a] a [a]
-  deriving (Eq, Read, Show)
+  deriving (Eq, Read, Show, Generic)
+
+instance Binary s => Binary (Zipper s)
 
 instance Functor Zipper where
   fmap f (Zipper top cur bot) = Zipper (f <$> top) (f cur) (f <$> bot) 
