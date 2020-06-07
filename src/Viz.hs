@@ -34,6 +34,9 @@ import Memoize
 import State
 import Util
 
+instance Ord Color where
+  compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
+
 duration = 0.5
 
 gridSizeFor :: Int -> Int
@@ -110,9 +113,9 @@ clip lo hi x | otherwise = x
 -- Some potential for inconsistency here, Pic and it's Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int
   deriving (Eq, Show, Ord)
-data Pic c = LoopP Tag (c (V2 Float))
-           | SeqP Tag (c (V2 Float)) (c Float)
-           | LoopPlaceP Tag (c (V2 Float))
+data Pic c = LoopP Tag (c (V2 Float)) Color
+           | SeqP Tag (c (V2 Float)) (c Float) Color
+           | LoopPlaceP Tag (c (V2 Float)) Color
            | MarkP Tag (c (V2 Float))
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
@@ -121,39 +124,39 @@ data Id a = Id a
   deriving Show
 
 mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
-mapPic f (SeqP tag pos size) = SeqP tag (f pos) (f size)
-mapPic f (LoopP tag pos) = LoopP tag (f pos)
-mapPic f (LoopPlaceP tag pos) = LoopPlaceP tag (f pos)
+mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) color
+mapPic f (LoopP tag pos color) = LoopP tag (f pos) color
+mapPic f (LoopPlaceP tag pos color) = LoopPlaceP tag (f pos) color
 mapPic f (MarkP tag pos) = MarkP tag (f pos)
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
-zipWithPic f (SeqP tag pos size) (SeqP tag' pos' size') | tag == tag' = SeqP tag (f pos pos') (f size size')
-zipWithPic f (LoopP tag pos) (LoopP tag' pos') | tag == tag' = LoopP tag (f pos pos')
-zipWithPic f (LoopPlaceP tag pos) (LoopPlaceP tag' pos') | tag == tag' = LoopPlaceP tag (f pos pos')
+zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f size size') color
+zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' && color == color' = LoopP tag (f pos pos') color
+zipWithPic f (LoopPlaceP tag pos color) (LoopPlaceP tag' pos' color') | tag == tag' && color == color' = LoopPlaceP tag (f pos pos') color
 zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
 
 mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
-mapSquish f (SeqP tag pos size) = [f pos, f size]
-mapSquish f (LoopP tag pos) = [f pos]
-mapSquish f (LoopPlaceP tag pos) = [f pos]
+mapSquish f (SeqP tag pos size _) = [f pos, f size]
+mapSquish f (LoopP tag pos _) = [f pos]
+mapSquish f (LoopPlaceP tag pos _) = [f pos]
 mapSquish f (MarkP tag pos) = [f pos]
 
 gcReport :: Viz -> [Int]
 gcReport (Viz pics) = concat $ map (mapSquish aValSize) pics
 
 getTag :: Pic a -> Tag
-getTag (LoopP tag _) = tag
-getTag (SeqP tag _ _) = tag
-getTag (LoopPlaceP tag _) = tag
+getTag (LoopP tag _ _) = tag
+getTag (SeqP tag _ _ _) = tag
+getTag (LoopPlaceP tag _ _) = tag
 getTag (MarkP tag _) = tag
 
 picInterpolator :: Pic c -> Pic Interpolator
-picInterpolator (LoopP tag _) =
-  LoopP tag v2FloatInterpolator
-picInterpolator (SeqP tag _ _) =
-  SeqP tag v2FloatInterpolator floatInterpolator
-picInterpolator (LoopPlaceP tag _) =
-  LoopPlaceP tag v2FloatInterpolator
+picInterpolator (LoopP tag _ color) =
+  LoopP tag v2FloatInterpolator color
+picInterpolator (SeqP tag _ _ color) =
+  SeqP tag v2FloatInterpolator floatInterpolator color
+picInterpolator (LoopPlaceP tag _ color) =
+  LoopPlaceP tag v2FloatInterpolator color
 picInterpolator (MarkP tag _) =
   MarkP tag v2FloatInterpolator
 
@@ -212,13 +215,13 @@ renderViz :: Float -> State -> Viz -> IO Picture
 renderViz t s (Viz pics) = do
   mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
-      (hc, mat') = renderHypercube s mat t
+      --(hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
-  writeIORef (currentHypercubeMat s) mat'
+  --writeIORef (currentHypercubeMat s) mat'
   (tx, cursor) <- sequenceCursor s
   let seqPics = map (Translate (-tx) 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy]
+  return $ Pictures $ [cursor] ++ seqPics ++ anims ++ [strategy]
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
@@ -345,6 +348,11 @@ loopColor' loop =
    in makeColor r g b 1.0
 loopColor = unsafePerformIO (memoizePure loopColor')
 
+alphaLoopColor' loop = withAlpha 0.2 (loopColor' loop)
+alphaLoopColor = unsafePerformIO (memoizePure alphaLoopColor')
+
+borderColor = withAlpha 0.2 $ black
+
 rectWidth :: Float
 rectWidth = 25
 rectHeight :: Float
@@ -406,14 +414,9 @@ upTri = Color black $ Scale scale scale $ Polygon pts
         scale = 10
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP (LoopT loop) (Id (V2 x y))) = Translate x y $ rect color black
-  where color = loopColor loop
-renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size)) = Translate x y $ rect color black
-  where color = loopColor loop
-renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y))) = Translate x y $ rect color borderColor
-  where color = withAlpha a $ loopColor loop
-        borderColor = withAlpha a $ black
-        a = 0.2
+renderPic (LoopP (LoopT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
+renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size) color) = Translate x y $ rect color black
+renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
@@ -421,12 +424,12 @@ stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s -- ++ sequenceToPic
 
 loopPlacePics :: State -> [Pic AVal]
 loopPlacePics s@(State { loops }) = map toPic loops
-  where toPic loop = constPic $ LoopPlaceP (LoopPlaceT loop) (Id pos)
+  where toPic loop = constPic $ LoopPlaceP (LoopPlaceT loop) (Id pos) (alphaLoopColor loop)
           where pos = (gridPosition loop s)
 
 affinitiesToPics :: State -> [Pic AVal]
 affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
-  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos)
+  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (loopColor loop)
           where pos = case aps M.!? loop of Just pos -> pos
                                             Nothing -> (gridPosition loop s)
                 aps = affinityPositions s
@@ -439,9 +442,10 @@ sequenceToPics t s =
   let State { currentSong = Just loops } = s
    in L.zipWith (toPic True) [0..] (endPositions loops)
   where toPic theSame i (loop, pos) = if (esp theSame) then constPic endPic else combine startPic endPic
-          where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0)
-                startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0)
+          where endPic = SeqP (SeqT loop i t) (Id pos) (Id 10.0) color
+                startPic = SeqP (SeqT loop i t) (Id startPos) (Id 10.0) color
                 startPos = aps M.! loop
+                color = loopColor loop
         combine p p' = updatePic (t+2*duration) (t+3*duration) (constPic p) (constPic p')
         endPositions loops = (seqLayOutPositions $ seqLoopsAndPositions loops)
         aps = affinityPositions s
