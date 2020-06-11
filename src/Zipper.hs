@@ -17,8 +17,13 @@ module Zipper
 
 import Data.Binary
 import GHC.Generics (Generic)
--- import Data.Foldable
--- import Data.Traversable
+
+-- This might not be a proper list zipper.
+-- [1 2, 3, 4, 5, 6} with 4 selected is:
+--   Zipper [3, 2, 1] 4 [5, 6]
+--
+-- The 'push' operation is poorly named. If we pushed 40 on the above zipper, we'd get
+--   Zipper [3, 2, 1] 40 [4, 5, 6]
 
 -- Zipper top current bottom; top is reversed
 data Zipper a = Zipper [a] a [a]
@@ -77,6 +82,7 @@ zwhere (Zipper t _ b) = (length t, length b)
 toList :: Zipper a -> [a]
 toList (Zipper top c bot) = top ++ [c] ++ bot
 
+-- Foous is initialized to the head of the list
 fromList :: [a] -> Zipper a
 fromList (x:xs) = Zipper [] x xs
 

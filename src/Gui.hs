@@ -7,6 +7,7 @@ module Gui
   , windowHeight
   , windowDim ) where
 
+import qualified Data.Set as S
 import Control.Concurrent (forkIO, threadDelay, killThread)
 --import Control.Concurrent.MVar
 import Control.Concurrent.STM.TChan
@@ -63,12 +64,77 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
   where displayMode = InWindow "Remixr" (windowWidth, windowHeight) (810, 10)
         bgColor = white
 
-execute :: (Read t, Show t, Binary t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO (History s)
+-- Loading a history with 169 states -- 1.5M on disk -- pins all four cpus at
+-- 100%. I don't know why. Further investigation was even more baffling.
+--
+-- It sort of seems like
+--   (1) that's too much state for a program with a 93M heap
+--   (2) the heap is not growing
+--   (3) it's GC'ing like mad
+loadHistoryAndSurviveSomehow :: (Show s, Read t, Show t, Binary t) => FilePath -> Loader s t -> IO (History s)
+loadHistoryAndSurviveSomehow filename loader = do
+  -- Normal: pins
+  -- load filename loader
+
+  h <- load filename loader
+  msp ("len", length (toList h))
+
+  -- wait this one is good
+  -- let [s0, s1] = take 2 (toList h)
+  --     h' = fromList [s0, s1]
+
+  -- and this one is bad?
+  -- let h' = fromList (take 2 (toList h))
+
+  -- and this is bad too?
+  -- let ss = take 2 (toList h)
+  --     h' = fromList ss
+
+  -- But this one is okay??
+  -- Is this because History/Zipper put the first one in a different place?
+  -- let ss = take 1 (toList h)
+  --     h' = fromList ss
+
+  -- but this is ok just because we print it?
+  -- works for: 2, 10, 20
+  -- a little higher but still not pinning: 30, 40, 60
+  -- even higher but not pinning: 100
+  -- almost pinned, but not pinned: 120!
+  -- let ss = take 2 (toList h)
+  --     h' = fromList ss
+  -- msp h'
+
+  let ss = take 20 (toList h)
+      h' = fromList ss
+  msp $ length $ toList h'
+
+  -- This works if you evaluate the unevaluated tail of the list
+  -- Presumably the thunk is holding on to the entire ist
+  -- let h' = fromList (take 2 (toList h))
+  -- msp $ drop 2 (toList h')
+
+  return h'
+
+  -- Grab some: pins iff more than one state
+  -- h <- load filename loader
+  -- msp ("len", length (toList h))
+  -- let h' = fromList (take 1 (toList h))
+  -- return h'
+
+  -- Throw away giant history, fixes cpu pinning
+  -- Load filename -> do fmap (start . cur) $ load filename loader
+
+execute :: (Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO (History s)
 execute command h saver loader =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h
                                       return h
-                  Load filename -> load filename loader
+                  -- Load filename -> load filename loader
+                  Load filename -> loadHistoryAndSurviveSomehow filename loader
+                  -- Load filename -> do h <- load filename loader
+                  --                     msp ("len", length (toList h))
+                  --                     let h' = fromList (take 1 (toList h))
+                  --                     return h'
                   Undo -> return $ undo h
                   Redo -> return $ redo h
                   Quit -> exitSuccess

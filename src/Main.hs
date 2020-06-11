@@ -1,6 +1,7 @@
 module Main where
 
 import GHC.Conc
+import GHC.RTS.Flags
 import System.Environment (getArgs)
 
 import Affinity
@@ -32,6 +33,7 @@ doStuff [] = doStuff doStuffDefault
 
 main = withPortaudio $ do
   noBuffering
+  getGCFlags >>= msp
   putStrLn $ "numCapabilities: " ++ show numCapabilities
   np <- getNumProcessors
   putStrLn $ "getNumProcessors: " ++ show np

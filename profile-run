@@ -1,1 +1,3 @@
-stack build --profile && stack exec --profile -- rhythmr $* +RTS -p
+#stack build --profile && stack exec --profile -- rhythmr $* +RTS -p
+stack build --library-profiling --executable-profiling --ghc-options="-fprof-auto -fno-prof-count-entries -rtsopts" \
+  && stack exec --profile -- rhythmr $* +RTS -p

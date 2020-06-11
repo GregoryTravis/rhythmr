@@ -215,13 +215,13 @@ renderViz :: Float -> State -> Viz -> IO Picture
 renderViz t s (Viz pics) = do
   mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
-      --(hc, mat') = renderHypercube s mat t
+      (hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
-  --writeIORef (currentHypercubeMat s) mat'
+  writeIORef (currentHypercubeMat s) mat'
   (tx, cursor) <- sequenceCursor s
   let seqPics = map (Translate (-tx) 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [cursor] ++ seqPics ++ anims ++ [strategy]
+  return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy]
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
