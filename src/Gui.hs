@@ -104,9 +104,10 @@ loadHistoryAndSurviveSomehow filename loader = do
   --     h' = fromList ss
   -- msp h'
 
-  let ss = take 20 (toList h)
-      h' = fromList ss
-  msp $ length $ toList h'
+  -- aaaand guess what, if we add this flag to the cabal file, we don't have to do anything special:
+  -- ghc-options:
+  --   -with-rtsopts=-H128m
+  let h' = h
 
   -- This works if you evaluate the unevaluated tail of the list
   -- Presumably the thunk is holding on to the entire ist
