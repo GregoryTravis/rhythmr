@@ -376,7 +376,7 @@ renderLoopGrid (State { soundLoader }) loopGrid = do
 -- number = zip [0..]
 
 setSong :: State -> State
-setSong s = s { currentSong = Just $ buildlLoopGrid s }
+setSong s = s { currentSong = Just $ buildlLoopGrid s, currentGroup = [] }
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
 someAcceptable :: State -> [[Loop]]

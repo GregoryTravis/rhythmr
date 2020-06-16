@@ -47,6 +47,7 @@ module Util
 , replaceInList
 , allEq
 , groupUsing
+, applyMaybes
 ) where
 
 import Control.Exception
@@ -287,3 +288,9 @@ groupUsing f xs =
       groups :: [[a]]
       groups = M.elems m
    in groups
+
+-- I know this exists under a standard name but I can't find it
+applyMaybes :: [a -> Maybe b] -> a -> Maybe b
+applyMaybes (f:fs) a = case f a of Just b -> Just b
+                                   Nothing -> applyMaybes fs a
+applyMaybes [] a = Nothing

@@ -89,6 +89,13 @@ affinityPositions s = case affinities s of xss -> M.fromList $ concat (zipWith r
   where rah :: (V2 Float -> V2 Float) -> [Loop] -> [(Loop, V2 Float)]
         rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
+-- Draw the current group in the middle of the screen
+currentPositions :: State -> M.Map Loop (V2 Float)
+currentPositions (State { currentGroup }) = M.fromList (zip currentGroup (map (place . ($ V2 0 0)) (ringOfCirclesInUnitSquare (length currentGroup))))
+  where place :: V2 Float -> V2 Float
+        place = (translater (fmap fromIntegral (V2 0 (- (windowHeight `div` 4))))) . (scaler (V2 500 500)) . (subtract (V2 0.5 0.5))
+--currentPositions (State { currentGroup }) = M.fromList (zip currentGroup (repeat (V2 0 0)))
+
 interpV :: Float -> Float -> Float -> V2 Float -> V2 Float -> V2 Float
 interpV t s e (V2 x y) (V2 x' y') = V2 x'' y''
   where x'' = interp t s e x x'
@@ -430,9 +437,9 @@ loopPlacePics s@(State { loops }) = map toPic loops
 affinitiesToPics :: State -> [Pic AVal]
 affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
   where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (loopColor loop)
-          where pos = case aps M.!? loop of Just pos -> pos
-                                            Nothing -> (gridPosition loop s)
+          where pos = fromJust $ applyMaybes [(curs M.!?), (aps M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
+                curs = currentPositions s
         marks = map (uncurry toMark) (zip [0..] (currentGroup s))
         toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
 
