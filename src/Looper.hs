@@ -23,7 +23,9 @@ foreign import ccall "init_audio" init_audio :: IO ()
 foreign import ccall "write_audio" write_audio :: Ptr Float -> Int -> IO ()
 foreign import ccall "term_audio" term_audio :: IO ()
 
-granularity = 64
+-- This used to work
+-- granularity = 64
+granularity = 16 * 64
 
 data Looper = Looper (MVar FSamples) (IORef Int) (IORef Int)
 
