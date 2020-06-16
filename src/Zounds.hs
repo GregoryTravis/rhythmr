@@ -186,8 +186,8 @@ fastRender z@(InternalFx _ _) = trivialRender z
 fastRender z@(MonoSynth _ _) = trivialRender z
 -- TODO slow
 fastRender z@(Silence _) = trivialRender z
--- TODO slow
-fastRender z@(Bounded _ _) = trivialRender z
+-- TODO slow, should crop the array or something
+fastRender z@(Bounded _ _) = fadeEnds <$> trivialRender z
 
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z
