@@ -118,12 +118,13 @@ clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
 
 -- Some potential for inconsistency here, Pic and it's Tag could differ
-data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int
+data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float)) Color
            | SeqP Tag (c (V2 Float)) (c Float) Color
            | LoopPlaceP Tag (c (V2 Float)) Color
            | MarkP Tag (c (V2 Float))
+           | CurP Tag (c (V2 Float)) Color
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
 
@@ -135,18 +136,21 @@ mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) color
 mapPic f (LoopP tag pos color) = LoopP tag (f pos) color
 mapPic f (LoopPlaceP tag pos color) = LoopPlaceP tag (f pos) color
 mapPic f (MarkP tag pos) = MarkP tag (f pos)
+mapPic f (CurP tag pos color) = CurP tag (f pos) color
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
 zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f size size') color
 zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' && color == color' = LoopP tag (f pos pos') color
 zipWithPic f (LoopPlaceP tag pos color) (LoopPlaceP tag' pos' color') | tag == tag' && color == color' = LoopPlaceP tag (f pos pos') color
 zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
+zipWithPic f (CurP tag pos color) (CurP tag' pos' color') | tag == tag' && color == color' = CurP tag (f pos pos') color
 
 mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
 mapSquish f (SeqP tag pos size _) = [f pos, f size]
 mapSquish f (LoopP tag pos _) = [f pos]
 mapSquish f (LoopPlaceP tag pos _) = [f pos]
 mapSquish f (MarkP tag pos) = [f pos]
+mapSquish f (CurP tag pos _) = [f pos]
 
 gcReport :: Viz -> [Int]
 gcReport (Viz pics) = concat $ map (mapSquish aValSize) pics
@@ -156,6 +160,7 @@ getTag (LoopP tag _ _) = tag
 getTag (SeqP tag _ _ _) = tag
 getTag (LoopPlaceP tag _ _) = tag
 getTag (MarkP tag _) = tag
+getTag (CurP tag _ _) = tag
 
 picInterpolator :: Pic c -> Pic Interpolator
 picInterpolator (LoopP tag _ color) =
@@ -166,6 +171,8 @@ picInterpolator (LoopPlaceP tag _ color) =
   LoopPlaceP tag v2FloatInterpolator color
 picInterpolator (MarkP tag _) =
   MarkP tag v2FloatInterpolator
+picInterpolator (CurP tag _ color) =
+  CurP tag v2FloatInterpolator color
 
 -- Surely this exists already
 data Pair c d a = Pair (c a) (d a)
@@ -425,9 +432,10 @@ renderPic (LoopP (LoopT loop) (Id (V2 x y)) color) = Translate x y $ rect color 
 renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size) color) = Translate x y $ rect color black
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
+renderPic (CurP (CurT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
-stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s -- ++ sequenceToPics t oldS s
+stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ sequenceToPics t oldS s
 
 loopPlacePics :: State -> [Pic AVal]
 loopPlacePics s@(State { loops }) = map toPic loops
@@ -437,8 +445,15 @@ loopPlacePics s@(State { loops }) = map toPic loops
 affinitiesToPics :: State -> [Pic AVal]
 affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
   where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (loopColor loop)
-          where pos = fromJust $ applyMaybes [(curs M.!?), (aps M.!?), const (Just (gridPosition loop s))] loop
+          where pos = fromJust $ applyMaybes [(aps M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
+        marks = map (uncurry toMark) (zip [0..] (currentGroup s))
+        toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
+
+currentsToPics :: State -> [Pic AVal]
+currentsToPics s@(State { loops }) = map toPic loops ++ marks
+  where toPic loop = constPic $ CurP (CurT loop) (Id pos) (loopColor loop)
+          where pos = fromJust $ applyMaybes [(curs M.!?), const (Just (gridPosition loop s))] loop
                 curs = currentPositions s
         marks = map (uncurry toMark) (zip [0..] (currentGroup s))
         toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
