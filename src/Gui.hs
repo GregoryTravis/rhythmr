@@ -52,7 +52,8 @@ guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToSta
         command <- keyboardHandler (cur h) c
         --msp command
         h' <- execute command h saver loader
-        if h == h'
+        --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
+        if h == h' && (cur h) == (cur h')
            then return gs
            else do respondToStateChange (cur h) (cur h')
                    return $ GuiState h' t (stateToViz (cur h) v (cur h') t)

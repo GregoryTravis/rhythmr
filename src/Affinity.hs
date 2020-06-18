@@ -53,21 +53,22 @@ data StateRep =
   StateRep { repCollections :: [(Double, String)]
            , repLoops :: [Loop]
            , repLikes :: S.Set [Loop]
-           , repDislikes :: S.Set [Loop] }
+           , repDislikes :: S.Set [Loop]
+           , repCurrentGroup :: [Loop] }
   deriving (Read, Show, Generic)
 
 instance Binary StateRep
 
-emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty, repCollections = [] }
+emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty, repCollections = [], repCurrentGroup = [] }
 
 initRand :: StdGen
 initRand = mkStdGen 0
 
 makeLoader :: (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections }) = do
+makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
-  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = [],
+  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
                    currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
 
@@ -75,7 +76,7 @@ makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCo
 -- saver = map toRep
 
 saver :: State -> StateRep
-saver (State { loops, likes, dislikes, collections }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections })
+saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
@@ -201,6 +202,7 @@ respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
   --resetTerm
   --putStrLn $ displayer s'
+  msp "respondToStateChange"
   if currentSong s' /= currentSong s && currentSong s' /= Nothing
      then time "playCurrentSong" $ playCurrentSong' s'
      else if currentGroup s' /= currentGroup s && currentGroup s' /= []
