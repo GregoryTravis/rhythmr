@@ -451,12 +451,10 @@ affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
         toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
 
 currentsToPics :: State -> [Pic AVal]
-currentsToPics s@(State { loops }) = map toPic loops ++ marks
+currentsToPics s@(State { loops }) = map toPic loops
   where toPic loop = constPic $ CurP (CurT loop) (Id pos) (loopColor loop)
           where pos = fromJust $ applyMaybes [(curs M.!?), const (Just (gridPosition loop s))] loop
                 curs = currentPositions s
-        marks = map (uncurry toMark) (zip [0..] (currentGroup s))
-        toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
 
 sequenceToPics :: Float -> State -> [Pic AVal]
 sequenceToPics t (State { currentSong = Nothing }) = []
