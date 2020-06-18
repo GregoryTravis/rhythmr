@@ -231,16 +231,23 @@ renderViz t s (Viz pics) = do
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
       (hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
+      labels = renderLabels
   writeIORef (currentHypercubeMat s) mat'
   (tx, cursor) <- sequenceCursor s
   let seqPics = map (Translate (-tx) 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy]
+  return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy] ++ labels
+
+renderLabels :: [Picture]
+renderLabels = [ at (-335) (350) "Loops"
+               , at 30 (350) "Affinities"
+               , at (-60) (-75) "Current stack" ]
+  where at x y s = Translate x y $ Scale 0.15 0.15 $ Text s
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
-  let V2 tx ty = fmap fromIntegral $ (fmap (`div` 2) $ V2 (-windowWidth) windowHeight) + margin
-      margin = V2 30 (-45)
+  let V2 tx ty = fmap fromIntegral $ (fmap (`div` 2) $ V2 (-windowWidth) (-windowHeight)) + margin
+      margin = V2 30 (45)
       s = 0.25
    in Translate tx ty $ Scale s s $ Text strategy
 

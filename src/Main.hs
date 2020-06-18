@@ -14,7 +14,7 @@ import Looper (withPortaudio)
 import Util
 import Zounds
 
-doStuffDefault = ["aff", "2345", "aaa", "2", "bbb", "1"]
+doStuffDefault = ["aff", "hiphop-beats", "1"]
 --doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
