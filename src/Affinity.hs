@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -22,7 +23,7 @@ import Graphics.Gloss
 import Linear
 import Linear.Matrix (identity)
 import System.Console.ANSI (clearScreen, setCursorPosition)
-import System.Directory (listDirectory)
+import System.Directory (listDirectory, createDirectoryIfMissing)
 import System.Random
 
 import Animate
@@ -78,6 +79,18 @@ makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCo
 saver :: State -> StateRep
 saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 
+-- Create dir if it does not exist
+getHistoryDir :: (?projectDir :: String) => IO String
+getHistoryDir = do
+  let dir = ?projectDir
+  createDirectoryIfMissing False dir
+  return dir
+
+getHistoryFile :: (?projectDir :: String) => IO String
+getHistoryFile = do
+  dir <- getHistoryDir
+  return $ dir ++ "/history.ab"
+
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
 --   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
@@ -121,7 +134,7 @@ setState s = return $ NewState s
 retCommand c = return c
 
 -- TODO maybe function type aliases are not good
-keyboardHandler :: State -> Char -> IO (GuiCommand State)
+keyboardHandler :: (?projectDir :: String) => State -> Char -> IO (GuiCommand State)
 --keyboardHandler :: KeyboardHandler State
 --keyboardHandler s 'r' = do
 --  group <- randomGroup s
@@ -168,8 +181,12 @@ keyboardHandler s '\ESC' = retCommand Quit
 --  setState s'
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
-keyboardHandler s '\DC3' = retCommand $ Save "history.ab"
-keyboardHandler s 'L' = retCommand $ Load "history.ab"
+keyboardHandler s '\DC3' = do
+  file <- getHistoryFile
+  retCommand $ Save file
+keyboardHandler s 'L' = do
+  file <- getHistoryFile
+  retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s key = do
@@ -486,7 +503,7 @@ displayer s = intercalate "\n" lines
 --   result <- kh s c
 --   case result of SetState s' -> do respondToStateChange
 
-affinityMain :: Int -> [(Double, String)] -> IO ()
+affinityMain :: (?projectDir :: String) => Int -> [(Double, String)] -> IO ()
 affinityMain seed collections = do
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds

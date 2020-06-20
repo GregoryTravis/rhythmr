@@ -1,3 +1,5 @@
+{-# LANGUAGE ImplicitParams #-}
+
 module Main where
 
 import GHC.Conc
@@ -37,7 +39,8 @@ main = withPortaudio $ do
   putStrLn $ "numCapabilities: " ++ show numCapabilities
   np <- getNumProcessors
   putStrLn $ "getNumProcessors: " ++ show np
-  args <- getArgs
-  msp $ "++ " ++ (show args)
-  doStuff args
+  (projectDir:args) <- getArgs
+  msp $ "++ " ++ (show (projectDir:args))
+  let ?projectDir = projectDir
+   in doStuff args
   msp "hi"
