@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -29,6 +28,7 @@ import System.Random
 import Animate
 import Ascii
 import Chew
+import Config
 import Constants
 import FX
 import Gui
@@ -80,15 +80,15 @@ saver :: State -> StateRep
 saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 
 -- Create dir if it does not exist
-getHistoryDir :: (?projectDir :: String) => IO String
-getHistoryDir = do
-  let dir = ?projectDir
-  createDirectoryIfMissing False dir
-  return dir
+getProjectDir :: IO String
+getProjectDir = do
+  let Config { projectDir } = config
+  createDirectoryIfMissing False projectDir
+  return projectDir
 
-getHistoryFile :: (?projectDir :: String) => IO String
+getHistoryFile :: IO String
 getHistoryFile = do
-  dir <- getHistoryDir
+  dir <- getProjectDir
   return $ dir ++ "/history.ab"
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
@@ -134,7 +134,7 @@ setState s = return $ NewState s
 retCommand c = return c
 
 -- TODO maybe function type aliases are not good
-keyboardHandler :: (?projectDir :: String) => State -> Char -> IO (GuiCommand State)
+keyboardHandler :: State -> Char -> IO (GuiCommand State)
 --keyboardHandler :: KeyboardHandler State
 --keyboardHandler s 'r' = do
 --  group <- randomGroup s
@@ -503,7 +503,7 @@ displayer s = intercalate "\n" lines
 --   result <- kh s c
 --   case result of SetState s' -> do respondToStateChange
 
-affinityMain :: (?projectDir :: String) => Int -> [(Double, String)] -> IO ()
+affinityMain :: Int -> [(Double, String)] -> IO ()
 affinityMain seed collections = do
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
