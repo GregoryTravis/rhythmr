@@ -1,14 +1,15 @@
 {-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Main where
 
 import GHC.Conc
 import GHC.RTS.Flags
-import System.Environment (getArgs)
 
 import Affinity
 import Analysis
 import Bars
+import Config
 import Diag
 import Gfx
 import Hypercube
@@ -39,7 +40,7 @@ main = withPortaudio $ do
   putStrLn $ "numCapabilities: " ++ show numCapabilities
   np <- getNumProcessors
   putStrLn $ "getNumProcessors: " ++ show np
-  (projectDir:args) <- getArgs
+  let Config { projectDir, args } = config
   msp $ "++ " ++ (show (projectDir:args))
   let ?projectDir = projectDir
    in doStuff args
