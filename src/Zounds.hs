@@ -25,6 +25,8 @@ module Zounds
 , toZero
 , snip
 , normalize
+, segmentToChannels
+, channelsToSegment
 ) where
 
 import Control.Monad.ST
@@ -258,6 +260,14 @@ readZound filename = do
   where stereoize :: Int -> SV.Vector Float -> Samples
         stereoize 1 fs = SV.map realToFrac $ SV.interleave [fs, fs]
         stereoize 2 fs = SV.map realToFrac fs
+
+-- Assumes 0 offset
+segmentToChannels :: Zound -> [Samples]
+segmentToChannels (Segment { samples, offset = 0 }) = SV.deinterleave 2 samples
+
+channelsToSegment :: [Samples] -> Zound
+channelsToSegment channels@[_, _] = Segment { samples, offset = 0 }
+  where samples = SV.iterleave channels
 
 writeZound :: String -> Zound -> IO ()
 writeZound filename z = do
