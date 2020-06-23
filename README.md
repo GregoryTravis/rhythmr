@@ -1,4 +1,4 @@
-Remixr, or, Tinder for Audio Loops
+Rhythmr, Or Semi-Automated Audio Loops
 ======
 
 
@@ -9,15 +9,15 @@ Remixr, or, Tinder for Audio Loops
 
 ## Introduction
 
-Remixr is an interactive system, implemented in Haskell, for creating good-sounding rhythm loops from randomly-acquired audio files. The user iterates through an unending stream of randomly combined music loops, swiping left or right on each one to indicate whether you like them or not. Remixr derives a model of which combinations sounds good, and from that, it produces a complete song by inserting the chosen combinations into a predefined score.
+Rhythmr is an interactive system, implemented in Haskell, for creating good-sounding rhythm loops from randomly-acquired audio files. The user iterates through an unending stream of randomly combined music loops, swiping left or right on each one to indicate whether you like them or not. Rhythmr derives a model of which combinations sounds good, and from that, it produces a complete song by inserting the chosen combinations into a predefined score.
 
-In a previous project, I generated songs from a pool of musical loops completely automatically. I generated thousands of these songs and picked sixteen and called it an album. However, Remixr takes this concept a step further, placing the user in the middle of the process, having them select individual elements before they are combined randomly.
+In a previous project, I generated songs from a pool of musical loops completely automatically. I generated thousands of these songs and picked sixteen and called it an album. However, Rhythmr takes this concept a step further, placing the user in the middle of the process, having them select individual elements before they are combined randomly.
 
-Aesthetic choice cannot be automated, but it can be optimized. One way to look at creativity is that it is a kind of generate-and-test process, albeit a largely unconscious and invisible one. Remixr makes this process explicit: actually generate material, and let the user select.
+Aesthetic choice cannot be automated, but it can be optimized. One way to look at creativity is that it is a kind of generate-and-test process, albeit a largely unconscious and invisible one. Rhythmr makes this process explicit: actually generate material, and let the user select.
 
 ## Aesthetic Model
 
-It could be said that Remixr is based on a narrow, Western definition of what sounds good: regular beats, 4/4 time, and so on. And certainly, uniformity and consistency are by no means the only principles guiding what things work well together. Remixr is good for finding things that fit nicely together, but “fitting nicely” is by no means the only possible way to structure music. Sometimes you want things to be weird, and rhythmr supports this as well: you, as the user, can simply swipe right on weird things, and see what happens.
+It could be said that Rhythmr is based on a narrow, Western definition of what sounds good: regular beats, 4/4 time, and so on. And certainly, uniformity and consistency are by no means the only principles guiding what things work well together. Rhythmr is good for finding things that fit nicely together, but “fitting nicely” is by no means the only possible way to structure music. Sometimes you want things to be weird, and rhythmr supports this as well: you, as the user, can simply swipe right on weird things, and see what happens.
 Model
 
 We say there is an affinity between a set of loops if the user swipes right on that set, or if we can guess that the user would, based on previous choices. We use the notation a ~ b to mean that a and b sound good together: they have affinity.
@@ -38,19 +38,19 @@ The transitive rule, in particular, can produce affinities that don’t sound go
 
 ## Process
 
-Remixr leads the user through a series of mixes, asking them to swipe left or right on each one. The mixes are derived in several different ways, outlined below. At each step Remixr will pick the strategy, or the user can also choose the strategy.
+Rhythmr leads the user through a series of mixes, asking them to swipe left or right on each one. The mixes are derived in several different ways, outlined below. At each step Rhythmr will pick the strategy, or the user can also choose the strategy.
 
-* Random: Remixr picks two to four loops randomly from the pool. Because the pool is a subset of the entire library, there is a moderate chance that the randomly chosen set will intersect with previously judged loops, which allows the model to combine smaller affinity groups into larger ones.
+* Random: Rhythmr picks two to four loops randomly from the pool. Because the pool is a subset of the entire library, there is a moderate chance that the randomly chosen set will intersect with previously judged loops, which allows the model to combine smaller affinity groups into larger ones.
 
-* Incremental: If the previous group was judged good, Remixr replaces just one of the loops with another loop. The resulting group thus has a higher likelihood of being good as well, since the group is similar to the last one.
+* Incremental: If the previous group was judged good, Rhythmr replaces just one of the loops with another loop. The resulting group thus has a higher likelihood of being good as well, since the group is similar to the last one.
 
-* Subsets: If the previous group is judged bad, then from that group of n, Remixr generates all possible subsets of size n-1. This approach has the downside that it generates a lot of very similar proposals, but it tends to find better and larger affinity groups simply because more intersecting combinations are tried, and the user is asked to make finer distinctions.
+* Subsets: If the previous group is judged bad, then from that group of n, Rhythmr generates all possible subsets of size n-1. This approach has the downside that it generates a lot of very similar proposals, but it tends to find better and larger affinity groups simply because more intersecting combinations are tried, and the user is asked to make finer distinctions.
 
-* Divide And Conquer: If the previous group was judged bad, Remixr divides it in half and proposes each half in turn. If either of these halves are also judged bad, this is repeated. The idea is that a mix might be compromised by a single beat that is generally out of step with any regular rhythm, or two loops that are ruining things for the rest of the mix, and this strategy swiftly eliminates them.
+* Divide And Conquer: If the previous group was judged bad, Rhythmr divides it in half and proposes each half in turn. If either of these halves are also judged bad, this is repeated. The idea is that a mix might be compromised by a single beat that is generally out of step with any regular rhythm, or two loops that are ruining things for the rest of the mix, and this strategy swiftly eliminates them.
 
 ## User Interface
 
-Remixr has a graphical user interface, although it dispenses with buttons, menus, and so on. Instead, the application window shows the state and behavior of the model, and choices are made using the keyboard. (If I ever figure out how to run Haskell on a mobile device, I will definitely implement a Tinder-like swiping interface.)
+Rhythmr has a graphical user interface, although it dispenses with buttons, menus, and so on. Instead, the application window shows the state and behavior of the model, and choices are made using the keyboard. (If I ever figure out how to run Haskell on a mobile device, I will definitely implement a Tinder-like swiping interface.)
 
 The window is divided into three sections: pool, affinities, and song.
 
@@ -60,7 +60,7 @@ The window is divided into three sections: pool, affinities, and song.
 
 * Song: If there are enough affinities, they can be used to generate a song, which is displayed in this area and played out loud.
 
-Remixr also supports saving, loading, undo and redo.
+Rhythmr also supports saving, loading, undo and redo.
 
 ## Terminology
 
