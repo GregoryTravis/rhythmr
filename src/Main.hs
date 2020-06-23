@@ -8,6 +8,7 @@ import GHC.RTS.Flags
 
 import Affinity
 import Analysis
+import BandLimitedInterpolator
 import Bars
 import Config
 import Diag
@@ -34,7 +35,12 @@ doStuff ["hy"] = hypercubeMain
 doStuff ["zound"] = zoundMain
 doStuff [] = doStuff doStuffDefault
 
-main = withPortaudio $ do
+main = do
+  z <- readZound "hey.wav"
+  z' <- resample (numFrames z * 2) z
+  writeZound "hoy.wav" z'
+
+_main = withPortaudio $ do
   noBuffering
   getGCFlags >>= msp
   putStrLn $ "numCapabilities: " ++ show numCapabilities

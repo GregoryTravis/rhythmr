@@ -18,6 +18,7 @@ module Zounds
 , readZound
 , readZoundZeroCrossings
 , readZoundFadeEnds
+, resample
 , writeZound
 , numFrames
 , samplesAsFloats

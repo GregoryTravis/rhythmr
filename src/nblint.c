@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 //#include <malloc.h>
 
@@ -40,6 +41,7 @@ void nblint_gen_wsinc( void )
   int i;
 
   wsinc = &wsinc_[1];
+  printf("NAT pi %f\n", M_PI);
 
   for (i=0; i<WSINCLEN; ++i) {
     int ii=i-(WSINCLEN/2);
@@ -55,10 +57,12 @@ void nblint_gen_wsinc( void )
   dwsinc = &dwsinc_[1];
   for (i=0; i<WSINCLEN+2-1; ++i)
     dwsinc_[i] = wsinc_[i+1] - wsinc_[i];
+  printf("NAT wsinc %f %f\n", wsinc[0], wsinc[1]);
+  printf("NAT dwsinc %f %f\n", dwsinc[0], dwsinc[1]);
 }
 
 // nraw is src, raw is dest
-void nblint_blint(double *nraw, int nlen, double *raw, double len) {
+void nblint_blint(double *raw, int nlen, double *nraw, double len) {
   //jboolean iscopy = JNI_FALSE;
   //jshort *raw, *nraw;
   //jsize len, nlen;
@@ -73,7 +77,14 @@ void nblint_blint(double *nraw, int nlen, double *raw, double len) {
   double c1;
   double dwsincarg;
 
+  printf("NAT0 ptrs %p %p\n", nraw, raw);
+  printf("NAT %f %f\n", nraw[0], nraw[1]);
+
   nblint_init();
+
+  // Copy the sinc to the dest, for debugging
+  // memcpy(nraw, wsinc, (WSINCLEN+2) * sizeof(double));
+  // return;
 
   /* nraw = (*env)->GetShortArrayElements( env, jnraw, &iscopy ); */
   /* raw = (*env)->GetShortArrayElements( env, jraw, &iscopy ); */
@@ -95,7 +106,7 @@ void nblint_blint(double *nraw, int nlen, double *raw, double len) {
   dt = (double)len/(double)nlen;
 
   c0 = (double)Fo*(Nz/Ww);
-  c1 = Fo*Nz;
+  c1 = (double)(Fo*Nz);
   dwsincarg = (Fo*Nz)/Ww;
 
   for (nn=0; nn<nlen; ++nn) {
@@ -130,7 +141,7 @@ void nblint_blint(double *nraw, int nlen, double *raw, double len) {
 
       samp = raw[n];
       wsincarg_int = wsincarg;
-      wsincarg_frac = wsincarg - ((int)wsincarg);
+      wsincarg_frac = wsincarg - wsincarg_int;
       wsinca = wsinc[wsincarg_int];
       dws = wsinc[wsincarg_int+1] - wsinca;
       ws = wsinca + (wsincarg_frac * dws);
