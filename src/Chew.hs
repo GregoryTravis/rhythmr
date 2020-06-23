@@ -42,7 +42,7 @@ loadGrid s loopGrid = do
       -- reh = mapM (mapM render) rooh
   ugh <- rah
   let ugh' :: [[Zound]]
-      ugh' = map (map (ExternalFx (resampleZoundProcessor loopLengthFrames))) ugh
+      ugh' = map (map (Scale loopLengthFrames)) ugh
   mapM (mapM render) ugh'
 
 renderZGrid :: [[Zound]] -> Zound

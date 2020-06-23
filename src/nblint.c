@@ -1,7 +1,9 @@
-#include <math.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdio.h>
-//#include "a.h"
+#include <math.h>
+//#include <malloc.h>
+
+#include "a.h"
 //#include "fix.h"
 
 static int initted = 0;
@@ -21,6 +23,8 @@ double *wsinc;
 double dwsinc_[WSINCLEN+2];
 double *dwsinc;
 
+void nblint_gen_wsinc();
+
 void nblint_init()
 {
   if (initted)
@@ -39,9 +43,9 @@ void nblint_gen_wsinc( void )
 
   for (i=0; i<WSINCLEN; ++i) {
     int ii=i-(WSINCLEN/2);
-    double arg = ((double)ii) * (PI/Fo);
+    double arg = ((double)ii) * (M_PI/Fo);
     double val = (arg==0.0) ? 1.0 : (sin(arg)/arg);
-    wsinc[i] = val*HAMMING((i*PI)/(Nz*Fo));
+    wsinc[i] = val*HAMMING((i*M_PI)/(Nz*Fo));
   }
 
   // padding
@@ -69,7 +73,7 @@ void nblint_blint(double *nraw, int nlen, double *raw, double len) {
   double c1;
   double dwsincarg;
 
-  init();
+  nblint_init();
 
   /* nraw = (*env)->GetShortArrayElements( env, jnraw, &iscopy ); */
   /* raw = (*env)->GetShortArrayElements( env, jraw, &iscopy ); */
@@ -136,7 +140,7 @@ void nblint_blint(double *nraw, int nlen, double *raw, double len) {
     }
 
     A(nn>=0 && nn<nlen);
-    nraw[nn] = acc * ws_scale_fx;
+    nraw[nn] = acc * ws_scale;
 
     t += dt;
   }
