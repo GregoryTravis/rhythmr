@@ -62,7 +62,7 @@ void nblint_gen_wsinc( void )
 }
 
 // nraw is src, raw is dest
-void nblint_blint(double *raw, int nlen, double *nraw, double len) {
+void nblint_blint(double *raw, int len, double *nraw, int nlen) {
   //jboolean iscopy = JNI_FALSE;
   //jshort *raw, *nraw;
   //jsize len, nlen;

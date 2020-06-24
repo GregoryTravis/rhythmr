@@ -35,12 +35,16 @@ doStuff ["hy"] = hypercubeMain
 doStuff ["zound"] = zoundMain
 doStuff [] = doStuff doStuffDefault
 
-main = do
-  z <- readZound "hey.wav"
-  z' <- resample (numFrames z * 2) z
-  writeZound "hoy.wav" z'
+-- main = do
+--   z <- readZound "hey.wav"
+--   z' <- resample (numFrames z * 2) z
+--   writeZound "hoy.wav" z'
+--   z'' <- resample (numFrames z `div` 2) z
+--   writeZound "hoy2.wav" z''
+--   -- z'' <- readZound "hoy.wav"
+--   -- msp ("finally", numFrames z, numFrames z', numFrames z'')
 
-_main = withPortaudio $ do
+main = withPortaudio $ do
   noBuffering
   getGCFlags >>= msp
   putStrLn $ "numCapabilities: " ++ show numCapabilities

@@ -23,11 +23,6 @@ fromCDoubles = SV.map realToFrac
 -- Resample a sound to be the given length
 blint :: Int -> SV.Vector Double -> IO (SV.Vector Double)
 blint destLen srcV = do
-  msp "wut"
-  msp $ srcV `SV.index` 0
-  msp $ srcV `SV.index` 1
-  msp $ (toCDoubles srcV) `SV.index` 0
-  msp $ (toCDoubles srcV) `SV.index` 1
   fromCDoubles <$> blintCD destLen (toCDoubles srcV)
 
 -- This assumes (and asserts) that the starting offset of the vector is 0,
@@ -42,15 +37,16 @@ blintCD destLen srcSV = do
       resample :: Ptr CDouble -> IO ()
       resample destP = do
         withForeignPtr srcFP $ \srcP -> do
-          msp ("ptrs", srcP, destP)
-          s0 <- peek srcP 
+          --msp ("ptrs", srcP, destP)
+          s0 <- peek srcP
           s1 <- peekElemOff srcP 1
-          msp ("P", s0, s1)
+          --msp ("P", s0, s1)
           nblint_blint srcP (fromIntegral srcLen) destP (fromIntegral destLen)
-          d0 <- peek destP 
+          d0 <- peek destP
           d1 <- peekElemOff destP 1
-          msp ("P", d0, d1)
+          --msp ("P", d0, d1)
   massert "srcSV length mismatch" (srcLen == fpSrcLen)
+  --msp ("LENS", srcLen, destLen)
   SVB.create destLen resample
   --massert "destSV length mismatch" (destLen == fpDestLen)
   -- runST $ do
