@@ -44,7 +44,8 @@ doStuff [] = doStuff doStuffDefault
 --   -- z'' <- readZound "hoy.wav"
 --   -- msp ("finally", numFrames z, numFrames z', numFrames z'')
 
-main = withPortaudio $ do
+main = zblah
+_main = withPortaudio $ do
   noBuffering
   getGCFlags >>= msp
   putStrLn $ "numCapabilities: " ++ show numCapabilities

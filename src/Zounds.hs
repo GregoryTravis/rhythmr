@@ -10,6 +10,7 @@ module Zounds
 , getBounds
 , getStart
 , getEnd
+, zblah
 , durationSeconds
 , render
 , renderGrid
@@ -32,6 +33,8 @@ module Zounds
 import Control.Monad.ST
 import qualified Data.StorableVector as SV
 import qualified Data.StorableVector.ST.Strict as MSV
+import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Generic.Mutable as MVU
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
 import System.Directory
@@ -203,6 +206,32 @@ resample numFrames z = do
   rightDestSV <- blint numFrames rightSrcSV
   return $ channelsToSegment (leftDestSV, rightDestSV)
 
+zblah = do
+  z <- readZound "hey.wav"
+  z' <- readZound "hey2.wav"
+  yeahTest [z, z']
+
+yeahTest :: [Zound] -> IO ()
+yeahTest zs = do
+  let n = 50
+      [sv0, sv1] = map samples zs
+      [vu0, vu1] = map toVu [sv0, sv1]
+  time "old" $ do
+    runST $ do
+      msv0 <- MSV.thaw sv0
+      runNTimes n $ mixOnto msv0 sv1 0
+      MSV.freeze msv0
+      return $ msp "huh"
+  time "new" $ do
+    runST $ do
+      mvu0 <- VU.thaw vu0
+      runNTimes n $ mixOnto' mvu0 vu1 0
+      VU.freeze mvu0
+      return $ msp "huh2"
+    return ()
+  where toVu :: SV.Vector Double -> VU.Vector Double
+        toVu sv = VU.fromList (SV.unpack sv)
+
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z
 mixSegments [] = error "mixSegments: empty list"
@@ -221,6 +250,18 @@ mixSegments zs = do
         mixOnto mutableMixBuffer samples offset
   msp ("mixSegments", length zs, allBounds)
   return $ Segment { samples = mixBuffer', offset = getStart allBounds }
+
+mixOnto' :: VU.MVector s Double -> VU.Vector Double -> Int -> ST s ()
+mixOnto' mix v offset = do
+  --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
+  eesp ("mixOnto'", offset) $ mapM mixSample indices
+  return ()
+  where indices = take (VU.length v) [0..]
+        offsetSamples = offset * 2
+        mixSample i = do
+          mixSample <- MVU.read mix (i + offsetSamples)
+          let vSample = v VU.! i
+          MVU.write mix (i + offsetSamples) (mixSample + vSample)
 
 mixOnto :: MSV.Vector s Double -> Samples -> Int -> ST s ()
 mixOnto mix v offset = do

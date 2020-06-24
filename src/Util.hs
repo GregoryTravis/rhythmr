@@ -48,6 +48,7 @@ module Util
 , allEq
 , groupUsing
 , applyMaybes
+, runNTimes
 ) where
 
 import Control.Exception
@@ -294,3 +295,6 @@ applyMaybes :: [a -> Maybe b] -> a -> Maybe b
 applyMaybes (f:fs) a = case f a of Just b -> Just b
                                    Nothing -> applyMaybes fs a
 applyMaybes [] a = Nothing
+
+runNTimes :: Monad m => Int -> m a -> m ()
+runNTimes n action = mapM_ (\_ -> action) [0..n-1]
