@@ -17,14 +17,16 @@ module Zounds
 , zoundMain
 , readZound
 , readZoundZeroCrossings
-, resampleZoundProcessor
 , readZoundFadeEnds
+, resample
 , writeZound
 , numFrames
 , samplesAsFloats
 , toZero
 , snip
 , normalize
+, segmentToChannels
+, channelsToSegment
 ) where
 
 import Control.Monad.ST
@@ -35,6 +37,7 @@ import Sound.File.Sndfile as SF hiding (hGetContents)
 import System.Directory
 import System.IO.Temp
 
+import BandLimitedInterpolator
 import Constants
 import External
 import Util
@@ -175,7 +178,9 @@ fastRender z@(Segment _ _) = return z
 fastRender (ExternalFx p z) = do
   z' <- fastRender z
   processZound z' p
-fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleZoundProcessor numFrames) z)
+fastRender (Scale numFrames z) = do
+  z' <- fastRender z
+  resample numFrames z'
 fastRender (Translate dt z) = do
   z' <- fastRender z
   return $ z' { offset = offset z' + dt }
@@ -188,6 +193,15 @@ fastRender z@(MonoSynth _ _) = trivialRender z
 fastRender z@(Silence _) = trivialRender z
 -- TODO slow, should crop the array or something
 fastRender z@(Bounded _ _) = fadeEnds <$> trivialRender z
+
+
+-- Split into left and right and resample separately
+resample :: Int -> Zound -> IO Zound
+resample numFrames z = do
+  let (leftSrcSV, rightSrcSV) = segmentToChannels z
+  leftDestSV <- blint numFrames leftSrcSV
+  rightDestSV <- blint numFrames rightSrcSV
+  return $ channelsToSegment (leftDestSV, rightDestSV)
 
 mixSegments :: [Zound] -> IO Zound
 mixSegments [z] = return z
@@ -259,6 +273,16 @@ readZound filename = do
         stereoize 1 fs = SV.map realToFrac $ SV.interleave [fs, fs]
         stereoize 2 fs = SV.map realToFrac fs
 
+-- Assumes 0 offset
+segmentToChannels :: Zound -> (Samples, Samples)
+segmentToChannels (Segment { samples, offset = 0 }) =
+  let [l, r] = SV.deinterleave 2 samples
+   in (l, r)
+
+channelsToSegment :: (Samples, Samples) -> Zound
+channelsToSegment (left, right) = Segment { samples, offset = 0 }
+  where samples = SV.interleave [left, right]
+
 writeZound :: String -> Zound -> IO ()
 writeZound filename z = do
   let Segment { samples } = normalize z
@@ -280,10 +304,10 @@ writeZound filename z = do
 --   z' <- render z
 --   writeZound filename z'
 
-resampleZoundProcessor :: Frame -> Processor
-resampleZoundProcessor destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
-  where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
-        srcLengthFrames = numFrames z
+-- resampleZoundProcessor :: Frame -> Processor
+-- resampleZoundProcessor destLengthFrames z@(Segment { samples }) = soxer ["speed", show speedRatio] z
+--   where speedRatio = (fromIntegral srcLengthFrames) / (fromIntegral destLengthFrames)
+--         srcLengthFrames = numFrames z
 
 -- Find the first and last zero-crossing and clip to those.
 -- If they aren't very close to the end, we print a warning
