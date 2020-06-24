@@ -37,14 +37,7 @@ blintCD destLen srcSV = do
       resample :: Ptr CDouble -> IO ()
       resample destP = do
         withForeignPtr srcFP $ \srcP -> do
-          --msp ("ptrs", srcP, destP)
-          s0 <- peek srcP
-          s1 <- peekElemOff srcP 1
-          --msp ("P", s0, s1)
           nblint_blint srcP (fromIntegral srcLen) destP (fromIntegral destLen)
-          d0 <- peek destP
-          d1 <- peekElemOff destP 1
-          --msp ("P", d0, d1)
   massert "srcSV length mismatch" (srcLen == fpSrcLen)
   --msp ("LENS", srcLen, destLen)
   SVB.create destLen resample
