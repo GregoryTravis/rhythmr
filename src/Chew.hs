@@ -136,7 +136,7 @@ chew :: State -> IO Zound
 chew s = do
   clik <- readZound "wavs/clik.wav"
   --let loops = S.toList (likes s)
-  let loops = affinities s
+  let loops = S.toList $ likes s
   likes' <- loadGrid s loops
   let likes = reverse $ sortOn length likes'
   let grid = map (:[]) $ concat (map wackyStacks likes)
