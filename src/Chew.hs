@@ -154,11 +154,22 @@ chopOuts =
   , (8, [3, 7, 8])
   ]
 
+sprinklers :: [(Int, [Int])]
+sprinklers =
+  [ (4, [0, 1])
+  , (16, [0, 4, 11])
+  , (16, [0, 1, 2])
+  , (8, [0, 1, 2])
+  , (4, [1, 1, 0, 1])
+  , (8, [0, 7, 2, 7, 4, 7, 6, 7])
+  ]
+
 -- Use the first loop intact; chop out the rest
 wackyStack :: [Zound] -> Zound
 wackyStack [] = error "empty wackyStack"
 wackyStack (z:zs) = Mix $ [z] ++ zipWith co (cycle chopOuts) zs
   where co (n, keepers) z = chopOut n keepers z
+  --where co (n, keepers) z = sprinkle n keepers z
 
 -- Rotate the stack a few times
 wackyStacks :: [Zound] -> [Zound]
