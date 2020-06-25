@@ -24,7 +24,9 @@ module Zounds
 , samplesAsFloats
 , toZero
 , snip
+, snipBounds
 , normalize
+, toOrigin
 ) where
 
 import Control.Monad.ST
@@ -353,6 +355,7 @@ toZero z =
   let Bounds s e = getBounds z
    in Translate (-s) z
 
+-- Chop away everything < start and >= end
 -- start is the first sample, end is the sample after the last sample
 snip :: Frame -> Frame -> Zound -> Zound
 snip start end (Segment { samples, offset }) =
@@ -365,6 +368,14 @@ snip start end (Segment { samples, offset }) =
       ok = startIndex < endIndex && 0 <= startIndex && endIndex <= length
       samples' = SV.take (endIndex - startIndex) (SV.drop startIndex samples)
    in Segment { samples = samples', offset = offset' }
+
+snipBounds :: Bounds -> Zound -> Zound
+snipBounds (Bounds s e) z = snip s e z
+
+-- Translate the start to 0
+toOrigin :: Zound -> Zound
+toOrigin z = Translate (-s) z
+  where Bounds s e = getBounds z
 
 applyToSamples :: (Samples -> Samples) -> Zound -> Zound
 applyToSamples f sound = sound { samples = f (samples sound) }

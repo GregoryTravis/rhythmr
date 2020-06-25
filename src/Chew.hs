@@ -51,18 +51,37 @@ renderZGrid zses =
       stacks = map Mix zses
    in Mix $ zipWith Translate offsets stacks
 
--- Chop into n pieces and translate all to origin
-slice :: Int -> Zound -> [Zound]
-slice n z =
-  let Bounds s e = getBounds z
-      interp :: Double -> Frame
-      interp x = floor $ ((1.0 - x) * fromIntegral s) + (x * fromIntegral e)
+-- Chop a time segment 0..len into n pieces and return the bounds
+-- Assumes it starts at origin
+slices :: Frame -> Int -> [Bounds]
+slices len n =
+  let s = 0
+      e = len
       points :: [Frame]
       points = map floor $ map (* (fromIntegral e - fromIntegral s)) $ map ((/ fromIntegral n) . fromIntegral) [0..n]
       starts = take n points
       ends = drop 1 points
-      pieces = zipWith (\s e -> snip s e z) starts ends
+   in zipWith Bounds starts ends
+
+-- Slices, for the length of the provided zound
+slicesFor :: Zound -> Int -> [Bounds]
+slicesFor z n = slices (numFrames z) n
+
+-- Chop into n pieces and leave where they are, do not translate to origin
+slice :: Int -> Zound -> [Zound]
+slice n z =
+  let Bounds s e = getBounds z
+      points :: [Frame]
+      points = map floor $ map (* (fromIntegral e - fromIntegral s)) $ map ((/ fromIntegral n) . fromIntegral) [0..n]
+      starts = take n points
+      ends = drop 1 points
+      pieceBounds = slicesFor z n
+      pieces = map (flip snipBounds z) pieceBounds
    in pieces
+
+-- Chop into n pieces and translate to origin
+sliceToOrigin:: Int -> Zound -> [Zound]
+sliceToOrigin n z = map toOrigin (slice n z)
 
 -- Chop into n pieces and translate all to origin
 dice :: Int -> Zound -> [Zound]
@@ -99,10 +118,24 @@ scaleSeq scale (Mix zs) = Mix $ mapStarts (floor . (* scale) . fromIntegral) zs
 sameBounds :: (Zound -> Zound) -> (Zound -> Zound)
 sameBounds f z = Bounded (getBounds z) (f z)
 
+-- Break a the sample into n pieces, and only keep the ones mentioned in
+-- 'keepers'.
 chopOut :: Int -> [Int] -> Zound -> Zound
 chopOut n keepers z = Mix $ zipWith keepOrSilence [0..n-1] (slice n z)
   where keepOrSilence i sz | elem i keepers = sz
         keepOrSilence i sz | otherwise = Silence (getBounds sz)
+       
+-- Break a the sample into n pieces, and construct a new n-piece list from the piece indices in 'pieces'.
+-- -1 means a rest. If the list is too long, the extra ones are ignored. If too short, it is repeated.
+sprinkle :: Int -> [Int] -> Zound -> Zound
+sprinkle n indices' z =
+  let pieces = sliceToOrigin n z
+      places = slicesFor z n
+      indices = take n $ cycle indices'
+      toPiece (-1) bounds = Silence bounds
+      toPiece i bounds | i < 0 || i >= length pieces = error "sprinkle.toPiece OOB"
+      toPiece i bounds | otherwise = Translate (getStart bounds) (pieces !! i)
+   in Mix (zipWith toPiece indices places)
        
 -- chopOut n keepers z = Mix (map (pieces !!) keepers)
 --   where pieces = slice n z
@@ -140,7 +173,7 @@ chew s = do
   likes' <- loadGrid s loops
   let likes = reverse $ sortOn length likes'
   let grid = map (:[]) $ concat (map wackyStacks likes)
-  let song = renderZGrid $ addClick clik grid
+  let song = renderZGrid $ {-addClick clik-} grid
   mix <- time "zrender" $ strictRender song
   writeZound "chew.wav" mix
   return mix
