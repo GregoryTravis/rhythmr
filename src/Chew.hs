@@ -6,6 +6,7 @@ module Chew
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (sortOn)
 import qualified Data.Set as S
+import System.Random
 
 import Constants
 import Loop
@@ -157,6 +158,8 @@ chopOuts =
 sprinklers :: [(Int, [Int])]
 sprinklers =
   [ (4, [0, 1])
+  , (32, [3, 2, 3, 2, 8, 5, 8, 5])
+  , (32, [0, 0, 0, 1, 1, 1, 4, 4, 4, 13, 13, 13])
   , (16, [0, 4, 11])
   , (16, [0, 1, 2])
   , (8, [0, 1, 2])
@@ -168,15 +171,59 @@ sprinklers =
 wackyStack :: [Zound] -> Zound
 wackyStack [] = error "empty wackyStack"
 wackyStack (z:zs) = Mix $ [z] ++ zipWith co (cycle chopOuts) zs
-  where co (n, keepers) z = chopOut n keepers z
-  --where co (n, keepers) z = sprinkle n keepers z
+  --where co (n, keepers) z = chopOut n keepers z
+  where co (n, keepers) z = sprinkle n keepers z
 
 -- Rotate the stack a few times
 wackyStacks :: [Zound] -> [Zound]
 wackyStacks zs = map wackyStack $ map (flip rotate zs) [0..n-1]
   where n = 3
 
-chew :: State -> IO Zound
+-- Pick a spot in the list to insert an element, and remove one from the end
+shunt :: Int -> a -> [a] -> [a]
+shunt i e xs = init $ (take i xs) ++ [e] ++ (drop i xs)
+
+randParam :: (Int, Int) -> (Int -> f) -> [f]
+randParam range f = zipWith ($) (repeat f) rands
+  where rands = randomRs range (mkStdGen 37)
+
+randParam2 :: (Int, Int) -> (Int -> Int -> f) -> [f]
+randParam2 range f = zipWith ($) (zipWith ($) (repeat f) rands) rands'
+  where rands = randomRs range (mkStdGen 37)
+        rands' = randomRs range (mkStdGen 2036)
+
+-- Apply first function to value, pass result to second, etc, and return all
+-- values (including the initial one)
+runThrough :: [a -> a] -> a -> [a]
+runThrough [] _ = []
+runThrough (f:fs) x = x : (runThrough fs (f x))
+
+-- Return elements at odd positions
+odds :: [a] -> [a]
+odds xs = odds' False xs
+  where odds' True (x:xs) = x : (odds' False xs)
+        odds' False (x:xs) = odds' True xs
+
+-- Shunt and shunt again. 'odds' makes we do two shunts per step
+shuntMadness :: [Int] -> [[Int]]
+shuntMadness xs = odds $ runThrough randShunt xs
+  where randShunt = randParam2 (0, length xs-1) shunt
+
+dnb :: State -> IO Zound
+dnb s = do
+  z <- readZound "hey.wav" >>= yah
+  -- msp $ take 10 (runThrough (map (+) [0..]) 3)
+  -- msp $ take 10 (shuntMadness [0..15])
+  let shunts = take 40 $ shuntMadness [0..15]
+      shunteds = map (\s -> sprinkle 16 s z) shunts
+      grid = map (:[z]) shunteds
+      score = renderZGrid grid
+  mix <- strictRender score
+  msp shunts
+  writeZound "chew.wav" mix
+  return mix
+  where yah z = render (ExternalFx (resampleZoundProcessor loopLengthFrames) z)
+
 chew s = do
   clik <- readZound "wavs/clik.wav"
   --let loops = S.toList (likes s)
