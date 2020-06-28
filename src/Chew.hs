@@ -211,20 +211,32 @@ shuntMadness xs = odds $ runThrough randShunt xs
 
 dnb :: State -> IO Zound
 dnb s = do
-  z <- readZound "hey.wav" >>= yah
+  -- z <- readZound "hey.wav" >>= yah
+  -- z2 <- readZound "hay.wav" >>= yah
+  msp ("likes", S.toList $ likes s)
+  msp ("likes", head $ S.toList $ likes s)
+  let [zf, z2f, z3f] = twoOrThree $ head $ S.toList $ likes s
+  msp ("um", zf, z2f, z3f)
+  [z', z2', z3'] <- mapM (soundLoader s) $ map loopFilename [zf, z2f, z3f]
+  [z'', z2'', z3''] <- mapM render [z', z2', z3']
+  [z, z2, z3] <- mapM yah [z'', z2'', z3'']
+  msp ("um", z, z2)
   -- msp $ take 10 (runThrough (map (+) [0..]) 3)
   -- msp $ take 10 (shuntMadness [0..15])
-  let shunts = take 40 $ shuntMadness [0..15]
+  let shunts = take 10 $ shuntMadness [0..15]
       shunteds = map (\s -> sprinkle 16 s z) shunts
-      grid = map (:[z]) shunteds
+      grid = map (:[z2, z3]) shunteds
       score = renderZGrid grid
   mix <- strictRender score
   msp shunts
   writeZound "chew.wav" mix
   return mix
   where yah z = render (ExternalFx (resampleZoundProcessor loopLengthFrames) z)
+        twoOrThree (x:y:z:_) = [x, y, z]
+        twoOrThree [x, y] = [x, y, y]
 
-chew s = do
+chew = dnb
+_chew s = do
   clik <- readZound "wavs/clik.wav"
   --let loops = S.toList (likes s)
   let loops = S.toList $ likes s
