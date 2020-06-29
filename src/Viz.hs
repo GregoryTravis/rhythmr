@@ -26,6 +26,7 @@ import System.Exit (exitSuccess)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Animate
+import Constants
 import Gui
 import Hypercube
 import Loop
@@ -33,6 +34,7 @@ import Looper
 import Memoize
 import State
 import Util
+import Zounds hiding (Translate, Scale)
 
 instance Ord Color where
   compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
@@ -117,7 +119,7 @@ clip lo hi x | x < lo = lo
 clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
 
--- Some potential for inconsistency here, Pic and it's Tag could differ
+-- Some potential for inconsistency here, Pic and its Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float)) Color
@@ -132,21 +134,21 @@ data Id a = Id a
   deriving Show
 
 mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
-mapPic f (SeqP tag pos size color) = SeqP tag (f pos) (f size) color
+mapPic f (SeqP tag pos width color) = SeqP tag (f pos) (f width) color
 mapPic f (LoopP tag pos color) = LoopP tag (f pos) color
 mapPic f (LoopPlaceP tag pos color) = LoopPlaceP tag (f pos) color
 mapPic f (MarkP tag pos) = MarkP tag (f pos)
 mapPic f (CurP tag pos color) = CurP tag (f pos) color
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
-zipWithPic f (SeqP tag pos size color) (SeqP tag' pos' size' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f size size') color
+zipWithPic f (SeqP tag pos width color) (SeqP tag' pos' width' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f width width') color
 zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' && color == color' = LoopP tag (f pos pos') color
 zipWithPic f (LoopPlaceP tag pos color) (LoopPlaceP tag' pos' color') | tag == tag' && color == color' = LoopPlaceP tag (f pos pos') color
 zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
 zipWithPic f (CurP tag pos color) (CurP tag' pos' color') | tag == tag' && color == color' = CurP tag (f pos pos') color
 
 mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
-mapSquish f (SeqP tag pos size _) = [f pos, f size]
+mapSquish f (SeqP tag pos width _) = [f pos, f width]
 mapSquish f (LoopP tag pos _) = [f pos]
 mapSquish f (LoopPlaceP tag pos _) = [f pos]
 mapSquish f (MarkP tag pos) = [f pos]
@@ -233,10 +235,11 @@ renderViz t s (Viz pics) = do
       strategy = renderStrategy s
       labels = renderLabels
   writeIORef (currentHypercubeMat s) mat'
-  (tx, cursor) <- sequenceCursor s
-  let seqPics = map (Translate (-tx) 0) $ map renderPic $ map (mapPic (aValToId t)) $ sequenceToPics t s
+  progress <- getProgress (looper s)
+  -- (tx, cursor) <- sequenceCursor s
+  let seqPics = map (Translate (-progress) 0) $ map renderPic $ map (mapPic (aValToId t)) $ renderCurrentSong t s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [hc, cursor] ++ seqPics ++ anims ++ [strategy] ++ labels
+  return $ Pictures $ [hc] ++ seqPics ++ anims ++ [strategy] ++ labels
 
 renderLabels :: [Picture]
 renderLabels = [ at (-335) (350) "Loops"
@@ -349,13 +352,13 @@ fadeLine n a b t0 t1 c0 c1 = Pictures $ zipWith cl colors pairs
         toColor t = mixColors (realToFrac (1 - t)) (realToFrac t) c0 c1
         debug = (n, t0, t1, ts, tts)
 
-sequenceCursor :: State -> IO (Float, Picture)
-sequenceCursor s@(State { looper }) = do
-  progress <- getProgress looper
-  --msp ("mp", progress)
-  --let progress = 0.3
-  --msp $ ("cs", case s of State { currentSong } -> currentSong)
-  return $ renderProgress s progress
+--sequenceCursor :: State -> IO (Float, Picture)
+--sequenceCursor s@(State { looper }) = do
+--  progress <- getProgress looper
+--  --msp ("mp", progress)
+--  --let progress = 0.3
+--  --msp $ ("cs", case s of State { currentSong } -> currentSong)
+--  return $ renderProgress s progress
 
 loopColor' :: Loop -> Color
 loopColor' loop =
@@ -395,8 +398,11 @@ markRect = Color black $ thickBorder markThickness (V2 0 0) markDim
 --         m = V2 markMargin markMargin
 
 rect :: Color -> Color -> Picture
-rect color borderColor = Pictures [bg, border]
-  where bg = Color color $ Polygon $ rectanglePath rectWidth rectHeight
+rect = vRect rectWidth
+
+vRect :: Float -> Color -> Color -> Picture
+vRect width color borderColor = Pictures [bg, border]
+  where bg = Color color $ Polygon $ rectanglePath width rectHeight
         border = rectBorder borderColor
         --border = Color black $ lineLoop $ rectanglePath 25.0 20.0
         --waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
@@ -436,13 +442,13 @@ upTri = Color black $ Scale scale scale $ Polygon pts
 
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
-renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id size) color) = Translate x y $ rect color black
+renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
 renderPic (CurP (CurT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
-stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ sequenceToPics t oldS s
+stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ renderCurrentSong t s
 
 loopPlacePics :: State -> [Pic AVal]
 loopPlacePics s@(State { loops }) = map toPic loops
@@ -465,6 +471,27 @@ currentsToPics s@(State { loops }) = map toPic loops
                 aps = affinityPositions s
                 curs = currentPositions s
 
+renderCurrentSong :: Float -> State -> [Pic AVal]
+renderCurrentSong t (State { currentSong = Nothing }) = []
+renderCurrentSong t (State { currentSong = Just z }) =
+  let songBounds = getBounds z
+      fakeLoop = Loop "ff0044"
+      toPic :: Zound -> Bounds -> Pic AVal
+      toPic z b = constPic (SeqP (SeqT fakeLoop 0 0.0) (Id $ segmentPos b) (Id $ segmentWidth b) (loopColor fakeLoop))
+      segmentPos :: Bounds -> V2 Float
+      segmentPos (Bounds s e) = V2 (toScreen ((e - s) `div` 2)) (fromIntegral windowHeight / 2)
+      segmentWidth :: Bounds -> Float
+      segmentWidth (Bounds s e) = toScreen (s - e)
+      -- Convert sample num to screen space
+      toScreen :: Frame -> Float
+      toScreen frame = ((fromIntegral frame) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin)
+      seqMargin = 5
+      allBounds = getAllBounds z
+      allSegments = getAllSegments z
+      ok = (length allBounds) == (length allSegments)
+   in assertM "bounds/segments mismatch" ok $ zipWith toPic allSegments allBounds
+
+{-
 sequenceToPics :: Float -> State -> [Pic AVal]
 sequenceToPics t (State { currentSong = Nothing }) = []
 sequenceToPics t s =
@@ -532,6 +559,7 @@ seqLoopsAndPositions loopses =
 --         col measures x = zipWith (one x) measures [0..]
 --         one :: Int -> Measure -> Int -> (Loop, V2 Int)
 --         one x (Measure (g, i) _) y = ((loops !! g) !! i, V2 x y)
+-}
 
 reportViz :: Viz -> Viz
 reportViz = id

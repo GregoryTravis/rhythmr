@@ -48,6 +48,7 @@ module Util
 , allEq
 , groupUsing
 , applyMaybes
+, trace
 ) where
 
 import Control.Exception
@@ -59,6 +60,7 @@ import Data.Text.Lazy (toStrict)
 import Data.Time.Clock (diffUTCTime)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Typeable (typeOf)
+import qualified Debug.Trace as TR
 import GHC.Conc
 import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, stderr, hSetBuffering, BufferMode(..))
@@ -294,3 +296,6 @@ applyMaybes :: [a -> Maybe b] -> a -> Maybe b
 applyMaybes (f:fs) a = case f a of Just b -> Just b
                                    Nothing -> applyMaybes fs a
 applyMaybes [] a = Nothing
+
+trace :: Show a => a -> Bool
+trace x = TR.trace (show x) False

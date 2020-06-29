@@ -130,6 +130,7 @@ initState soundLoader looper collections = do
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
+setState :: State -> IO (GuiCommand State)
 setState s = return $ NewState s
 retCommand c = return c
 
@@ -162,11 +163,8 @@ keyboardHandler s 'W' = do
   writeCurrentSongSeparateTracks' s
   writeClick
   setState s
-keyboardHandler s 'S' = do
-  setState (setSong s)
-keyboardHandler s 'J' = do
-  someChew s
-  setState s
+keyboardHandler s 'S' = cycleLikesSong s >>= setSong s
+keyboardHandler s 'J' = chew s >>= setSong s
 keyboardHandler s '\ESC' = retCommand Quit
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
@@ -188,7 +186,7 @@ keyboardHandler s 'L' = do
   file <- getHistoryFile
   retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
-keyboardHandler s 'c' = setState $ setSong $ s { affinityCycle = affinityCycle s + 1 }
+keyboardHandler s 'c' = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
 keyboardHandler s key = do
   msp $ ("?? " ++ (show key))
   setState s'
@@ -220,25 +218,22 @@ respondToStateChange s s' = do
   --resetTerm
   --putStrLn $ displayer s'
   msp "respondToStateChange"
-  if currentSong s' /= currentSong s && currentSong s' /= Nothing
-     then time "playCurrentSong" $ playCurrentSong' s'
-     else if currentGroup s' /= currentGroup s && currentGroup s' /= []
-            then playCurrent s'
-            else return ()
+  if currentGroup s' /= currentGroup s && currentGroup s' /= []
+    then playCurrent s'
+    else return ()
 
-someChew :: State -> IO ()
-someChew s@(State { likes }) = do
-  mix <- chew s
-  msp ("mix", durationSeconds mix)
-  time "zsetsound" $ setZound (looper s) mix
+playCurrentSong :: State -> IO ()
+playCurrentSong (State { currentSong = Nothing }) = return ()
+playCurrentSong s@(State { currentSong = Just mix }) =
+   time "zsetsound" $ setZound (looper s) mix
 
-playCurrentSong' :: State -> IO ()
-playCurrentSong' (State { currentSong = Nothing }) = return ()
-playCurrentSong' s@(State { currentSong = Just loops }) = do
-  song <- renderLoopGrid s loops
-  mix <- time "zrender" $ strictRender song
-  msp ("mix", durationSeconds mix, desiredLength)
-  time "zsetsound" $ setZound (looper s) mix
+-- playCurrentSong :: State -> IO ()
+-- playCurrentSong (State { currentSong = Nothing }) = return ()
+-- playCurrentSong s@(State { currentSong = Just loops }) = do
+--   song <- renderLoopGrid s loops
+--   mix <- time "zrender" $ strictRender song
+--   msp ("mix", durationSeconds mix, desiredLength)
+--   time "zsetsound" $ setZound (looper s) mix
 
 -- playCurrentSong :: State -> IO ()
 -- playCurrentSong s@(State { currentSong = Just (score, loops) }) = do
@@ -250,7 +245,7 @@ playCurrentSong' s@(State { currentSong = Just loops }) = do
 
 writeCurrentSong :: State -> IO ()
 writeCurrentSong s = do
-  let loopGrid = buildlLoopGrid s
+  let loopGrid = buildLoopGrid s
   z <- renderLoopGrid s loopGrid
   mix <- render z
   MkSystemTime { systemSeconds } <- getSystemTime
@@ -317,8 +312,8 @@ allFirstThrees :: [a] -> [[a]]
 allFirstThrees xs = take n (map (take 3) (cycles xs))
   where n = length xs
 
-buildlLoopGrid :: State -> [[Loop]]
-buildlLoopGrid s@(State { affinityCycle, likes }) =
+buildLoopGrid :: State -> [[Loop]]
+buildLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
       stacks = rotateMod affinityCycle (S.toList likes)
       loopGrid :: [[Loop]]
@@ -342,7 +337,7 @@ groupBySourceTrack xs = eesp ("gosh", map getSourceTrackHash xs) $ groupUsing ge
 -- Group loops by source track, then render each group separately
 buildStemLoopGrids :: State -> [[[Loop]]]
 buildStemLoopGrids s =
-  let loopGrid = buildlLoopGrid s
+  let loopGrid = buildLoopGrid s
       loops = nubOrd (concat loopGrid)
       sourceTrackGroups = groupBySourceTrack loops
    in map (onlyThese loopGrid) sourceTrackGroups
@@ -394,8 +389,16 @@ renderLoopGrid (State { soundLoader }) loopGrid = do
 -- number :: [a] -> [(Int, a)]
 -- number = zip [0..]
 
-setSong :: State -> State
-setSong s = s { currentSong = Just $ buildlLoopGrid s, currentGroup = [] }
+cycleLikesSong :: State -> IO Zound
+cycleLikesSong s = do
+  song <- renderLoopGrid s (buildLoopGrid s)
+  time "zrender" $ strictRender song
+
+setSong :: State -> Zound -> IO (GuiCommand State)
+setSong s z = do
+  let s' = s { currentSong = Just z }
+  playCurrentSong s'
+  setState s'
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
 someAcceptable :: State -> [[Loop]]

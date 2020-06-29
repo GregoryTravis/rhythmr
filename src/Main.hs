@@ -17,7 +17,7 @@ import Looper (withPortaudio)
 import Util
 import Zounds
 
-doStuffDefault = ["aff", "hiphop-beats", "1"]
+doStuffDefault = ["drum-breaks-p", "aff", "drum-breaks", "1"]
 --doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]

@@ -8,6 +8,8 @@ module Zounds
 , FSamples
 , Bounds(..)
 , getBounds
+, getAllBounds
+, getAllSegments
 , getStart
 , getEnd
 , durationSeconds
@@ -30,8 +32,11 @@ module Zounds
 ) where
 
 import Control.Monad.ST
+import Data.Maybe
 import qualified Data.StorableVector as SV
 import qualified Data.StorableVector.ST.Strict as MSV
+import Numeric.Interval
+import qualified Numeric.Interval as NI
 import qualified Sound.File.Sndfile.Buffer.StorableVector as BV
 import Sound.File.Sndfile as SF hiding (hGetContents)
 import System.Directory
@@ -84,11 +89,28 @@ getEnd (Bounds s e) = e
 translateBounds :: Bounds -> Frame -> Bounds
 translateBounds (Bounds s e) dt = Bounds (s + dt) (e + dt)
 
+-- This is wrong because the semantics of Scale are wrong: Scale effectively
+-- translates to the origin before, and back after; most likely, we never use
+-- Scale on anything that's not at the origin. So this, too, assumes that.
+scaleBoundsWrong :: Bounds -> Frame -> Bounds
+scaleBoundsWrong _ n = Bounds 0 n
+--scaleBoundsWrong (Bounds s e) scale = Bounds (floor $ (fromIntegral s) * scale) (floor $ (fromIntegral e) * scale)
+
 -- inside :: Bounds -> Frame -> Bool
 -- inside (Bounds s e) t = t >= s && t < e
 
 boundsUnion :: Bounds -> Bounds -> Bounds
 boundsUnion (Bounds s e) (Bounds s' e') = Bounds (min s s') (max e e')
+
+boundsIntersection :: Bounds -> Bounds -> Maybe Bounds
+boundsIntersection b0 b1 =
+  let i0 = toInterval b0
+      i1 = toInterval b1
+      int = intersection i0 i1
+   in toMaybe int
+  where toMaybe int | NI.null int = Nothing
+                    | otherwise = Just $ Bounds (inf int) (sup int)
+        toInterval (Bounds s e) = s ... e
 
 boundingBox :: [Bounds] -> Bounds
 boundingBox [] = error "boundingBox: empty list"
@@ -112,7 +134,7 @@ instance Show Zound where
   show z = show' z ++ " " ++ (niceShowBounds (getBounds z))
     where show' (Segment {}) = "[...]"
           show' (Translate dt z) = "(Translate " ++ (show dt) ++ " " ++ (show z) ++ ")"
-          show' (Scale s z) = "(Scale " ++ (show s) ++ " " ++ (show z) ++ ")"
+          show' (Scale len z) = "(Scale " ++ (show len) ++ " " ++ (show z) ++ ")"
           show' (ExternalFx _ z) = "(ExternalFx " ++ (show z) ++ ")"
           show' (InternalFx _ z) = "(InternalFx " ++ (show z) ++ ")"
           show' (MonoSynth _ _) = "(MonoSynth)"
@@ -142,6 +164,27 @@ getBounds (Mix zs) = boundingBox (map getBounds zs)
 getBounds (InternalFx f z) = getBounds z
 getBounds (MonoSynth f b) = b
 getBounds (Silence b) = b
+
+-- Walk the tree and get Bounds for each segment, scaling and translating as we
+-- go.
+getAllBounds :: Zound -> [Bounds]
+getAllBounds z@(Segment {}) = [getBounds z]
+getAllBounds (Translate dt z) = map (flip translateBounds dt) (getAllBounds z)
+getAllBounds (Scale numFrames z) = map (flip scaleBoundsWrong numFrames) (getAllBounds z)
+getAllBounds (Bounded b z) = catMaybes $ map (boundsIntersection b) (getAllBounds z)
+getAllBounds (Silence _) = []
+getAllBounds (Mix zs) = concat (map getAllBounds zs)
+getAllBounds z = error ("???" ++ (show z))
+
+-- Walk the tree and get Segments.
+getAllSegments :: Zound -> [Zound]
+getAllSegments z@(Segment {}) = [z]
+getAllSegments (Translate dt z) = getAllSegments z
+getAllSegments (Scale s z) = getAllSegments z
+getAllSegments (Bounded b z) = getAllSegments z
+getAllSegments (Silence _) = []
+getAllSegments (Mix zs) = concat (map getAllSegments zs)
+getAllSegments z = error ("???" ++ (show z))
 
 -- Second argument is sample index, not frame number.
 sample :: Zound -> Int -> Double
@@ -348,7 +391,7 @@ renderGrid zses bpm =
       placeMeasuresInTime zses = zipWith moveToMeasure zses [0..]
       moveToMeasure zs n = map (Translate (n * numFrames)) zs
       mix = Mix (concat zses')
-   in eesp ("ha", numFrames) $ mix
+   in mix
 
 toZero :: Zound -> Zound
 toZero z =
