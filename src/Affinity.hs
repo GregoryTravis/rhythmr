@@ -224,8 +224,9 @@ respondToStateChange s s' = do
 
 playCurrentSong :: State -> IO ()
 playCurrentSong (State { currentSong = Nothing }) = return ()
-playCurrentSong s@(State { currentSong = Just mix }) =
-   time "zsetsound" $ setZound (looper s) mix
+playCurrentSong s@(State { currentSong = Just mix }) = do
+  z <- strictRender mix
+  time "zsetsound" $ setZound (looper s) z
 
 -- playCurrentSong :: State -> IO ()
 -- playCurrentSong (State { currentSong = Nothing }) = return ()
@@ -396,7 +397,7 @@ cycleLikesSong s = do
 
 setSong :: State -> Zound -> IO (GuiCommand State)
 setSong s z = do
-  let s' = s { currentSong = Just z }
+  let s' = s { currentSong = Just z, currentGroup = [] }
   playCurrentSong s'
   setState s'
 

@@ -475,13 +475,13 @@ renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong t (State { currentSong = Nothing }) = []
 renderCurrentSong t (State { currentSong = Just z }) =
   let songBounds = getBounds z
-      fakeLoop = Loop "ff0044"
+      fakeLoop = Loop "loop-download-8d1fd86ed146df0d0d2dc00a81876a9b-9f7bc5b93193385bf29361f5bcc3fd60.wav"
       toPic :: Zound -> Bounds -> Pic AVal
       toPic z b = constPic (SeqP (SeqT fakeLoop 0 0.0) (Id $ segmentPos b) (Id $ segmentWidth b) (loopColor fakeLoop))
       segmentPos :: Bounds -> V2 Float
-      segmentPos (Bounds s e) = V2 (toScreen ((e - s) `div` 2)) (fromIntegral windowHeight / 2)
+      segmentPos (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (-(fromIntegral windowHeight / 4))
       segmentWidth :: Bounds -> Float
-      segmentWidth (Bounds s e) = toScreen (s - e)
+      segmentWidth (Bounds s e) = (toScreen (e - s)) * shrink
       -- Convert sample num to screen space
       toScreen :: Frame -> Float
       toScreen frame = ((fromIntegral frame) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin)
@@ -489,7 +489,9 @@ renderCurrentSong t (State { currentSong = Just z }) =
       allBounds = getAllBounds z
       allSegments = getAllSegments z
       ok = (length allBounds) == (length allSegments)
-   in assertM "bounds/segments mismatch" ok $ zipWith toPic allSegments allBounds
+      shrink = 0.8
+   in fesp (take 10 . map jeh) $ eesp ("huh", take 10 allBounds) $ assertM "bounds/segments mismatch" ok $ zipWith toPic allSegments allBounds
+  where jeh (SeqP _ pos wid _) = (pos, wid)
 
 {-
 sequenceToPics :: Float -> State -> [Pic AVal]

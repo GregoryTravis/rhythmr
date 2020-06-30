@@ -227,10 +227,11 @@ dnb s = do
       shunteds = map (\s -> sprinkle 16 s z) shunts
       grid = map (:[z2, z3]) shunteds
       score = renderZGrid grid
-  mix <- strictRender score
-  msp shunts
-  writeZound "chew.wav" mix
-  return mix
+  return score
+  -- mix <- strictRender score
+  -- msp shunts
+  -- writeZound "chew.wav" mix
+  -- return mix
   where yah z = render (ExternalFx (resampleZoundProcessor loopLengthFrames) z)
         twoOrThree (x:y:z:_) = [x, y, z]
         twoOrThree [x, y] = [x, y, y]
