@@ -519,7 +519,7 @@ stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
         -- 0)
         closest :: Bounds -> [Bounds] -> Frame
         closest b [] = 0
-        closest b bs = abs (endOf (last bs)):w
+        closest b bs = (-(abs (endOf (last bs))))
 
 
 -- Score each element of the list, and call the function on the one with the
