@@ -500,6 +500,38 @@ renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
    in fesp (take 10 . map jeh) $ eesp ("huh", take 10 allBounds) $ assertM "bounds/segments mismatch" ok $ zipWith toPic allSegments allBounds
   where jeh (SeqP _ pos wid _) = (pos, wid)
 
+-- Distribute entities on mutliple rows so as to minimize overlap, up to a
+-- maximum number of rows.
+-- - sort by left edge
+-- - Create empty rows
+-- - for each segment
+--   - if it is past the end of any row, add it to the row that has the greatest rightward extent
+--   - if it is not, add it to the row that has the least rightward extent
+stackBounds :: [Bounds] -> [[Bounds]]
+stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
+  where addBounds :: [[Bounds]] -> [Bounds] -> [[Bounds]]
+        addBounds stack [] = stack
+        addBounds stack (b:bs) = addBounds (addBound stack b) bs
+        addBound :: [[Bound]] -> Bound -> [[Bounds]]
+        addBound stack b = overBest (++ [b]) (closest b) stack
+        -- Since we sorted the list, we can just check the last element of the
+        -- list; if the list is empty, then we treat that as closest (distance
+        -- 0)
+        closest :: Bounds -> [Bounds] -> Frame
+        closest b [] = 0
+        closest b bs = abs (endOf (last bs)):w
+
+
+-- Score each element of the list, and call the function on the one with the
+-- highest score.
+overBest :: Num n => (a -> a) -> (a -> n) -> [a] -> [a]
+overBest _ _ [] == error "overBest: empty list"
+overBest f scorer xs = replaceInList xs bestIndex (f (xs !! bestIndex))
+  where bestIndex = fromMyabe err (elemIndex bestScore scores)
+        err = "overBest: ???"
+        scores = map scorder xs
+        bestScore = head (maximum scores)
+
 {-
 sequenceToPics :: Float -> State -> [Pic AVal]
 sequenceToPics t (State { currentSong = Nothing }) = []
