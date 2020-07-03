@@ -41,7 +41,7 @@ data State =
         , soundLoader :: String -> IO Zound
         , editorLog :: [String]
         , stack :: [[Loop]]
-        , currentSong :: Maybe Zound
+        , currentSong :: Maybe (Zound, Zound)  -- First is mix, second is rendered
         , affinityCycle :: Int
         , currentHypercubeMat :: IORef Mat
         , rand :: StdGen

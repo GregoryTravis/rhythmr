@@ -15,6 +15,9 @@ loopLengthSeconds = toLoopLengthSeconds bpm
 standardSR :: Int
 standardSR = 44100
 
+timeToFrame :: Float -> Int
+timeToFrame t = floor $ t * fromIntegral standardSR
+
 toLoopLengthFrames :: Int -> Int
 toLoopLengthFrames bpm = floor $ (fromIntegral standardSR) * (toLoopLengthSeconds bpm)
 

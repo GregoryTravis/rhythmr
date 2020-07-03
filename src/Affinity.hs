@@ -222,12 +222,6 @@ respondToStateChange s s' = do
     then playCurrent s'
     else return ()
 
-playCurrentSong :: State -> IO ()
-playCurrentSong (State { currentSong = Nothing }) = return ()
-playCurrentSong s@(State { currentSong = Just mix }) = do
-  z <- strictRender mix
-  time "zsetsound" $ setZound (looper s) z
-
 -- playCurrentSong :: State -> IO ()
 -- playCurrentSong (State { currentSong = Nothing }) = return ()
 -- playCurrentSong s@(State { currentSong = Just loops }) = do
@@ -396,9 +390,10 @@ cycleLikesSong s = do
   time "zrender" $ strictRender song
 
 setSong :: State -> Zound -> IO (GuiCommand State)
-setSong s z = do
-  let s' = s { currentSong = Just z, currentGroup = [] }
-  playCurrentSong s'
+setSong s mix = do
+  z <- strictRender mix
+  let s' = s { currentSong = Just (mix, z), currentGroup = [] }
+  setZound (looper s') z
   setState s'
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements

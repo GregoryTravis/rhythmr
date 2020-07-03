@@ -237,7 +237,7 @@ renderViz t s (Viz pics) = do
   writeIORef (currentHypercubeMat s) mat'
   progress <- getProgress (looper s)
   -- (tx, cursor) <- sequenceCursor s
-  let seqPics = map (Translate (-progress) 0) $ map renderPic $ map (mapPic (aValToId t)) $ renderCurrentSong t s
+  let seqPics = map (Translate (-progress) 0) $ map renderPic $ map (mapPic (aValToId t)) $ renderCurrentSong progress s
   --msp ("renderViz", cursor)
   return $ Pictures $ [hc] ++ seqPics ++ anims ++ [strategy] ++ labels
 
@@ -384,7 +384,7 @@ rectHeight = 20
 rectDim :: V2 Float
 rectDim = V2 rectWidth rectHeight
 rectThickness :: Float
-rectThickness = 3
+rectThickness = 1
 
 markMargin = 10
 markThickness = 3
@@ -401,11 +401,14 @@ rect :: Color -> Color -> Picture
 rect = vRect rectWidth
 
 vRect :: Float -> Color -> Color -> Picture
-vRect width color borderColor = Pictures [bg, border]
+vRect width color borderColor = Pictures [{-bg,-} border]
   where bg = Color color $ Polygon $ rectanglePath width rectHeight
-        border = rectBorder borderColor
+        border = vRectBorder width borderColor
         --border = Color black $ lineLoop $ rectanglePath 25.0 20.0
         --waveForm = Color black $ Line [(-10.0, -10.0), (10.0, 10.0)]
+
+vRectBorder :: Float -> Color -> Picture
+vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 width rectHeight)
 
 rectBorder :: Color -> Picture
 --rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
@@ -472,8 +475,8 @@ currentsToPics s@(State { loops }) = map toPic loops
                 curs = currentPositions s
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
-renderCurrentSong t (State { currentSong = Nothing }) = []
-renderCurrentSong t (State { currentSong = Just z }) =
+renderCurrentSong progress (State { currentSong = Nothing }) = []
+renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
   let songBounds = getBounds z
       fakeLoop = Loop "loop-download-8d1fd86ed146df0d0d2dc00a81876a9b-9f7bc5b93193385bf29361f5bcc3fd60.wav"
       toPic :: Zound -> Bounds -> Pic AVal
@@ -484,12 +487,16 @@ renderCurrentSong t (State { currentSong = Just z }) =
       segmentWidth (Bounds s e) = (toScreen (e - s)) * shrink
       -- Convert sample num to screen space
       toScreen :: Frame -> Float
-      toScreen frame = ((fromIntegral frame) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin)
+      toScreen frame = ((fromIntegral (frame)) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin) * stretch
+      songTimeFrames :: Frame
+      songTimeFrames = floor $ progress * (fromIntegral (numFrames renderedZ))
+      --tFrames = timeToFrame t
       seqMargin = 5
       allBounds = getAllBounds z
       allSegments = getAllSegments z
       ok = (length allBounds) == (length allSegments)
-      shrink = 0.8
+      shrink = 0.9
+      stretch = 10.0
    in fesp (take 10 . map jeh) $ eesp ("huh", take 10 allBounds) $ assertM "bounds/segments mismatch" ok $ zipWith toPic allSegments allBounds
   where jeh (SeqP _ pos wid _) = (pos, wid)
 
@@ -528,30 +535,30 @@ seqLayOutPositions poses = map lop poses
         seqWindow :: V2 Float
         seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
 
--- TODO really shouldn't duplicate this, but how?
-renderProgress :: State -> Float -> (Float, Picture)
-renderProgress (State { currentSong = Just loops }) progress = (tx, Translate 0 (ty - 5) $ upTri)
-  where tx = interp progress 0 1 left right
-        V2 _ ty = (-(window / 2)) + seqMargin - room / 2
-        V2 left _ = (-(window / 2)) + seqMargin - room / 2
-        V2 right _ = (window / 2) - seqMargin + room / 2
-        window = fmap fromIntegral $ V2 windowWidth windowHeight
-        room :: V2 Float
-        room = V2 32.0 27.0
-        allXs :: [Int]
-        allXs = map (\(_, V2 x _) -> x) poses
-        allYs :: [Int]
-        allYs = map (\(_, V2 _ y) -> y) poses
-        seqSizeI :: V2 Int
-        seqSizeI = V2 (maximum allXs) (maximum allYs)
-        seqSize :: V2 Float
-        seqSize = fmap fromIntegral seqSizeI * room
-        seqMargin :: V2 Float
-        seqMargin = (seqWindow - seqSize) / 2
-        seqWindow :: V2 Float
-        seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
-        poses = seqLoopsAndPositions loops
-renderProgress _ _ = (0, Blank)
+-- -- TODO really shouldn't duplicate this, but how?
+-- renderProgress :: State -> Float -> (Float, Picture)
+-- renderProgress (State { currentSong = Just loops }) progress = (tx, Translate 0 (ty - 5) $ upTri)
+--   where tx = interp progress 0 1 left right
+--         V2 _ ty = (-(window / 2)) + seqMargin - room / 2
+--         V2 left _ = (-(window / 2)) + seqMargin - room / 2
+--         V2 right _ = (window / 2) - seqMargin + room / 2
+--         window = fmap fromIntegral $ V2 windowWidth windowHeight
+--         room :: V2 Float
+--         room = V2 32.0 27.0
+--         allXs :: [Int]
+--         allXs = map (\(_, V2 x _) -> x) poses
+--         allYs :: [Int]
+--         allYs = map (\(_, V2 _ y) -> y) poses
+--         seqSizeI :: V2 Int
+--         seqSizeI = V2 (maximum allXs) (maximum allYs)
+--         seqSize :: V2 Float
+--         seqSize = fmap fromIntegral seqSizeI * room
+--         seqMargin :: V2 Float
+--         seqMargin = (seqWindow - seqSize) / 2
+--         seqWindow :: V2 Float
+--         seqWindow = window / V2 1.0 2.0 -- V2 (windowWidth `div` 2) (windowHeight `div` 2)
+--         poses = seqLoopsAndPositions loops
+-- renderProgress _ _ = (0, Blank)
 
 seqLoopsAndPositions :: [[Loop]] -> [(Loop, V2 Int)]
 seqLoopsAndPositions loopses =
