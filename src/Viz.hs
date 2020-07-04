@@ -15,7 +15,7 @@ import Data.IORef
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Picture
@@ -479,25 +479,31 @@ renderCurrentSong progress (State { currentSong = Nothing }) = []
 renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
   let songBounds = getBounds z
       fakeLoop = Loop "loop-download-8d1fd86ed146df0d0d2dc00a81876a9b-9f7bc5b93193385bf29361f5bcc3fd60.wav"
-      toPic :: Zound -> Bounds -> Pic AVal
-      toPic z b = constPic (SeqP (SeqT fakeLoop 0 0.0) (Id $ segmentPos b) (Id $ segmentWidth b) (loopColor fakeLoop))
-      segmentPos :: Bounds -> V2 Float
-      segmentPos (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (-(fromIntegral windowHeight / 4))
+      toPic :: Int -> Zound -> Bounds -> Pic AVal
+      toPic row z b = constPic (SeqP (SeqT fakeLoop 0 0.0) (Id $ segmentPos row b) (Id $ segmentWidth b) (loopColor fakeLoop))
+      segmentPos :: Int -> Bounds -> V2 Float
+      segmentPos row (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (rowOffset - (fromIntegral windowHeight / 4))
+        where rowOffset = (-(fromIntegral row * (rectWidth + 5)))
       segmentWidth :: Bounds -> Float
-      segmentWidth (Bounds s e) = (toScreen (e - s)) * shrink
+      segmentWidth (Bounds s e) = (toScreen e - toScreen s) * shrink
       -- Convert sample num to screen space
       toScreen :: Frame -> Float
-      toScreen frame = ((fromIntegral (frame)) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin) * stretch
+      toScreen frame = ((fromIntegral (frame - songTimeFrames)) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin) * stretch
       songTimeFrames :: Frame
       songTimeFrames = floor $ progress * (fromIntegral (numFrames renderedZ))
       --tFrames = timeToFrame t
       seqMargin = 5
       allBounds = getAllBounds z
       allSegments = getAllSegments z
+      boundsToSegment :: M.Map Bounds Zound
+      boundsToSegment = M.fromList (zip allBounds allSegments)
       ok = (length allBounds) == (length allSegments)
       shrink = 0.9
       stretch = 10.0
-   in fesp (take 10 . map jeh) $ eesp ("huh", take 10 allBounds) $ assertM "bounds/segments mismatch" ok $ zipWith toPic allSegments allBounds
+      stackedBounds = stackBounds allBounds
+      picses :: [Pic AVal]
+      picses = concat $ zipWith (\row bs -> map (\b -> toPic row (boundsToSegment M.! b) b) bs) [0..] stackedBounds
+   in {-fesp (take 10 . map jeh) $ eesp ("huh", take 10 allBounds) $-} assertM "bounds/segments mismatch" ok $ picses
   where jeh (SeqP _ pos wid _) = (pos, wid)
 
 -- Distribute entities on mutliple rows so as to minimize overlap, up to a
@@ -512,25 +518,26 @@ stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
   where addBounds :: [[Bounds]] -> [Bounds] -> [[Bounds]]
         addBounds stack [] = stack
         addBounds stack (b:bs) = addBounds (addBound stack b) bs
-        addBound :: [[Bound]] -> Bound -> [[Bounds]]
+        addBound :: [[Bounds]] -> Bounds -> [[Bounds]]
         addBound stack b = overBest (++ [b]) (closest b) stack
         -- Since we sorted the list, we can just check the last element of the
         -- list; if the list is empty, then we treat that as closest (distance
         -- 0)
         closest :: Bounds -> [Bounds] -> Frame
         closest b [] = 0
-        closest b bs = (-(abs (endOf (last bs))))
-
+        closest b bs = (-(abs (getStart b - getEnd (last bs))))
+        numRows = 4
+        sortBounds = L.sortOn getStart
 
 -- Score each element of the list, and call the function on the one with the
--- highest score.
-overBest :: Num n => (a -> a) -> (a -> n) -> [a] -> [a]
-overBest _ _ [] == error "overBest: empty list"
+-- highest score, replacing it.
+overBest :: (Ord n) => (a -> a) -> (a -> n) -> [a] -> [a]
+overBest _ _ [] = error "overBest: empty list"
 overBest f scorer xs = replaceInList xs bestIndex (f (xs !! bestIndex))
-  where bestIndex = fromMyabe err (elemIndex bestScore scores)
-        err = "overBest: ???"
-        scores = map scorder xs
-        bestScore = head (maximum scores)
+  where bestIndex = fromMaybe err (L.elemIndex bestScore scores)
+        err = error "overBest: ???"
+        scores = map scorer xs
+        bestScore = maximum scores
 
 {-
 sequenceToPics :: Float -> State -> [Pic AVal]

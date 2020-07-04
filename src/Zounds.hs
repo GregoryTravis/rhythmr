@@ -66,7 +66,7 @@ type FSamples = SV.Vector Float
 -- Bounds start end
 -- start inclusive, end exclusive, of course.
 data Bounds = Bounds Frame Frame
-  deriving (Eq, Show)
+  deriving (Eq, Show, Ord)
 
 niceShowBounds :: Bounds -> String
 niceShowBounds (Bounds s e) = "[" ++ (show s') ++ ", " ++ (show e') ++ "]"

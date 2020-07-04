@@ -225,9 +225,9 @@ dnb s = do
   -- msp $ take 10 (shuntMadness [0..15])
   let shunts = take 1 $ shuntMadness [0..15]
       shunteds = map (\s -> sprinkle 16 s z) shunts
-      --grid = map (:[z2, z3]) shunteds
+      grid = map (:[z2, z3]) shunteds
       --grid = [[z]]
-      grid = [[sprinkle 8 [0..7] z, Translate (timeToFrame 0.125) $ sprinkle 4 [0..3] z]]
+      --grid = [[sprinkle 8 [0..7] z, Translate (timeToFrame 0.125) $ sprinkle 4 [0..3] z]]
       score = renderZGrid grid
   return score
   -- mix <- strictRender score
