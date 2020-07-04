@@ -1,13 +1,16 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Zounds
-( Zound(..)
+( Zound
+, ZoundT(..)
 , Frame
 , FSamples
 , Bounds(..)
 , getBounds
+--, getSamples
 , getAllBounds
 , getAllSegments
 , getStart
@@ -119,7 +122,19 @@ boundingBox bs = foldr1 boundsUnion bs
 boundsLength :: Bounds -> Frame
 boundsLength (Bounds s e) = e - s
 
-data Zound = Segment { samples :: Samples, offset :: Frame }
+-- Represents where the sound came from, eg a filename.
+data Source = Source [String]
+  deriving Show
+
+combineSources :: [Source] -> Source
+combineSources sources = Source $ concat $ map unSource sources
+  where unSource (Source ss) = ss
+
+combineSourcesFrom :: [Zound] -> Source
+combineSourcesFrom zs = combineSources $ catMaybes $ map getSource $ concat $ map getAllSegments zs
+  where getSource (Segment { source }) = source
+
+data ZoundT a = Segment { samples :: Samples, offset :: Frame, source :: Maybe a }
            | Translate Frame Zound
            | Scale Frame Zound
            | Affine Double Frame Zound
@@ -130,7 +145,12 @@ data Zound = Segment { samples :: Samples, offset :: Frame }
            | Silence Bounds
            | Mix [Zound]
 
-instance Show Zound where
+type Zound = ZoundT Source
+
+-- getSamples :: Zound -> Samples
+-- getSamples (Segment { samples }) = samples
+
+instance Show (ZoundT Source) where
   show z = show' z ++ " " ++ (niceShowBounds (getBounds z))
     where show' (Segment {}) = "[...]"
           show' (Translate dt z) = "(Translate " ++ (show dt) ++ " " ++ (show z) ++ ")"
@@ -214,11 +234,11 @@ trivialRender z =
   let bounds = getBounds z
       Bounds s e = bounds
       samples = SV.pack $ map (sample z) (toSampleIndices bounds)
-   in return $ Segment { samples, offset = s }
+   in return $ Segment { samples, offset = s, source = Nothing }
 
 -- Chunk up, optimize affines, etc
 fastRender :: Zound -> IO Zound
-fastRender z@(Segment _ _) = return z
+fastRender z@(Segment {}) = return z
 fastRender (ExternalFx p z) = do
   z' <- fastRender z
   processZound z' p
@@ -253,7 +273,7 @@ mixSegments zs = do
       mixSegmentOnto mutableMixBuffer (Segment { samples, offset }) = do
         mixOnto mutableMixBuffer samples offset
   msp ("mixSegments", length zs, allBounds)
-  return $ Segment { samples = mixBuffer', offset = getStart allBounds }
+  return $ Segment { samples = mixBuffer', offset = getStart allBounds, source = Just $ combineSourcesFrom zs }
 
 mixOnto :: MSV.Vector s Double -> Samples -> Int -> ST s ()
 mixOnto mix v offset = do
@@ -301,7 +321,8 @@ readZound filename = do
   massert "sections != 1" (sections info == 1) 
   massert ("channels: " ++ filename) (channels info == 1 || channels info == 2)
   return $ Segment { samples = stereoize (channels info) $ BV.fromBuffer buffer
-                   , offset = 0 }
+                   , offset = 0
+                   , source = Just $ Source [filename] }
   where stereoize :: Int -> SV.Vector Float -> Samples
         stereoize 1 fs = SV.map realToFrac $ SV.interleave [fs, fs]
         stereoize 2 fs = SV.map realToFrac fs
@@ -403,7 +424,7 @@ toZero z =
 -- Chop away everything < start and >= end
 -- start is the first sample, end is the sample after the last sample
 snip :: Frame -> Frame -> Zound -> Zound
-snip start end (Segment { samples, offset }) =
+snip start end (Segment { samples, offset, source }) =
   let start' = start - offset
       end' = end - offset
       offset' = start'
@@ -412,7 +433,7 @@ snip start end (Segment { samples, offset }) =
       endIndex = end' * 2
       ok = startIndex < endIndex && 0 <= startIndex && endIndex <= length
       samples' = SV.take (endIndex - startIndex) (SV.drop startIndex samples)
-   in Segment { samples = samples', offset = offset' }
+   in Segment { samples = samples', offset = offset', source }
 
 snipBounds :: Bounds -> Zound -> Zound
 snipBounds (Bounds s e) z = snip s e z

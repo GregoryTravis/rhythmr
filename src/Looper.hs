@@ -46,7 +46,7 @@ withLooper action = do
 
 setZound :: Looper -> Zound -> IO ()
 setZound l sound = do
-  --msp ("set", SV.length (samples sound))
+  --msp ("set", SV.length (amples sound))
   -- Dum way to make sure the sound is evaluated before putting it in the mvar
   let (Looper sv _ lv) = (samples sound) `seq` l
       samplesF = samplesAsFloats sound
