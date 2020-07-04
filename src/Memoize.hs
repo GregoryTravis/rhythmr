@@ -5,16 +5,13 @@ module Memoize
 , memoizeIO
 , memoizePure ) where
 
-import qualified Crypto.Hash.MD5 as MD5
-import qualified Data.ByteString.Base16 as B16
-import qualified Data.ByteString.Char8 as C8
 import Data.IORef
 import qualified Data.Map.Strict as MS
-import Data.ByteString.UTF8 as BSU (fromString)
 import System.Directory
 import System.IO.Temp
 import System.IO.Unsafe (unsafePerformIO)
 
+import qualified Hash as H
 import Util
 
 memoDir = ".memo"
@@ -30,7 +27,7 @@ diskMemoize :: Show a
             -> (a -> IO String)  -- an action taking an argument
 diskMemoize functionName (TakesFile f) args = do
   let key = show (functionName, args)
-      hash = md5 key
+      hash = H.hash key
       filename = memoDir ++ "/" ++ functionName ++ "-" ++ hash
   exists <- doesFileExist filename
   -- factor out return filename
@@ -81,6 +78,3 @@ memoizeIO f = do
                                                 writeIORef ioref $ MS.insert a b cache
                                                 return b
   return memoizedF
-
-md5 :: Show a => a -> String
-md5 x = C8.unpack $ B16.encode $ MD5.finalize $ MD5.update MD5.init (BSU.fromString $ show x)

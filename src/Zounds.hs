@@ -9,6 +9,7 @@ module Zounds
 , Frame
 , FSamples
 , Bounds(..)
+, Source(..)
 , getBounds
 --, getSamples
 , getAllBounds

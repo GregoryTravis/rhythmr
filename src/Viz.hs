@@ -28,6 +28,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Animate
 import Constants
 import Gui
+import qualified Hash as H
 import Hypercube
 import Loop
 import Looper
@@ -361,16 +362,22 @@ fadeLine n a b t0 t1 c0 c1 = Pictures $ zipWith cl colors pairs
 --  return $ renderProgress s progress
 
 loopColor' :: Loop -> Color
-loopColor' loop =
-  let hash = getHash loop
-      ri = read ("0x" ++ (take 2 hash)) :: Int
+loopColor' = hashColor . getHash
+loopColor = unsafePerformIO (memoizePure loopColor')
+
+hashColor' :: String -> Color
+hashColor' hash =
+  let ri = read ("0x" ++ (take 2 hash)) :: Int
       gi = read ("0x" ++ (take 2 $ drop 2 hash)) :: Int
       bi = read ("0x" ++ (take 2 $ drop 4 hash)) :: Int
       r = fromIntegral ri / 256.0
       g = fromIntegral gi / 256.0
       b = fromIntegral bi / 256.0
    in makeColor r g b 1.0
-loopColor = unsafePerformIO (memoizePure loopColor')
+hashColor = unsafePerformIO (memoizePure hashColor')
+
+stringColor :: String -> Color
+stringColor = hashColor . H.hash
 
 alphaLoopColor' loop = withAlpha 0.2 (loopColor' loop)
 alphaLoopColor = unsafePerformIO (memoizePure alphaLoopColor')
@@ -478,9 +485,12 @@ renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong progress (State { currentSong = Nothing }) = []
 renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
   let songBounds = getBounds z
-      fakeLoop = Loop "loop-download-8d1fd86ed146df0d0d2dc00a81876a9b-9f7bc5b93193385bf29361f5bcc3fd60.wav"
       toPic :: Int -> Zound -> Bounds -> Pic AVal
-      toPic row z b = constPic (SeqP (SeqT fakeLoop 0 0.0) (Id $ segmentPos row b) (Id $ segmentWidth b) (loopColor fakeLoop))
+      toPic row z b = constPic (SeqP (SeqT (Loop (filenameOf z)) 0 0.0) (Id $ segmentPos row b) (Id $ segmentWidth b) (colorFor z))
+      filenameOf :: Zound -> String
+      filenameOf z = case source z of Just (Source [filename]) -> filename
+      colorFor :: Zound -> Color
+      colorFor z = stringColor (filenameOf z)
       segmentPos :: Int -> Bounds -> V2 Float
       segmentPos row (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (rowOffset - (fromIntegral windowHeight / 4))
         where rowOffset = (-(fromIntegral row * (rectWidth + 5)))
