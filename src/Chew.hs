@@ -223,7 +223,7 @@ dnb s = do
   msp ("um", z, z2)
   -- msp $ take 10 (runThrough (map (+) [0..]) 3)
   -- msp $ take 10 (shuntMadness [0..15])
-  let shunts = take 1 $ shuntMadness [0..15]
+  let shunts = take 10 $ shuntMadness [0..15]
       shunteds = map (\s -> sprinkle 16 s z) shunts
       grid = map (:[z2, z3]) shunteds
       --grid = [[z]]

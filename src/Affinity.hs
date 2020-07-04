@@ -386,8 +386,7 @@ renderLoopGrid (State { soundLoader }) loopGrid = do
 
 cycleLikesSong :: State -> IO Zound
 cycleLikesSong s = do
-  song <- renderLoopGrid s (buildLoopGrid s)
-  time "zrender" $ strictRender song
+  renderLoopGrid s (buildLoopGrid s)
 
 setSong :: State -> Zound -> IO (GuiCommand State)
 setSong s mix = do

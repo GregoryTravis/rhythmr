@@ -171,6 +171,7 @@ getAllBounds :: Zound -> [Bounds]
 getAllBounds z@(Segment {}) = [getBounds z]
 getAllBounds (Translate dt z) = map (flip translateBounds dt) (getAllBounds z)
 getAllBounds (Scale numFrames z) = map (flip scaleBoundsWrong numFrames) (getAllBounds z)
+getAllBounds (InternalFx _ z) = getAllBounds z
 getAllBounds (Bounded b z) = catMaybes $ map (boundsIntersection b) (getAllBounds z)
 getAllBounds (Silence _) = []
 getAllBounds (Mix zs) = concat (map getAllBounds zs)
@@ -181,6 +182,7 @@ getAllSegments :: Zound -> [Zound]
 getAllSegments z@(Segment {}) = [z]
 getAllSegments (Translate dt z) = getAllSegments z
 getAllSegments (Scale s z) = getAllSegments z
+getAllSegments (InternalFx b z) = getAllSegments z
 getAllSegments (Bounded b z) = getAllSegments z
 getAllSegments (Silence _) = []
 getAllSegments (Mix zs) = concat (map getAllSegments zs)
