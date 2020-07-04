@@ -384,7 +384,7 @@ rectHeight = 20
 rectDim :: V2 Float
 rectDim = V2 rectWidth rectHeight
 rectThickness :: Float
-rectThickness = 1
+rectThickness = 3
 
 markMargin = 10
 markThickness = 3
@@ -401,7 +401,7 @@ rect :: Color -> Color -> Picture
 rect = vRect rectWidth
 
 vRect :: Float -> Color -> Color -> Picture
-vRect width color borderColor = Pictures [{-bg,-} border]
+vRect width color borderColor = Pictures [bg, border]
   where bg = Color color $ Polygon $ rectanglePath width rectHeight
         border = vRectBorder width borderColor
         --border = Color black $ lineLoop $ rectanglePath 25.0 20.0
