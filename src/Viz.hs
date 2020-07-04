@@ -384,7 +384,7 @@ rectHeight = 20
 rectDim :: V2 Float
 rectDim = V2 rectWidth rectHeight
 rectThickness :: Float
-rectThickness = 3
+rectThickness = 1
 
 markMargin = 10
 markThickness = 3
@@ -485,7 +485,7 @@ renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
       segmentPos row (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (rowOffset - (fromIntegral windowHeight / 4))
         where rowOffset = (-(fromIntegral row * (rectWidth + 5)))
       segmentWidth :: Bounds -> Float
-      segmentWidth (Bounds s e) = (toScreen e - toScreen s) * shrink
+      segmentWidth (Bounds s e) = (toScreen e - toScreen s) - 4
       -- Convert sample num to screen space
       toScreen :: Frame -> Float
       toScreen frame = ((fromIntegral (frame - songTimeFrames)) / (fromIntegral loopLengthFrames)) * (rectWidth + seqMargin) * stretch
@@ -498,7 +498,6 @@ renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
       boundsToSegment :: M.Map Bounds Zound
       boundsToSegment = M.fromList (zip allBounds allSegments)
       ok = (length allBounds) == (length allSegments)
-      shrink = 0.9
       stretch = 10.0
       stackedBounds = stackBounds allBounds
       picses :: [Pic AVal]
