@@ -160,7 +160,7 @@ keyboardHandler s 'A' = do
                                    setState s'
 keyboardHandler s 'W' = do
   writeCurrentSong s
-  writeCurrentSongSeparateTracks' s
+  --writeCurrentSongSeparateTracks' s
   writeClick
   setState s
 keyboardHandler s 'S' = cycleLikesSong s >>= setSong s
@@ -240,12 +240,17 @@ respondToStateChange s s' = do
 
 writeCurrentSong :: State -> IO ()
 writeCurrentSong s = do
-  let loopGrid = buildLoopGrid s
-  z <- renderLoopGrid s loopGrid
-  mix <- render z
+  let mix = snd $ fromJust (currentSong s)
   MkSystemTime { systemSeconds } <- getSystemTime
   let filename = "song-" ++ show systemSeconds ++ ".wav"
   writeZound filename mix
+-- writeCurrentSong s = do
+--   let loopGrid = buildLoopGrid s
+--   z <- renderLoopGrid s loopGrid
+--   mix <- render z
+--   MkSystemTime { systemSeconds } <- getSystemTime
+--   let filename = "song-" ++ show systemSeconds ++ ".wav"
+--   writeZound filename mix
 
 writeCurrentSongSeparateTracks' :: State -> IO ()
 writeCurrentSongSeparateTracks' s = do
