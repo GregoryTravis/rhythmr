@@ -395,6 +395,7 @@ cycleLikesSong s = do
 
 setSong :: State -> Zound -> IO (GuiCommand State)
 setSong s mix = do
+  mapM (msp . ("hey",)) (getAllSegments mix)
   z <- strictRender mix
   let s' = s { currentSong = Just (mix, z), currentGroup = [] }
   setZound (looper s') z

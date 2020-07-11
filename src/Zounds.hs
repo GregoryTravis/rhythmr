@@ -135,6 +135,10 @@ combineSourcesFrom :: [Zound] -> Source
 combineSourcesFrom zs = combineSources $ catMaybes $ map getSource $ concat $ map getAllSegments zs
   where getSource (Segment { source }) = source
 
+transferSources :: [Zound] -> Zound -> Zound
+transferSources zs z@(Segment {}) = z { source }
+  where source = Just $ combineSourcesFrom zs
+
 data ZoundT a = Segment { samples :: Samples, offset :: Frame, source :: Maybe a }
            | Translate Frame Zound
            | Scale Frame Zound
@@ -153,7 +157,7 @@ type Zound = ZoundT Source
 
 instance Show (ZoundT Source) where
   show z = show' z ++ " " ++ (niceShowBounds (getBounds z))
-    where show' (Segment {}) = "[...]"
+    where show' (Segment { source }) = "[" ++ (show source) ++ "]"
           show' (Translate dt z) = "(Translate " ++ (show dt) ++ " " ++ (show z) ++ ")"
           show' (Scale len z) = "(Scale " ++ (show len) ++ " " ++ (show z) ++ ")"
           show' (ExternalFx _ z) = "(ExternalFx " ++ (show z) ++ ")"
@@ -242,7 +246,11 @@ fastRender :: Zound -> IO Zound
 fastRender z@(Segment {}) = return z
 fastRender (ExternalFx p z) = do
   z' <- fastRender z
-  processZound z' p
+  z'' <- processZound z' p
+  let source'' = combineSourcesFrom [z]
+      Segment { samples = samples'', offset = offset'' } :: Zound = z''
+  return $ Segment { samples = samples'', offset = offset'', source = Just $ source'' }
+  --return $ z'' { source = source'' }
 fastRender (Scale numFrames z) = fastRender (ExternalFx (resampleZoundProcessor numFrames) z)
 fastRender (Translate dt z) = do
   z' <- fastRender z
@@ -250,7 +258,7 @@ fastRender (Translate dt z) = do
 fastRender (Mix zs) = do
   zs' <- mapM fastRender zs
   mixSegments zs'
-fastRender z@(InternalFx _ _) = trivialRender z
+fastRender z@(InternalFx _ _) = transferSources [z] <$> trivialRender z
 fastRender z@(MonoSynth _ _) = trivialRender z
 -- TODO slow
 fastRender z@(Silence _) = trivialRender z

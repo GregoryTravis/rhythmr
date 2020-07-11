@@ -218,7 +218,9 @@ dnb s = do
   let [zf, z2f, z3f] = twoOrThree $ head $ S.toList $ likes s
   msp ("um", zf, z2f, z3f)
   [z', z2', z3'] <- mapM (soundLoader s) $ map loopFilename [zf, z2f, z3f]
+  msp ("um", z', z2', z3')
   [z'', z2'', z3''] <- mapM render [z', z2', z3']
+  msp ("um", z'', z2'', z3'')
   [z, z2, z3] <- mapM yah [z'', z2'', z3'']
   msp ("um", z, z2)
   let shunts = take 10 $ shuntMadness [0..15]
