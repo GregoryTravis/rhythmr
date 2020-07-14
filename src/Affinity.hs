@@ -28,7 +28,6 @@ import System.Random
 import Animate
 import Ascii
 import Chew
-import Config
 import Constants
 import FX
 import Gui
@@ -65,11 +64,11 @@ emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.em
 initRand :: StdGen
 initRand = mkStdGen 0
 
-makeLoader :: (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
+makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
+makeLoader projectFile soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
-  return $ State { soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
+  return $ State { projectFile, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
                    currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
 
@@ -78,18 +77,6 @@ makeLoader soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCo
 
 saver :: State -> StateRep
 saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
-
--- Create dir if it does not exist
-getProjectDir :: IO String
-getProjectDir = do
-  let Config { projectDir } = config
-  createDirectoryIfMissing False projectDir
-  return projectDir
-
-getHistoryFile :: IO String
-getHistoryFile = do
-  dir <- getProjectDir
-  return $ dir ++ "/history.ab"
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
@@ -119,14 +106,14 @@ loadRandomLoops s n = do
   msp ("HAHA", filenames)
   return $ map Loop filenames
 
-initState :: (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
-initState soundLoader looper collections = do
-  let mat = identity :: Mat
-  matRef <- newIORef mat
-  newPool $ State { soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
-                    currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
-                    collections,
-                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
+-- initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
+-- initState projectFile soundLoader looper collections = do
+--   let mat = identity :: Mat
+--   matRef <- newIORef mat
+--   newPool $ State { projectFile, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
+--                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
+--                     collections,
+--                     currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -180,11 +167,10 @@ keyboardHandler s '\ESC' = retCommand Quit
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s '\DC3' = do
-  file <- getHistoryFile
-  retCommand $ Save file
-keyboardHandler s 'L' = do
-  file <- getHistoryFile
-  retCommand $ Load file
+  retCommand $ Save (projectFile s)
+-- keyboardHandler s 'L' = do
+--   file <- getHistoryFile
+--   retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s 'c' = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
 keyboardHandler s key = do
@@ -507,12 +493,14 @@ displayer s = intercalate "\n" lines
 --   result <- kh s c
 --   case result of SetState s' -> do respondToStateChange
 
-affinityMain :: Int -> [(Double, String)] -> IO ()
-affinityMain seed collections = do
+affinityMain :: String -> Int -> [(Double, String)] -> IO ()
+affinityMain projectFile seed collections = do
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
-                    let loader = makeLoader soundLoader looper
-                    s <- initState soundLoader looper collections
-                    guiMain s initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
+                    let loader = makeLoader projectFile soundLoader looper
+                    -- s <- initState projectFile soundLoader looper collections
+                    let initCommands :: [GuiCommand]
+                        initCommands = [Load projectFile]
+                    guiMain initCommands initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)
