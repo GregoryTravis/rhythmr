@@ -499,8 +499,6 @@ affinityMain projectFile seed collections = do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader projectFile soundLoader looper
                     -- s <- initState projectFile soundLoader looper collections
-                    let initCommands :: [GuiCommand]
-                        initCommands = [Load projectFile]
-                    guiMain initCommands initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
+                    guiMain (Right projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

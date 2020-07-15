@@ -17,7 +17,7 @@ import Looper (withPortaudio)
 import Util
 import Zounds
 
-doStuffDefault = ["drum-breaks-p", "aff", "drum-breaks", "1"]
+doStuffDefault = ["aff", "chitty-j-p.rhythmr", "chitty", "1", "jazz-drum-solo", "1"]
 --doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
