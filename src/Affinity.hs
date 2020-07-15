@@ -168,6 +168,8 @@ keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s '\DC3' = do
   retCommand $ Save (projectFile s)
+-- Quit without save
+keyboardHandler s '\DC1' = retCommand Quit
 -- keyboardHandler s 'L' = do
 --   file <- getHistoryFile
 --   retCommand $ Load file
