@@ -106,14 +106,14 @@ loadRandomLoops s n = do
   msp ("HAHA", filenames)
   return $ map Loop filenames
 
--- initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
--- initState projectFile soundLoader looper collections = do
---   let mat = identity :: Mat
---   matRef <- newIORef mat
---   newPool $ State { projectFile, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
---                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
---                     collections,
---                     currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
+initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
+initState projectFile soundLoader looper collections = do
+  let mat = identity :: Mat
+  matRef <- newIORef mat
+  newPool $ State { projectFile, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
+                    currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
+                    collections,
+                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -500,7 +500,7 @@ affinityMain projectFile seed collections = do
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader projectFile soundLoader looper
-                    -- s <- initState projectFile soundLoader looper collections
-                    guiMain (Right projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
+                    s <- initState projectFile soundLoader looper collections
+                    guiMain s (Just projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

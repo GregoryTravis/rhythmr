@@ -20,6 +20,7 @@ import Data.Time.Clock.System (getSystemTime, systemToUTCTime, SystemTime)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Linear
+import System.Directory (doesFileExist)
 import System.Exit (exitSuccess)
 import System.Random
 
@@ -38,11 +39,10 @@ data GuiState s v = GuiState (History s) Float v
 data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | GuiCommands [GuiCommand s] | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => (Either s FilePath) -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
+guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
                                              (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
-guiMain initStateOrSaveFile initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange = do
-  initHistory <- case initStateOrSaveFile of Left s -> return (start s)
-                                             Right filename -> load filename loader
+guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange = do
+  initHistory <- loadOrDefault loader defaultState filenameMaybe
   let s = cur initHistory
       initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0)
       worldToPicture (GuiState h t v) = renderViz t (cur h) v
@@ -67,6 +67,12 @@ guiMain initStateOrSaveFile initViz saver loader stateToViz renderViz keyboardHa
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (810, 10)
         bgColor = white
+
+loadOrDefault :: (Binary t, Read t) => Loader s t -> s -> Maybe FilePath -> IO (History s)
+loadOrDefault loader s (Just filename) = do
+  b <- doesFileExist filename
+  if b then load filename loader else return $ start s
+loadOrDefault _ s Nothing = return $ start s
 
 -- Loading a history with 169 states -- 1.5M on disk -- pins all four cpus at
 -- 100%. I don't know why. Further investigation was even more baffling.
