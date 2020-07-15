@@ -152,7 +152,7 @@ keyboardHandler s 'W' = do
   setState s
 keyboardHandler s 'S' = cycleLikesSong s >>= setSong s
 keyboardHandler s 'J' = chew s >>= setSong s
-keyboardHandler s '\ESC' = retCommand Quit
+keyboardHandler s '\ESC' = retCommand (GuiCommands [Save (projectFile s), Quit])
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
 --  --msp ("eh", currentGroup s, stack s)
