@@ -45,7 +45,8 @@ toId :: String -> String
 toId s = case stripPrefix youtubeUrlPrefix s of Just s -> s
                                                 Nothing -> s
 
--- takes a url or id
+-- Download from youtube by IDs or URLs ; possibly remove files after
+-- extracting loops.
 barsId :: String -> String -> IO ()
 barsId collection idOrUrl = do
   --let destFilename = "tracks/" ++ id
@@ -54,15 +55,19 @@ barsId collection idOrUrl = do
   --msp destFilename
   extractLoops collection filename
 
+-- Download from youtube by IDs or URLs listed in files; possibly remove files
+-- after extracting loops.
 barsIdFile :: String -> [String] -> IO ()
 barsIdFile collection filenames = do
   fileContentses <- mapM readFile filenames
   let ids = concat (map lines fileContentses)
   mapM_ (barsId collection) ids
 
+-- Extract loops from existing files or dirs; do not delete the files
 barsFile :: String -> [String] -> IO ()
 barsFile collection filenames = mapM_ (barsFile1 collection) filenames
 
+-- Extract loops from existing files or dirs; do not delete the files
 barsFile1 :: String -> String -> IO ()
 barsFile1 collection filename = do
   isDir <- doesDirectoryExist filename
