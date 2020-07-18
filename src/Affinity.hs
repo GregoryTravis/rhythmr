@@ -35,12 +35,13 @@ import Gui
 import Hypercube
 import Loop
 import Looper
-import Memoize (memoizeIO)
+import Memoize (memoizeIO, emptyMemoDir)
+import Rc
 import SaveLoad
-import Zounds
 import State
 import Util
 import Viz
+import Zounds
 import qualified Zounds as Z
 
 poolSize = 64
@@ -504,6 +505,13 @@ displayer s = intercalate "\n" lines
 --   result <- kh s c
 --   case result of SetState s' -> do respondToStateChange
 
+cleanupMemoMaybe :: IO ()
+cleanupMemoMaybe = do
+  msp ("CD", cacheDownloads rc)
+  if cacheDownloads rc
+    then return ()
+    else emptyMemoDir
+
 affinityMain :: String -> Int -> [(Double, String)] -> IO ()
 affinityMain projectDir seed collections = do
   withLooper $ \looper -> do
@@ -511,6 +519,6 @@ affinityMain projectDir seed collections = do
                     let loader = makeLoader projectDir soundLoader looper
                     s <- initState projectDir soundLoader looper collections
                     projectFile <- makeProjectFile s
-                    guiMain s (Just projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
+                    guiMain s (Just projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange cleanupMemoMaybe
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

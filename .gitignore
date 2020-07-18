@@ -20,3 +20,4 @@ files
 songs
 .DS_Store
 *.rhythmr
+.rhythmrc

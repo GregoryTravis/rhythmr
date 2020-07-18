@@ -3,7 +3,8 @@ module Memoize
 , diskMemoize
 , returnsString
 , memoizeIO
-, memoizePure ) where
+, memoizePure
+, emptyMemoDir ) where
 
 import Data.IORef
 import qualified Data.Map.Strict as MS
@@ -78,3 +79,6 @@ memoizeIO f = do
                                                 writeIORef ioref $ MS.insert a b cache
                                                 return b
   return memoizedF
+
+emptyMemoDir :: IO ()
+emptyMemoDir = removeDirectoryRecursive memoDir

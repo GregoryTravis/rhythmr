@@ -34,6 +34,7 @@ verbose = False
 -- oof :: (String, [String]) -> IO String
 -- oof (exe, args) = readFromProc' exe args
 
+cachedReadFromProc :: String -> [String] -> IO String
 cachedReadFromProc exe args = readTheFile $ (diskMemoize "readFromProc" (returnsString f)) (exe, args)
   where f (exe, args) = readFromProc exe args
         readTheFile :: IO String -> IO String
@@ -90,8 +91,9 @@ runViaFilesCmd :: String -> (String -> a -> IO ()) -> (String -> IO b) -> (Strin
 runViaFilesCmd ext writer reader commandBuilder = runViaFiles ext writer reader commander
   where commander f0 f1 = runProcArr (commandBuilder f0 f1)
 
+cachedJsonCommand :: String -> [String] -> IO (Maybe Value)
 cachedJsonCommand exe args = do
-  rawOutput <- cachedReadFromProc exe args
+  rawOutput <- (cachedReadFromProc exe args) :: IO String
   return $ (decode (BLU.fromString rawOutput) :: Maybe Value)
 
 csvCommand :: String -> [String] -> IO [[String]]

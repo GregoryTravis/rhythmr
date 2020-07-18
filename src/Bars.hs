@@ -34,6 +34,8 @@ searchAndDownloadFiles collection searchString count = do
   --         return $ dest filename
   --       dest filename = collection ++ "/" ++ (takeBaseName filename) ++ ".wav"
 
+-- Download from youtube by search string; possibly remove files after
+-- extracting loops.
 barsSearch :: String -> String -> Int -> IO ()
 barsSearch collection searchString numTracks = do
   filenames <- searchAndDownloadFiles collection searchString 8
@@ -45,7 +47,7 @@ toId :: String -> String
 toId s = case stripPrefix youtubeUrlPrefix s of Just s -> s
                                                 Nothing -> s
 
--- Download from youtube by IDs or URLs ; possibly remove files after
+-- Download from youtube by IDs or URLs; possibly remove files after
 -- extracting loops.
 barsId :: String -> String -> IO ()
 barsId collection idOrUrl = do

@@ -40,8 +40,8 @@ data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit 
   deriving Show
 
 guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
-                                             (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO ()
-guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange = do
+                                             (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO () -> IO ()
+guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange onExit = do
   initHistory <- loadOrDefault loader defaultState filenameMaybe
   let s = cur initHistory
       initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0)
@@ -54,7 +54,7 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
       eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
         command <- keyboardHandler (cur h) c
         --msp command
-        h' <- execute command h saver loader
+        h' <- execute command h saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
         if h == h' && (cur h) == (cur h')
            then return gs
@@ -136,8 +136,8 @@ loadHistoryAndSurviveSomehow filename loader = do
   -- Throw away giant history, fixes cpu pinning
   -- Load filename -> do fmap (start . cur) $ load filename loader
 
-execute :: (Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO (History s)
-execute command h saver loader =
+execute :: (Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO () -> IO (History s)
+execute command h saver loader onExit =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h
                                       return h
@@ -149,7 +149,8 @@ execute command h saver loader =
                   --                     return h'
                   Undo -> return $ undo h
                   Redo -> return $ redo h
-                  Quit -> exitSuccess
+                  Quit -> do onExit
+                             exitSuccess
                   GuiCommands (c:cs) -> do
-                    h' <- execute c h saver loader
-                    execute (GuiCommands cs) h saver loader
+                    h' <- execute c h saver loader onExit
+                    execute (GuiCommands cs) h saver loader onExit
