@@ -71,6 +71,7 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
 loadOrDefault :: (Binary t, Read t) => Loader s t -> s -> Maybe FilePath -> IO (History s)
 loadOrDefault loader s (Just filename) = do
   b <- doesFileExist filename
+  msp ("gosh", filename, b)
   if b then load filename loader else return $ start s
 loadOrDefault _ s Nothing = return $ start s
 

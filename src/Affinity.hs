@@ -23,6 +23,7 @@ import Linear
 import Linear.Matrix (identity)
 import System.Console.ANSI (clearScreen, setCursorPosition)
 import System.Directory (listDirectory, createDirectoryIfMissing)
+import System.FilePath.Posix (dropTrailingPathSeparator)
 import System.Random
 
 import Animate
@@ -65,10 +66,10 @@ initRand :: StdGen
 initRand = mkStdGen 0
 
 makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader projectFile soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
+makeLoader projectDir soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
-  return $ State { projectFile, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
+  return $ State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
                    currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
 
@@ -107,10 +108,10 @@ loadRandomLoops s n = do
   return $ map Loop filenames
 
 initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
-initState projectFile soundLoader looper collections = do
+initState projectDir soundLoader looper collections = do
   let mat = identity :: Mat
   matRef <- newIORef mat
-  newPool $ State { projectFile, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
+  newPool $ State { projectDir, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
                     currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
@@ -152,7 +153,9 @@ keyboardHandler s 'W' = do
   setState s
 keyboardHandler s 'S' = cycleLikesSong s >>= setSong s
 keyboardHandler s 'J' = chew s >>= setSong s
-keyboardHandler s '\ESC' = retCommand (GuiCommands [Save (projectFile s), Quit])
+keyboardHandler s '\ESC' = do
+  projectFile <- makeProjectFile s
+  retCommand (GuiCommands [Save projectFile, Quit])
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
 --  --msp ("eh", currentGroup s, stack s)
@@ -167,7 +170,8 @@ keyboardHandler s '\ESC' = retCommand (GuiCommands [Save (projectFile s), Quit])
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s '\DC3' = do
-  retCommand $ Save (projectFile s)
+  projectFile <- makeProjectFile s
+  retCommand $ Save projectFile
 -- Quit without save
 keyboardHandler s '\DC1' = retCommand Quit
 -- keyboardHandler s 'L' = do
@@ -179,6 +183,11 @@ keyboardHandler s key = do
   msp $ ("?? " ++ (show key))
   setState s'
   where s' = edlog s ("?? " ++ (show key))
+
+makeProjectFile :: State -> IO FilePath
+makeProjectFile s = do
+  createDirectoryIfMissing False (projectDir s)
+  return $ (dropTrailingPathSeparator (projectDir s)) ++ "/history"
 
 -- Replace the pool with a new random selection -- except keep the ones that
 -- have already been liked/disliked
@@ -496,11 +505,12 @@ displayer s = intercalate "\n" lines
 --   case result of SetState s' -> do respondToStateChange
 
 affinityMain :: String -> Int -> [(Double, String)] -> IO ()
-affinityMain projectFile seed collections = do
+affinityMain projectDir seed collections = do
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
-                    let loader = makeLoader projectFile soundLoader looper
-                    s <- initState projectFile soundLoader looper collections
+                    let loader = makeLoader projectDir soundLoader looper
+                    s <- initState projectDir soundLoader looper collections
+                    projectFile <- makeProjectFile s
                     guiMain s (Just projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange 
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

@@ -32,7 +32,7 @@ import Util
 editorLogLength = 10
 
 data State =
-  State { projectFile :: String
+  State { projectDir :: String
         , collections :: [(Double, String)]
         , loops :: [Loop]
         , likes :: S.Set [Loop]

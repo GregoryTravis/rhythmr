@@ -18,7 +18,7 @@ import Looper (withPortaudio)
 import Util
 import Zounds
 
-doStuffDefault = ["aff", "chitty-j-p.rhythmr", "chitty", "1", "jazz-drum-solo", "1"]
+doStuffDefault = ["aff", "chitty-p", "chitty", "1", "jazz-drum-solo", "1"]
 --doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
@@ -26,7 +26,7 @@ doStuff ["barsSearch", collection, searchString, numTracks] = barsSearch collect
 doStuff ["barsId", collection, id] = barsId collection id
 doStuff ("barsIdFile" : collection : filenames) = barsIdFile collection filenames
 doStuff ("barsFile" : collection : filenames) = barsFile collection filenames
-doStuff ("aff" : projectFile : collections) = affinityMain projectFile 2345 (parse collections)
+doStuff ("aff" : projectDir : collections) = affinityMain projectDir 2345 (parse collections)
   where parse :: [String] -> [(Double, String)]
         parse [] = []
         parse (c : w : etc) = (read w, c) : parse etc
