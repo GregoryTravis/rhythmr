@@ -17,6 +17,9 @@ import Util
 
 memoDir = ".memo"
 
+ensureMemoDir :: IO ()
+ensureMemoDir = createDirectoryIfMissing False memoDir
+
 -- String: filename
 -- a: other args
 data DiskAction a = TakesFile (String -> a -> IO ())
@@ -34,9 +37,11 @@ diskMemoize functionName (TakesFile f) args = do
   -- factor out return filename
   if exists then do msp $ "cache hit " ++ key
                     return filename
-            else do msp $ "cache miss " ++ key
+            else do ensureMemoDir
+                    msp $ "cache miss " ++ key
                     tmp <- emptySystemTempFile "src.wav"
                     f tmp args
+                    msp ("UGH4", filename)
                     renameFile tmp filename
                     return filename
 

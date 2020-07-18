@@ -13,7 +13,9 @@ import System.FilePath.Posix (takeBaseName)
 import Aubio
 import Download
 import External (contentAddressableWrite)
+import Project
 import Search
+import State
 import Zounds
 import Spleeter
 import Util
@@ -36,10 +38,10 @@ searchAndDownloadFiles collection searchString count = do
 
 -- Download from youtube by search string; possibly remove files after
 -- extracting loops.
-barsSearch :: String -> String -> Int -> IO ()
-barsSearch collection searchString numTracks = do
+barsSearch :: FilePath -> String -> String -> Int -> IO ()
+barsSearch projectDir collection searchString numTracks = do
   filenames <- searchAndDownloadFiles collection searchString 8
-  mapM_ (extractLoops collection) filenames
+  mapM_ (extractLoops projectDir collection) filenames
 
 youtubeUrlPrefix = "https://www.youtube.com/watch?v="
 
@@ -49,52 +51,53 @@ toId s = case stripPrefix youtubeUrlPrefix s of Just s -> s
 
 -- Download from youtube by IDs or URLs; possibly remove files after
 -- extracting loops.
-barsId :: String -> String -> IO ()
-barsId collection idOrUrl = do
+barsId :: FilePath -> String -> String -> IO ()
+barsId projectDir collection idOrUrl = do
   --let destFilename = "tracks/" ++ id
   filename <- download (toId idOrUrl)
   --renameFile filename destFilename
   --msp destFilename
-  extractLoops collection filename
+  extractLoops projectDir collection filename
 
 -- Download from youtube by IDs or URLs listed in files; possibly remove files
 -- after extracting loops.
-barsIdFile :: String -> [String] -> IO ()
-barsIdFile collection filenames = do
+barsIdFile :: FilePath -> String -> [String] -> IO ()
+barsIdFile projectDir collection filenames = do
   fileContentses <- mapM readFile filenames
   let ids = concat (map lines fileContentses)
-  mapM_ (barsId collection) ids
+  mapM_ (barsId projectDir collection) ids
 
 -- Extract loops from existing files or dirs; do not delete the files
-barsFile :: String -> [String] -> IO ()
-barsFile collection filenames = mapM_ (barsFile1 collection) filenames
+barsFile :: FilePath -> String -> [String] -> IO ()
+barsFile projectDir collection filenames = mapM_ (barsFile1 projectDir collection) filenames
 
 -- Extract loops from existing files or dirs; do not delete the files
-barsFile1 :: String -> String -> IO ()
-barsFile1 collection filename = do
+barsFile1 :: FilePath -> String -> String -> IO ()
+barsFile1 projectDir collection filename = do
   isDir <- doesDirectoryExist filename
   files <- if isDir then getDirRecursive filename
                     else return [filename]
-  mapM_ (extractLoops collection) files
+  mapM_ (extractLoops projectDir collection) files
 
-extractLoops collection filename = do
-  createDirectoryIfMissing False collection
+extractLoops :: FilePath -> String -> FilePath -> IO ()
+extractLoops projectDir collection filename = do
+  dir <- getLoopDir projectDir collection
   msp filename
   bars <- fmap (take 40 . drop 10) $ barBeat filename
   original <- readZound filename
   let originalLoops = splitIntoLoops original bars
-  originalFilenames <- writeZounds originalLoops
+  originalFilenames <- writeZounds dir originalLoops
   msp originalFilenames
   if doSpleeter
      then do spleetered <- spleeter original
              let spleeteredLoops = splitIntoLoops spleetered bars
-             spleeteredFilenames <- writeZounds spleeteredLoops
+             spleeteredFilenames <- writeZounds dir spleeteredLoops
              msp spleeteredFilenames
      else return ()
   where writer :: Zound -> String -> IO ()
         writer sound filename = writeZound filename sound
-        writeZounds :: [Zound] -> IO [String]
-        writeZounds sounds = mapM (contentAddressableWrite fileStub collection "wav" . writer) sounds
+        writeZounds :: FilePath -> [Zound] -> IO [String]
+        writeZounds dir sounds = mapM (contentAddressableWrite fileStub dir "wav" . writer) sounds
         fileStub = "loop-" ++ takeBaseName filename
 
 splitIntoLoops :: Zound -> [Int] -> [Zound]

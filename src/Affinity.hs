@@ -22,8 +22,7 @@ import Graphics.Gloss
 import Linear
 import Linear.Matrix (identity)
 import System.Console.ANSI (clearScreen, setCursorPosition)
-import System.Directory (listDirectory, createDirectoryIfMissing)
-import System.FilePath.Posix (dropTrailingPathSeparator)
+import System.Directory (listDirectory)
 import System.Random
 
 import Animate
@@ -36,6 +35,7 @@ import Hypercube
 import Loop
 import Looper
 import Memoize (memoizeIO, emptyMemoDir)
+import Project
 import Rc
 import SaveLoad
 import State
@@ -155,7 +155,7 @@ keyboardHandler s 'W' = do
 keyboardHandler s 'S' = cycleLikesSong s >>= setSong s
 keyboardHandler s 'J' = chew s >>= setSong s
 keyboardHandler s '\ESC' = do
-  projectFile <- makeProjectFile s
+  projectFile <- getProjectFile (projectDir s)
   retCommand (GuiCommands [Save projectFile, Quit])
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
@@ -171,7 +171,7 @@ keyboardHandler s '\ESC' = do
 keyboardHandler s 'u' = retCommand Undo
 keyboardHandler s '\DC2' = retCommand Redo
 keyboardHandler s '\DC3' = do
-  projectFile <- makeProjectFile s
+  projectFile <- getProjectFile (projectDir s)
   retCommand $ Save projectFile
 -- Quit without save
 keyboardHandler s '\DC1' = retCommand Quit
@@ -184,11 +184,6 @@ keyboardHandler s key = do
   msp $ ("?? " ++ (show key))
   setState s'
   where s' = edlog s ("?? " ++ (show key))
-
-makeProjectFile :: State -> IO FilePath
-makeProjectFile s = do
-  createDirectoryIfMissing False (projectDir s)
-  return $ (dropTrailingPathSeparator (projectDir s)) ++ "/history"
 
 -- Replace the pool with a new random selection -- except keep the ones that
 -- have already been liked/disliked
@@ -518,7 +513,7 @@ affinityMain projectDir seed collections = do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader projectDir soundLoader looper
                     s <- initState projectDir soundLoader looper collections
-                    projectFile <- makeProjectFile s
+                    projectFile <- getProjectFile projectDir
                     guiMain s (Just projectFile) initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange cleanupMemoMaybe
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

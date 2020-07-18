@@ -22,10 +22,10 @@ doStuffDefault = ["aff", "chitty-p", "chitty", "1", "jazz-drum-solo", "1"]
 --doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
-doStuff ["barsSearch", collection, searchString, numTracks] = barsSearch collection searchString (read numTracks)
-doStuff ["barsId", collection, id] = barsId collection id
-doStuff ("barsIdFile" : collection : filenames) = barsIdFile collection filenames
-doStuff ("barsFile" : collection : filenames) = barsFile collection filenames
+doStuff ["barsSearch", projectDir, collection, searchString, numTracks] = barsSearch projectDir collection searchString (read numTracks)
+doStuff ["barsId", projectDir, collection, id] = barsId projectDir collection id
+doStuff ("barsIdFile" : projectDir : collection : filenames) = barsIdFile projectDir collection filenames
+doStuff ("barsFile" : projectDir : collection : filenames) = barsFile projectDir collection filenames
 doStuff ("aff" : projectDir : collections) = affinityMain projectDir 2345 (parse collections)
   where parse :: [String] -> [(Double, String)]
         parse [] = []

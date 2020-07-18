@@ -143,6 +143,7 @@ withContentHashNamedFile label fileWriter action = do
   hashWithNewline <- readFromProc "md5" ["-q", tmp]
   let hash = chomp hashWithNewline
       newPath = tmpDir ++ "/" ++ label ++ "-" ++ hash
+  msp ("UGH2", newPath)
   renameFile tmp newPath
   a <- action newPath
   removeFile newPath
@@ -157,5 +158,6 @@ contentAddressableWrite label destDir ext fileWriter = do
   hashWithNewline <- readFromProc "md5" ["-q", tmp]
   let hash = chomp hashWithNewline
       newPath = destDir ++ "/" ++ label ++ "-" ++ hash ++ "." ++ ext
+  msp ("UGH3", newPath)
   renameFile tmp newPath
   return newPath
