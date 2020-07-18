@@ -92,7 +92,7 @@ loadLoopZounds soundLoader loops = mapM soundLoader (map fn loops)
 
 -- (a -> m b) -> t a -> m (t b)
 -- (a -> IO b) -> [a] -> IO [b]
--- Given a weighted list of dirs, return the dirs' contents, with the same weights
+-- Given a weighted list of collections, return the collections' contents, with the same weights
 scanCollections :: State -> IO [(Double, [String])]
 scanCollections s = mapM scan (collections s)
   where scan :: (Double, String) -> IO (Double, [String])
