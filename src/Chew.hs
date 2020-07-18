@@ -43,7 +43,7 @@ loadGrid s loopGrid = do
       -- reh = mapM (mapM render) rooh
   ugh <- rah
   let ugh' :: [[Zound]]
-      ugh' = map (map (ExternalFx (resampleZoundProcessor loopLengthFrames))) ugh
+      ugh' = map (map (Scale loopLengthFrames)) ugh
   mapM (mapM render) ugh'
 
 renderZGrid :: [[Zound]] -> Zound
@@ -228,7 +228,7 @@ dnb s = do
       grid = map (:[z2, z3]) shunteds
       score = renderZGrid grid
   return score
-  where yah z = render (ExternalFx (resampleZoundProcessor loopLengthFrames) z)
+  where yah z = render (Scale loopLengthFrames z)
         twoOrThree (x:y:z:_) = [x, y, z]
         twoOrThree [x, y] = [x, y, y]
 
