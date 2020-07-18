@@ -199,9 +199,11 @@ weightedRandFromList weightedElems = do
                                 | otherwise = pick etc (n - w)
 
 randFromList :: [a] -> IO a
+randFromList [] = error "randFromList: empty list"
 randFromList xs = do
   i <- getStdRandom (randomR (0, length xs - 1))
-  msp ("ORF", i >= length xs, i, length xs)
+  --msp ("ORF", i >= length xs, i, length xs)
+  massert ("randFromList", i, length xs) (i >=0 && i < length xs)
   return $ xs !! i
 
 randFromListPure :: RandomGen g => g -> [a] -> (a, g)

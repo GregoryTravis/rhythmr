@@ -17,6 +17,7 @@ import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import qualified Data.StorableVector as SV
 import Data.Time.Clock.System (getSystemTime, SystemTime(..))
+import Data.Tuple (swap)
 import GHC.Generics (Generic)
 import Graphics.Gloss
 import Linear
@@ -92,18 +93,21 @@ loadLoopZounds soundLoader loops = mapM soundLoader (map fn loops)
 -- (a -> m b) -> t a -> m (t b)
 -- (a -> IO b) -> [a] -> IO [b]
 -- Given a weighted list of dirs, return the dirs' contents, with the same weights
-scanCollections :: [(Double, String)] -> IO [(Double, [String])]
-scanCollections collections = mapM scan collections
+scanCollections :: State -> IO [(Double, [String])]
+scanCollections s = mapM scan (collections s)
   where scan :: (Double, String) -> IO (Double, [String])
-        scan (w, dir) = do
-          basenames <- listDirectory dir
+        scan (w, collection) = do
+          loopDir <- getLoopDir (projectDir s) collection
+          msp ("LD", loopDir)
+          basenames <- listDirectory loopDir
           let paths :: [FilePath]
-              paths = map ((dir ++ "/") ++) basenames
+              paths = map ((loopDir ++ "/") ++) basenames
           return (w, paths)
 
 loadRandomLoops :: State -> Int -> IO [Loop]
 loadRandomLoops s n = do
-  weightedFileLists <- scanCollections (collections s)
+  weightedFileLists <- scanCollections s
+  msp ("WEF", weightedFileLists)
   filenames <- replicateM n (weightedRandFromLists weightedFileLists)
   msp ("HAHA", filenames)
   return $ map Loop filenames
@@ -506,9 +510,24 @@ cleanupMemoMaybe = do
   if cacheDownloads rc
     then return ()
     else emptyMemoDir
+    
+-- Scan the project dir for existing collections and merge that with the provided list.
+-- Any collection not explicitly assigned a weight is given a default weight of 1.
+-- If you 
+scanForCollections :: FilePath -> [(Double, String)] -> IO [(Double, String)]
+scanForCollections projectDir provided = do
+  projectLoopDirs <- getLoopDirs projectDir
+  msp ("WUT", projectLoopDirs)
+  let defaultWeights = M.fromList (zip projectLoopDirs (repeat 1))
+      providedWeights = M.fromList (map swap provided)
+      combinedWeights = providedWeights `M.union` defaultWeights
+  return $ map swap (M.toList combinedWeights)
 
 affinityMain :: String -> Int -> [(Double, String)] -> IO ()
 affinityMain projectDir seed collections = do
+  msp ("before", collections)
+  collections <- scanForCollections projectDir collections
+  msp ("after", collections)
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader projectDir soundLoader looper

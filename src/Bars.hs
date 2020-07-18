@@ -26,7 +26,7 @@ searchAndDownloadFiles :: String -> String -> Int -> IO [FilePath]
 searchAndDownloadFiles collection searchString count = do
   -- The take here is because we can get more than we asked for
   ids <- fmap (take count) $ search searchString count
-  msp ("ids", ids)
+  msp ("ids", count, ids)
   filenames <- mapM download ids
   return filenames
   -- mapM save filenames
@@ -40,7 +40,7 @@ searchAndDownloadFiles collection searchString count = do
 -- extracting loops.
 barsSearch :: FilePath -> String -> String -> Int -> IO ()
 barsSearch projectDir collection searchString numTracks = do
-  filenames <- searchAndDownloadFiles collection searchString 8
+  filenames <- searchAndDownloadFiles collection searchString numTracks
   mapM_ (extractLoops projectDir collection) filenames
 
 youtubeUrlPrefix = "https://www.youtube.com/watch?v="

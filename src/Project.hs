@@ -22,6 +22,8 @@ getLoopDir projectDir collection = do
 getLoopDirs :: FilePath -> IO [FilePath]
 getLoopDirs projectDir = do
   ensureDir projectDir
-  dirs <- listDirectory projectDir
+  msp ("OYY", ((dropTrailingPathSeparator projectDir) ++ "/loops/"))
+  dirs <- listDirectory ((dropTrailingPathSeparator projectDir) ++ "/loops/")
+  msp ("OYY", dirs)
   msp ("getLoopDirs", dirs)
   return dirs
