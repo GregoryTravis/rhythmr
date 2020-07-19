@@ -9,7 +9,8 @@ module History
 , undo
 , redo
 , cur
-, runEm ) where
+, runEm
+, hWhere ) where
 
 import Data.Binary
 import GHC.Generics (Generic)
@@ -54,3 +55,6 @@ cur (History z) = Z.cur z
 -- I feel somehow that this already exists
 runEm :: History (IO a) -> IO (History a)
 runEm (History z) = History <$> Z.runEm z
+
+hWhere :: History s -> (Int, Int)
+hWhere (History z) = Z.zwhere z
