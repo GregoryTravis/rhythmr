@@ -48,15 +48,19 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
       initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0) initHistory
       worldToPicture (GuiState h t v _) = renderViz t (cur h) v
       eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v lastH) = do
-        msp ("EV", ev)
+        --msp ("EV", ev)
         command <- keyboardHandler (cur h) (key, modifiers)
-        msp ("COMMAND", command)
+        --msp ("COMMAND", command)
         h' <- execute command h lastH saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
+        -- If we just saved, then replace lastSave with current history
+        let newLastSave = case command of Save _ -> h'
+                                          _ -> lastH
+        --msp ("hmmm", hWhere h', hWhere lastH, hWhere newLastSave)
         if h == h' && (cur h) == (cur h')
-           then return gs
+           then return gs { lastSave = newLastSave }
            else do respondToStateChange (cur h) (cur h')
-                   return $ GuiState h' t (stateToViz (cur h) v (cur h') t) lastH
+                   return $ GuiState h' t (stateToViz (cur h) v (cur h') t) newLastSave
       eventHandler e gs = do
         --msp $ "?? " ++ (show e)
         return gs
@@ -148,10 +152,11 @@ execute command h lastH saver loader onExit =
                   Redo -> return $ redo h
                   QuitWithoutSaving -> do onExit
                                           exitSuccess
-                  Quit -> if h == lastH then do onExit
-                                                exitSuccess
-                                        else do putStrLn "Save first!"
-                                                return h
+                  Quit -> do  msp ("clean?", hWhere h, hWhere lastH)
+                              if h == lastH then do onExit
+                                                    exitSuccess
+                                            else do putStrLn "Save first!"
+                                                    return h
                   GuiCommands (c:cs) -> do
                     h' <- execute c h lastH saver loader onExit
                     execute (GuiCommands cs) h lastH saver loader onExit

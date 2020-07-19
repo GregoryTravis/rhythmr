@@ -186,15 +186,17 @@ keyboardHandler s (Char '\DC2', m) | ctrlM m = retCommand Redo
 keyboardHandler s (Char '\DC3', m) | ctrlM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ Save projectFile
--- Quit without save
-keyboardHandler s (Char '\DC1', ctrlM) = retCommand Quit
+keyboardHandler s (Char '\DC1', m) | ctrlM m= retCommand Quit
+keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 -- keyboardHandler s 'L' = do
 --   file <- getHistoryFile
 --   retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s (Char 'c', m) | noM m = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
-keyboardHandler s key = do
-  msp $ ("?? " ++ (show key))
+keyboardHandler s (Char c, _) = do
+  msp $ ("?? " ++ (show c))
+  return DoNothing
+keyboardHandler _ _ = do
   return DoNothing
 
 -- Replace the pool with a new random selection -- except keep the ones that
