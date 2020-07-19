@@ -1,4 +1,4 @@
-module Project (getProjectFile, getLoopDir, getLoopDirs) where
+module Project (getProjectFile, getLoopDir, getLoopDirs, cleanupProjectDir) where
 
 import System.Directory (createDirectoryIfMissing, listDirectory)
 import System.FilePath.Posix (dropTrailingPathSeparator)
@@ -11,19 +11,19 @@ ensureDir = createDirectoryIfMissing True
 getProjectFile :: FilePath -> IO FilePath
 getProjectFile projectDir = do
   ensureDir projectDir
-  return $ (dropTrailingPathSeparator projectDir) ++ "/history"
+  return $ projectDir ++ "/history"
 
 getLoopDir :: FilePath -> String -> IO FilePath
 getLoopDir projectDir collection = do
-  let loopDir = (dropTrailingPathSeparator projectDir) ++ "/loops/" ++ collection
+  let loopDir = projectDir ++ "/loops/" ++ collection
   ensureDir loopDir
   return loopDir
 
 getLoopDirs :: FilePath -> IO [FilePath]
 getLoopDirs projectDir = do
   ensureDir projectDir
-  msp ("OYY", ((dropTrailingPathSeparator projectDir) ++ "/loops/"))
-  dirs <- listDirectory ((dropTrailingPathSeparator projectDir) ++ "/loops/")
-  msp ("OYY", dirs)
-  msp ("getLoopDirs", dirs)
+  dirs <- listDirectory (projectDir ++ "/loops/")
   return dirs
+
+cleanupProjectDir :: FilePath -> FilePath
+cleanupProjectDir = dropTrailingPathSeparator

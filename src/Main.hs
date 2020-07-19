@@ -15,10 +15,10 @@ import Diag
 import Gfx
 import Hypercube
 import Looper (withPortaudio)
+import Project
 import Util
 import Zounds
 
-doStuffDefault = ["aff", "chitty", "chitty", "1", "jazz-drum-solo", "1"]
 --doStuffDefault = ["zound"]
 --doStuffDefault = ["g"]
 --doStuffDefault = ["hy"]
@@ -33,7 +33,6 @@ doStuff ("aff" : projectDir : collections) = affinityMain projectDir 2345 (parse
 doStuff ["g"] = gfxMain
 doStuff ["hy"] = hypercubeMain
 doStuff ["zound"] = zoundMain
-doStuff [] = doStuff doStuffDefault
 
 -- main = do
 --   z <- readZound "hey.wav"
@@ -44,13 +43,20 @@ doStuff [] = doStuff doStuffDefault
 --   -- z'' <- readZound "hoy.wav"
 --   -- msp ("finally", numFrames z, numFrames z', numFrames z'')
 
+cleanupArgs :: [String] -> [String]
+cleanupArgs (projectDir : rest) = (cleanupProjectDir projectDir) : rest 
+defaultArgs :: [String] -> [String]
+defaultArgs [] = defaultArgs'
+  where defaultArgs' = ["aff", "chitty", "chitty", "1", "jazz-drum-solo", "1"]
+defaultArgs x = x
+
 main = withPortaudio $ do
   noBuffering
   getGCFlags >>= msp
   putStrLn $ "numCapabilities: " ++ show numCapabilities
   np <- getNumProcessors
   putStrLn $ "getNumProcessors: " ++ show np
-  args <- getArgs
+  args <- cleanupArgs <$> defaultArgs <$> getArgs
   msp $ "++ " ++ (show args)
   doStuff args
   msp "hi"
