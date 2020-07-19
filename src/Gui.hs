@@ -33,10 +33,10 @@ windowWidth = 800
 windowHeight = 800
 windowDim = V2 windowWidth windowHeight
 
-data GuiState s v = GuiState (History s) Float v
+data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, lastSave :: History s }
 
 -- lol "Save String"
-data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | GuiCommands [GuiCommand s] | DoNothing
+data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | QuitWithoutSaving | GuiCommands [GuiCommand s] | DoNothing
   deriving Show
 
 guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
@@ -44,28 +44,23 @@ guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v 
 guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange onExit = do
   initHistory <- loadOrDefault loader defaultState filenameMaybe
   let s = cur initHistory
-      initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0)
-      worldToPicture (GuiState h t v) = renderViz t (cur h) v
-      -- eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
-      -- eventHandler (EventKey (SpecialKey KeySpace) Down x y) gs = eventHandler (EventKey (Char ' ') Down x y) gs
-      -- -- This is extremely goofy of me
-      -- eventHandler (EventKey (SpecialKey KeyLeft) Down x y) gs = eventHandler (EventKey (Char '\STX') Down x y) gs
-      -- eventHandler (EventKey (SpecialKey KeyRight) Down x y) gs = eventHandler (EventKey (Char '\ETX') Down x y) gs
-      -- eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
-      eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v) = do
+
+      initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0) initHistory
+      worldToPicture (GuiState h t v _) = renderViz t (cur h) v
+      eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v lastH) = do
         msp ("EV", ev)
         command <- keyboardHandler (cur h) (key, modifiers)
         msp ("COMMAND", command)
-        h' <- execute command h saver loader onExit
+        h' <- execute command h lastH saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
         if h == h' && (cur h) == (cur h')
            then return gs
            else do respondToStateChange (cur h) (cur h')
-                   return $ GuiState h' t (stateToViz (cur h) v (cur h') t)
+                   return $ GuiState h' t (stateToViz (cur h) v (cur h') t) lastH
       eventHandler e gs = do
         --msp $ "?? " ++ (show e)
         return gs
-      stepIteration dt (GuiState h t v) = return $ GuiState h (t + dt) v
+      stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) v lastH
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (810, 10)
         bgColor = white
@@ -138,8 +133,8 @@ loadHistoryAndSurviveSomehow filename loader = do
   -- Throw away giant history, fixes cpu pinning
   -- Load filename -> do fmap (start . cur) $ load filename loader
 
-execute :: (Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> Saver s t -> Loader s t -> IO () -> IO (History s)
-execute command h saver loader onExit =
+execute :: (Eq s, Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> History s -> Saver s t -> Loader s t -> IO () -> IO (History s)
+execute command h lastH saver loader onExit =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h
                                       return h
@@ -149,15 +144,15 @@ execute command h saver loader onExit =
                   --                     msp ("len", length (toList h))
                   --                     let h' = fromList (take 1 (toList h))
                   --                     return h'
-                  Undo -> return $ fesp (("GGG "++) . show . hWhere) $ undo h
-                  --Redo -> return $ fesp (("GGG "++) . show . hWhere) $ redo h
-                  Redo -> do msp ("BEFORE", hWhere h)
-                             let h' = redo h
-                             msp ("AFTER", hWhere h')
-                             return h'
-                  Quit -> do onExit
-                             exitSuccess
+                  Undo -> return $ undo h
+                  Redo -> return $ redo h
+                  QuitWithoutSaving -> do onExit
+                                          exitSuccess
+                  Quit -> if h == lastH then do onExit
+                                                exitSuccess
+                                        else do putStrLn "Save first!"
+                                                return h
                   GuiCommands (c:cs) -> do
-                    h' <- execute c h saver loader onExit
-                    execute (GuiCommands cs) h saver loader onExit
+                    h' <- execute c h lastH saver loader onExit
+                    execute (GuiCommands cs) h lastH saver loader onExit
                   DoNothing -> return h
