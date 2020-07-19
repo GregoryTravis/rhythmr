@@ -177,7 +177,7 @@ expy [] = [[]]
 -- The formula for far isn't right; it should produce approx the same size
 -- projection at any dimension, but it doesn't.
 moveAway :: Pt
-moveAway = eeesp "moveAway" $ fromJust $ fromVector $ V.fromList allButXY
+moveAway = fromJust $ fromVector $ V.fromList allButXY
   where allButXY = [0, 0] ++ (take (numDims - 2) (repeat far))
         far = 5 -- 100 ** (1 / fromIntegral (numDims - 2))
 -- Wrong! I was only pushing along Z, but I should have been pushing along *all but x and y*

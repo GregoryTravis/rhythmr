@@ -41,7 +41,7 @@ void nblint_gen_wsinc( void )
   int i;
 
   wsinc = &wsinc_[1];
-  printf("NAT pi %f\n", M_PI);
+  // printf("NAT pi %f\n", M_PI);
 
   for (i=0; i<WSINCLEN; ++i) {
     int ii=i-(WSINCLEN/2);
@@ -57,8 +57,8 @@ void nblint_gen_wsinc( void )
   dwsinc = &dwsinc_[1];
   for (i=0; i<WSINCLEN+2-1; ++i)
     dwsinc_[i] = wsinc_[i+1] - wsinc_[i];
-  printf("NAT wsinc %f %f\n", wsinc[0], wsinc[1]);
-  printf("NAT dwsinc %f %f\n", dwsinc[0], dwsinc[1]);
+  // printf("NAT wsinc %f %f\n", wsinc[0], wsinc[1]);
+  // printf("NAT dwsinc %f %f\n", dwsinc[0], dwsinc[1]);
 }
 
 // nraw is src, raw is dest
@@ -77,8 +77,8 @@ void nblint_blint(double *raw, int len, double *nraw, int nlen) {
   double c1;
   double dwsincarg;
 
-  printf("NAT0 ptrs %p %p\n", nraw, raw);
-  printf("NAT %f %f\n", nraw[0], nraw[1]);
+  // printf("NAT0 ptrs %p %p\n", nraw, raw);
+  // printf("NAT %f %f\n", nraw[0], nraw[1]);
 
   nblint_init();
 

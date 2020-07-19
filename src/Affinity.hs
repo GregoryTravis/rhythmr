@@ -195,8 +195,7 @@ keyboardHandler s (Char '\DC1', ctrlM) = retCommand Quit
 keyboardHandler s (Char 'c', m) | noM m = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
 keyboardHandler s key = do
   msp $ ("?? " ++ (show key))
-  setState s'
-  where s' = edlog s ("?? " ++ (show key))
+  return DoNothing
 
 -- Replace the pool with a new random selection -- except keep the ones that
 -- have already been liked/disliked
@@ -223,7 +222,7 @@ respondToStateChange :: State -> State -> IO ()
 respondToStateChange s s' = do
   --resetTerm
   --putStrLn $ displayer s'
-  msp "respondToStateChange"
+  --msp "respondToStateChange"
   if currentGroup s' /= currentGroup s && currentGroup s' /= []
     then playCurrent s'
     else return ()
@@ -338,7 +337,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
 
 groupBySourceTrack :: [Loop] -> [[Loop]]
 --groupBySourceTrack = groupUsing getSourceTrackHash
-groupBySourceTrack xs = eesp ("gosh", map getSourceTrackHash xs) $ groupUsing getSourceTrackHash xs
+groupBySourceTrack xs = groupUsing getSourceTrackHash xs
 
 -- Group loops by source track, then render each group separately
 buildStemLoopGrids :: State -> [[[Loop]]]

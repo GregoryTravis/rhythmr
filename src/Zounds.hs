@@ -294,13 +294,13 @@ mixSegments zs = do
         MSV.freeze mutableMixBuffer
       mixSegmentOnto mutableMixBuffer (Segment { samples, offset }) = do
         mixOnto mutableMixBuffer samples offset
-  msp ("mixSegments", length zs, allBounds)
+  --msp ("mixSegments", length zs, allBounds)
   return $ Segment { samples = mixBuffer', offset = getStart allBounds, source = Just $ combineSourcesFrom zs }
 
 mixOnto :: MSV.Vector s Double -> Samples -> Int -> ST s ()
 mixOnto mix v offset = do
   --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
-  eesp ("mixOnto", offset) $ mapM mixSample indices
+  --eesp ("mixOnto", offset) $ mapM mixSample indices
   return ()
   where indices = take (SV.length v) [0..]
         offsetSamples = offset * 2

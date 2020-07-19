@@ -52,9 +52,10 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
       -- eventHandler (EventKey (SpecialKey KeyLeft) Down x y) gs = eventHandler (EventKey (Char '\STX') Down x y) gs
       -- eventHandler (EventKey (SpecialKey KeyRight) Down x y) gs = eventHandler (EventKey (Char '\ETX') Down x y) gs
       -- eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
-      eventHandler (EventKey key Down modifiers _) gs@(GuiState h t v) = do
+      eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v) = do
+        msp ("EV", ev)
         command <- keyboardHandler (cur h) (key, modifiers)
-        --msp command
+        msp ("COMMAND", command)
         h' <- execute command h saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
         if h == h' && (cur h) == (cur h')
@@ -72,7 +73,7 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
 loadOrDefault :: (Binary t, Read t) => Loader s t -> s -> Maybe FilePath -> IO (History s)
 loadOrDefault loader s (Just filename) = do
   b <- doesFileExist filename
-  msp ("gosh", filename, b)
+  --msp ("gosh", filename, b)
   if b then load filename loader else return $ start s
 loadOrDefault _ s Nothing = return $ start s
 
@@ -148,10 +149,15 @@ execute command h saver loader onExit =
                   --                     msp ("len", length (toList h))
                   --                     let h' = fromList (take 1 (toList h))
                   --                     return h'
-                  Undo -> return $ undo h
-                  Redo -> return $ redo h
+                  Undo -> return $ fesp (("GGG "++) . show . hWhere) $ undo h
+                  --Redo -> return $ fesp (("GGG "++) . show . hWhere) $ redo h
+                  Redo -> do msp ("BEFORE", hWhere h)
+                             let h' = redo h
+                             msp ("AFTER", hWhere h')
+                             return h'
                   Quit -> do onExit
                              exitSuccess
                   GuiCommands (c:cs) -> do
                     h' <- execute c h saver loader onExit
                     execute (GuiCommands cs) h saver loader onExit
+                  DoNothing -> return h
