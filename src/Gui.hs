@@ -40,19 +40,20 @@ data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit 
   deriving Show
 
 guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
-                                             (s -> Char -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO () -> IO ()
+                                             (s -> (Key, Modifiers) -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO () -> IO ()
 guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange onExit = do
   initHistory <- loadOrDefault loader defaultState filenameMaybe
   let s = cur initHistory
       initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0)
       worldToPicture (GuiState h t v) = renderViz t (cur h) v
-      eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
-      eventHandler (EventKey (SpecialKey KeySpace) Down x y) gs = eventHandler (EventKey (Char ' ') Down x y) gs
-      -- This is extremely goofy of me
-      eventHandler (EventKey (SpecialKey KeyLeft) Down x y) gs = eventHandler (EventKey (Char '\STX') Down x y) gs
-      eventHandler (EventKey (SpecialKey KeyRight) Down x y) gs = eventHandler (EventKey (Char '\ETX') Down x y) gs
-      eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
-        command <- keyboardHandler (cur h) c
+      -- eventHandler (EventKey (SpecialKey KeyEsc) Down x y) gs = eventHandler (EventKey (Char '\ESC') Down x y) gs
+      -- eventHandler (EventKey (SpecialKey KeySpace) Down x y) gs = eventHandler (EventKey (Char ' ') Down x y) gs
+      -- -- This is extremely goofy of me
+      -- eventHandler (EventKey (SpecialKey KeyLeft) Down x y) gs = eventHandler (EventKey (Char '\STX') Down x y) gs
+      -- eventHandler (EventKey (SpecialKey KeyRight) Down x y) gs = eventHandler (EventKey (Char '\ETX') Down x y) gs
+      -- eventHandler (EventKey (Char c) Down _ _) gs@(GuiState h t v) = do
+      eventHandler (EventKey key Down modifiers _) gs@(GuiState h t v) = do
+        command <- keyboardHandler (cur h) (key, modifiers)
         --msp command
         h' <- execute command h saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))

@@ -19,7 +19,7 @@ import qualified Data.StorableVector as SV
 import Data.Time.Clock.System (getSystemTime, SystemTime(..))
 import Data.Tuple (swap)
 import GHC.Generics (Generic)
-import Graphics.Gloss
+import Graphics.Gloss.Interface.IO.Game (SpecialKey(..), Key(..), Modifiers(..), KeyState(..))
 import Linear
 import Linear.Matrix (identity)
 import System.Console.ANSI (clearScreen, setCursorPosition)
@@ -127,8 +127,17 @@ setState :: State -> IO (GuiCommand State)
 setState s = return $ NewState s
 retCommand c = return c
 
+noM :: Modifiers -> Bool
+noM m = m == Modifiers { shift = Up, ctrl = Up, alt = Up }
+shiftM :: Modifiers -> Bool
+shiftM m = m == Modifiers { shift = Down, ctrl = Up, alt = Up }
+ctrlM :: Modifiers -> Bool
+ctrlM m = m == Modifiers { shift = Up, ctrl = Down, alt = Up }
+shiftCtrlM :: Modifiers -> Bool
+shiftCtrlM m = m == Modifiers { shift = Down, ctrl = Down, alt = Up }
+
 -- TODO maybe function type aliases are not good
-keyboardHandler :: State -> Char -> IO (GuiCommand State)
+keyboardHandler :: State -> (Key, Modifiers) -> IO (GuiCommand State)
 --keyboardHandler :: KeyboardHandler State
 --keyboardHandler s 'r' = do
 --  group <- randomGroup s
@@ -136,29 +145,29 @@ keyboardHandler :: State -> Char -> IO (GuiCommand State)
 --  --msp "YOSH"
 --  --playCurrent s'
 --  setState s'
-keyboardHandler s 'E' = do s' <- newPool s
-                           setState s'
-keyboardHandler s ' ' = setState $ skip s (Just RandomStrategy)
-keyboardHandler s '\ETX' = setState $ like s Nothing
-keyboardHandler s 'r' = setState $ skip s (Just RandomStrategy)
-keyboardHandler s 'i' = setState $ skip s (Just IncrementalStrategy)
-keyboardHandler s '\STX' = setState $ dislike s Nothing
-keyboardHandler s 's' = setState $ dislike s (Just SubsetsStrategy)
-keyboardHandler s 'd' = setState $ dislike s (Just DNCStrategy)
+keyboardHandler s (Char 'E', m) | shiftM m = do s' <- newPool s
+                                                setState s'
+keyboardHandler s (SpecialKey KeySpace, m) | noM m = setState $ skip s (Just RandomStrategy)
+keyboardHandler s (SpecialKey KeyRight, m) | noM m = setState $ like s Nothing
+keyboardHandler s (Char 'r', m) | noM m = setState $ skip s (Just RandomStrategy)
+keyboardHandler s (Char 'i', m) | noM m = setState $ skip s (Just IncrementalStrategy)
+keyboardHandler s (SpecialKey KeyLeft, m) | noM m = setState $ dislike s Nothing
+keyboardHandler s (Char 's', m) | noM m = setState $ dislike s (Just SubsetsStrategy)
+keyboardHandler s (Char 'd', m) | noM m = setState $ dislike s (Just DNCStrategy)
 -- Hear the top affinity group
-keyboardHandler s 'A' = do
+keyboardHandler s (Char 'A', m) | noM m = do
   case affinities s of [] -> setState s
                        (g:gs) -> do
                                    let s' = s { currentGroup = g }
                                    setState s'
-keyboardHandler s 'W' = do
+keyboardHandler s (Char 'W', m) | shiftM m = do
   writeCurrentSong s
   writeCurrentSongSeparateTracks' s
   writeClick
   setState s
-keyboardHandler s 'S' = cycleLikesSong s >>= setSong s
-keyboardHandler s 'J' = chew s >>= setSong s
-keyboardHandler s '\ESC' = do
+keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
+keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
+keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand (GuiCommands [Save projectFile, Quit])
 --keyboardHandler s 'p' = do
@@ -172,18 +181,18 @@ keyboardHandler s '\ESC' = do
 --             else return $ nextFromStack s
 --  --let s' = nextFromStack s
 --  setState s'
-keyboardHandler s 'u' = retCommand Undo
-keyboardHandler s '\DC2' = retCommand Redo
-keyboardHandler s '\DC3' = do
+keyboardHandler s (Char 'u', m) | noM m = retCommand Undo
+keyboardHandler s (Char '\DC2', m) | ctrlM m = retCommand Redo
+keyboardHandler s (Char '\DC3', m) | ctrlM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ Save projectFile
 -- Quit without save
-keyboardHandler s '\DC1' = retCommand Quit
+keyboardHandler s (Char '\DC1', ctrlM) = retCommand Quit
 -- keyboardHandler s 'L' = do
 --   file <- getHistoryFile
 --   retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
-keyboardHandler s 'c' = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
+keyboardHandler s (Char 'c', m) | noM m = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
 keyboardHandler s key = do
   msp $ ("?? " ++ (show key))
   setState s'
