@@ -49,6 +49,7 @@ module Util
 , groupUsing
 , applyMaybes
 , trace
+, gridShow
 ) where
 
 import Control.Exception
@@ -302,3 +303,10 @@ applyMaybes [] a = Nothing
 
 trace :: Show a => a -> Bool
 trace x = TR.trace (show x) False
+
+-- lazy, and not in the good way
+gridShow :: Show a => [[a]] -> [[a]]
+gridShow xses = map esp xses
+-- gridShow xses = unsafePerformIO $ do
+--   mapM_ esp xses
+--   return xses

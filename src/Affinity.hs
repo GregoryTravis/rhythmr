@@ -192,7 +192,8 @@ keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 --   file <- getHistoryFile
 --   retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
-keyboardHandler s (Char 'c', m) | noM m = (cycleLikesSong $ s { affinityCycle = affinityCycle s + 1 }) >>= setSong s
+keyboardHandler s (Char 'c', m) | noM m = cycleLikesSong s' >>= setSong s'
+  where s' = s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s (Char c, _) = do
   msp $ ("?? " ++ (show c))
   return DoNothing
@@ -324,8 +325,8 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
       stacks = rotateMod affinityCycle (S.toList likes)
       loopGrid :: [[Loop]]
-      loopGrid = concat (map mini stacks)
-   in eesp (length loopGrid, length $ take desiredLengthLoops loopGrid) $ take desiredLengthLoops loopGrid
+      loopGrid = concat $ eesp "GRID" $ map gridShow $ (map mini stacks)
+   in take desiredLengthLoops loopGrid
   where mini :: [a] -> [[a]]
         mini xs =
           let --cycled :: [a]

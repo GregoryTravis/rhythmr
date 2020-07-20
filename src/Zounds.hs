@@ -95,6 +95,10 @@ getEnd (Bounds s e) = e
 translateBounds :: Bounds -> Frame -> Bounds
 translateBounds (Bounds s e) dt = Bounds (s + dt) (e + dt)
 
+-- Really don't think this is right
+scaleBounds :: Bounds -> Frame -> Bounds
+scaleBounds (Bounds s e) frames = Bounds s (e + frames)
+
 -- This is wrong because the semantics of Scale are wrong: Scale effectively
 -- translates to the origin before, and back after; most likely, we never use
 -- Scale on anything that's not at the origin. So this, too, assumes that.
@@ -144,7 +148,6 @@ transferSources zs z@(Segment {}) = z { source }
 data ZoundT a = Segment { samples :: Samples, offset :: Frame, source :: Maybe a }
            | Translate Frame Zound
            | Scale Frame Zound
-           | Affine Double Frame Zound
            | ExternalFx Processor Zound
            | InternalFx (Int -> Double -> Double) Zound
            | MonoSynth (Frame -> Double) Bounds
@@ -185,6 +188,7 @@ numFrames (Segment { samples }) = SV.length samples `div` 2
 getBounds :: Zound -> Bounds
 getBounds z@(Segment { samples, offset }) = Bounds offset (offset + numFrames z)
 getBounds (Translate dt z) = translateBounds (getBounds z) dt
+getBounds (Scale frames z) = scaleBounds (getBounds z) frames
 getBounds (Bounded b _) = b
 getBounds (Mix zs) = boundingBox (map getBounds zs)
 --getBounds (ExternalFx _ z) = getBounds z
