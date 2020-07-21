@@ -327,7 +327,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
       loopGrid :: [[Loop]]
       loopGrid = concat $ eesp "GRID" $ map gridShow $ (map mini stacks)
    in take desiredLengthLoops loopGrid
-  where mini :: [a] -> [[a]]
+  where mini :: (Show a, Ord a) => [a] -> [[a]]
         mini xs =
           let --cycled :: [a]
               cycled = cycle xs
@@ -336,7 +336,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
               --firstThrees :: [[a]]
               firstThrees = map (take 3) cycles
               justOneFirstThree = [head firstThrees]
-           in concat $ map oneTwoThree justOneFirstThree
+           in concat $ map (map nubOrd) $ map oneTwoThree justOneFirstThree
 
 groupBySourceTrack :: [Loop] -> [[Loop]]
 --groupBySourceTrack = groupUsing getSourceTrackHash

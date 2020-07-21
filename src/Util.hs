@@ -85,6 +85,7 @@ fesp f a = unsafePerformIO $ do
   return a
 
 -- function, arg, and result
+faresp :: (Show a, Show b) => (a -> b) -> (a -> b)
 faresp f a = unsafePerformIO $ do
   let result = f a
   putStrLn $ evalString $ show $ (a, result)
