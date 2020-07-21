@@ -86,9 +86,14 @@ saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep 
 --   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
 --   mapM soundReader filenames
 
-loadLoopZounds ::(String -> IO Zound) -> [Loop] -> IO [Zound] 
-loadLoopZounds soundLoader loops = mapM soundLoader (map fn loops)
-  where fn (Loop filename) = filename
+loadLoopZound ::State -> Loop -> IO Zound
+loadLoopZound s loop = (soundLoader s) (fn loop)
+  where fn (Loop filename) = projectDir s ++ "/loops/" ++ filename
+loadLoopZounds ::State -> [Loop] -> IO [Zound] 
+loadLoopZounds s loops = mapM (loadLoopZound s) loops
+-- loadLoopZounds ::State -> [Loop] -> IO [Zound] 
+-- loadLoopZounds s loops = mapM (soundLoader s) (map fn loops)
+--   where fn (Loop filename) = projectDir s ++ "/loops/" ++ filename
 
 -- (a -> m b) -> t a -> m (t b)
 -- (a -> IO b) -> [a] -> IO [b]
@@ -100,8 +105,11 @@ scanCollections s = mapM scan (collections s)
           loopDir <- getLoopDir (projectDir s) collection
           msp ("LD", loopDir)
           basenames <- listDirectory loopDir
+          msp ("loopDir", loopDir)
+          msp ("basenames", basenames)
           let paths :: [FilePath]
-              paths = map ((loopDir ++ "/") ++) basenames
+              paths = map ((collection ++ "/") ++) basenames
+          msp ("paths", paths)
           return (w, paths)
 
 loadRandomLoops :: State -> Int -> IO [Loop]
@@ -360,14 +368,14 @@ renderStems s = do
   mapM (renderLoopGrid s) loopGrids
 
 renderLoopGrid :: State -> [[Loop]] -> IO Zound
-renderLoopGrid (State { soundLoader }) loopGrid = do
-  let numLoops = length (nubOrd (concat loopGrid))
-  msp ("loopgrid", numLoops)
-  let filenameGrid :: [[String]]
-      filenameGrid = map (map loopFilename) loopGrid
-      rah :: IO [[Zound]]
-      rah =  mapM (mapM soundLoader) filenameGrid
-  zoundGrid <- ((mapM (mapM soundLoader) filenameGrid) :: IO [[Zound]])
+renderLoopGrid s loopGrid = do
+  -- let numLoops = length (nubOrd (concat loopGrid))
+  -- msp ("loopgrid", numLoops)
+  -- let filenameGrid :: [[String]]
+  --     filenameGrid = map (map loopFilename) loopGrid
+  --     rah :: IO [[Zound]]
+  --     rah =  mapM (mapM soundLoader) filenameGrid
+  zoundGrid <- ((mapM (mapM (loadLoopZound s)) loopGrid) :: IO [[Zound]])
   let mix :: Zound
       mix = renderGrid zoundGrid bpm
   return mix
@@ -468,7 +476,7 @@ playCurrent :: State -> IO ()
 playCurrent s = do
   clickTrack <- case addClick of Just filename -> fmap (:[]) $ readZound filename
                                  Nothing -> return []
-  ss <- loadLoopZounds (soundLoader s) (currentGroup s)
+  ss <- loadLoopZounds s (currentGroup s)
   let z = renderGrid [ss] bpm
   mix <- render z
   setZound (looper s) mix
