@@ -36,7 +36,7 @@ windowDim = V2 windowWidth windowHeight
 data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, lastSave :: History s }
 
 -- lol "Save String"
-data GuiCommand s = NewState s | Save String | Load String | Undo | Redo | Quit | QuitWithoutSaving | GuiCommands [GuiCommand s] | DoNothing
+data GuiCommand s = NewState s | Save FilePath | Load FilePath | Undo | Redo | Quit | QuitWithoutSaving | SaveAndQuit FilePath | GuiCommands [GuiCommand s] | DoNothing
   deriving Show
 
 guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
@@ -50,7 +50,7 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
       eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v lastH) = do
         --msp ("EV", ev)
         command <- keyboardHandler (cur h) (key, modifiers)
-        --msp ("COMMAND", command)
+        msp ("COMMAND", command)
         h' <- execute command h lastH saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
         -- If we just saved, then replace lastSave with current history
@@ -142,6 +142,9 @@ execute command h lastH saver loader onExit =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h
                                       return h
+                  SaveAndQuit filename -> do save filename saver h
+                                             onExit
+                                             exitSuccess
                   -- Load filename -> load filename loader
                   Load filename -> loadHistoryAndSurviveSomehow filename loader
                   -- Load filename -> do h <- load filename loader
@@ -160,4 +163,5 @@ execute command h lastH saver loader onExit =
                   GuiCommands (c:cs) -> do
                     h' <- execute c h lastH saver loader onExit
                     execute (GuiCommands cs) h lastH saver loader onExit
+                  GuiCommands [] -> return h
                   DoNothing -> return h

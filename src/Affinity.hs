@@ -169,7 +169,7 @@ keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
 keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
   projectFile <- getProjectFile (projectDir s)
-  retCommand (GuiCommands [Save projectFile, Quit])
+  retCommand $ SaveAndQuit projectFile
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
 --  --msp ("eh", currentGroup s, stack s)
