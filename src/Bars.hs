@@ -83,7 +83,7 @@ extractLoops :: FilePath -> String -> FilePath -> IO ()
 extractLoops projectDir collection filename = do
   dir <- getLoopDir projectDir collection
   msp filename
-  bars <- fmap (take 40 . drop 10) $ barBeat filename
+  bars <- barBeat filename
   original <- readZound filename
   let originalLoops = splitIntoLoops original bars
   originalFilenames <- writeZounds dir originalLoops
