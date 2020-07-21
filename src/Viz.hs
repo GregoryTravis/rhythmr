@@ -528,23 +528,26 @@ stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
         addBounds stack [] = stack
         addBounds stack (b:bs) = addBounds (addBound stack b) bs
         addBound :: [[(Bounds, Zound)]] -> (Bounds, Zound) -> [[(Bounds, Zound)]]
-        addBound stack b = {-eesp fep $-} overBest (++ [b]) (closest b) stack
+        addBound stack b = eesp fep $ overBest (++ [b]) (closest b) stack
           where fep = ("fep", fst b, map (closest b) stack, map gep stack)
                 gep [] = -100
                 gep xs = getEnd $ fst $ last xs
         -- Compare the start of the bounds we wish to place with the ends of all the rows
-        -- e <= s is always better, and in this case the higest e wins
+        -- e to the left of s is always better, and in this case the higest e wins
         -- otherwise, the lowest e wins.
         -- If a row is empty, treat the 'end' of its 'bounds' as 0
         -- Returns (side, score), where side is 1 if e < s
+        -- By "to the left" we mean <, but because of round errors mean 'within [fudge factor]
+        -- of being to the left'.
         closest :: (Bounds, Zound) -> [(Bounds, Zound)] -> (Int, Frame)
         closest b bs = (side, compareSE s e)
-          where side | e <= s = 1
+          where side | e <= s + fudge = 1
                      | otherwise = 0
                 s = getStart (fst b)
                 e | null bs = 0
                   | otherwise = getEnd (fst (last bs))
                 compareSE s e = (-(abs (s - e)))
+                fudge = 3
                 -- compareSE s e | e <= s = e - s
                 --               | otherwise = e - s
         -- -- Since we sorted the list, we can just check the last element of the
