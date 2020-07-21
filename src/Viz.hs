@@ -528,13 +528,30 @@ stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
         addBounds stack [] = stack
         addBounds stack (b:bs) = addBounds (addBound stack b) bs
         addBound :: [[(Bounds, Zound)]] -> (Bounds, Zound) -> [[(Bounds, Zound)]]
-        addBound stack b = overBest (++ [b]) (closest b) stack
-        -- Since we sorted the list, we can just check the last element of the
-        -- list; if the list is empty, then we treat that as closest (distance
-        -- 0)
-        closest :: (Bounds, Zound) -> [(Bounds, Zound)] -> Frame
-        closest b [] = 0
-        closest b bs = (-(abs (getStart (fst b) - getEnd (fst (last bs)))))
+        addBound stack b = {-eesp fep $-} overBest (++ [b]) (closest b) stack
+          where fep = ("fep", fst b, map (closest b) stack, map gep stack)
+                gep [] = -100
+                gep xs = getEnd $ fst $ last xs
+        -- Compare the start of the bounds we wish to place with the ends of all the rows
+        -- e <= s is always better, and in this case the higest e wins
+        -- otherwise, the lowest e wins.
+        -- If a row is empty, treat the 'end' of its 'bounds' as 0
+        -- Returns (side, score), where side is 1 if e < s
+        closest :: (Bounds, Zound) -> [(Bounds, Zound)] -> (Int, Frame)
+        closest b bs = (side, compareSE s e)
+          where side | e <= s = 1
+                     | otherwise = 0
+                s = getStart (fst b)
+                e | null bs = 0
+                  | otherwise = getEnd (fst (last bs))
+                compareSE s e = (-(abs (s - e)))
+                -- compareSE s e | e <= s = e - s
+                --               | otherwise = e - s
+        -- -- Since we sorted the list, we can just check the last element of the
+        -- -- list; if the list is empty, we treat the rightmost extent of that
+        -- -- row as 0.
+        -- closest b [] = (-(abs (getStart (fst b) - 0)))
+        -- closest b bs = (-(abs (getStart (fst b) - getEnd (fst (last bs)))))
         numRows = 4
         sortBounds = L.sortOn (getStart . fst)
 
