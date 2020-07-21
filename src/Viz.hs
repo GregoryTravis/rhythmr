@@ -509,9 +509,9 @@ renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
       boundsToSegment = M.fromList (zip allBounds allSegments)
       ok = (length allBounds) == (length allSegments)
       stretch = 10.0
-      stackedBounds = stackBounds allBounds
+      stackedBounds = stackBounds (zip allBounds allSegments)
       picses :: [Pic AVal]
-      picses = concat $ zipWith (\row bs -> map (\b -> toPic row (boundsToSegment M.! b) b) bs) [0..] stackedBounds
+      picses = concat $ zipWith (\row bs -> map (\(bounds, z) -> toPic row z bounds) bs) [0..] stackedBounds
    in {-fesp (take 10 . map jeh) $ eesp ("huh", take 10 allBounds) $-} assertM "bounds/segments mismatch" ok $ picses
   where jeh (SeqP _ pos wid _) = (pos, wid)
 
@@ -522,21 +522,21 @@ renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
 -- - for each segment
 --   - if it is past the end of any row, add it to the row that has the greatest rightward extent
 --   - if it is not, add it to the row that has the least rightward extent
-stackBounds :: [Bounds] -> [[Bounds]]
+stackBounds :: [(Bounds, Zound)] -> [[(Bounds, Zound)]]
 stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
-  where addBounds :: [[Bounds]] -> [Bounds] -> [[Bounds]]
+  where addBounds :: [[(Bounds, Zound)]] -> [(Bounds, Zound)] -> [[(Bounds, Zound)]]
         addBounds stack [] = stack
         addBounds stack (b:bs) = addBounds (addBound stack b) bs
-        addBound :: [[Bounds]] -> Bounds -> [[Bounds]]
+        addBound :: [[(Bounds, Zound)]] -> (Bounds, Zound) -> [[(Bounds, Zound)]]
         addBound stack b = overBest (++ [b]) (closest b) stack
         -- Since we sorted the list, we can just check the last element of the
         -- list; if the list is empty, then we treat that as closest (distance
         -- 0)
-        closest :: Bounds -> [Bounds] -> Frame
+        closest :: (Bounds, Zound) -> [(Bounds, Zound)] -> Frame
         closest b [] = 0
-        closest b bs = (-(abs (getStart b - getEnd (last bs))))
+        closest b bs = (-(abs (getStart (fst b) - getEnd (fst (last bs)))))
         numRows = 4
-        sortBounds = L.sortOn getStart
+        sortBounds = L.sortOn (getStart . fst)
 
 -- Score each element of the list, and call the function on the one with the
 -- highest score, replacing it.
