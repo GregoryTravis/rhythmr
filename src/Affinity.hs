@@ -86,15 +86,6 @@ saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep 
 --   filenames <- fmap (map ("loops/" ++)) $ fmap (take 128) $ listDirectory "loops"
 --   mapM soundReader filenames
 
-loadLoopZound ::State -> Loop -> IO Zound
-loadLoopZound s loop = (soundLoader s) (fn loop)
-  where fn (Loop filename) = projectDir s ++ "/loops/" ++ filename
-loadLoopZounds ::State -> [Loop] -> IO [Zound] 
-loadLoopZounds s loops = mapM (loadLoopZound s) loops
--- loadLoopZounds ::State -> [Loop] -> IO [Zound] 
--- loadLoopZounds s loops = mapM (soundLoader s) (map fn loops)
---   where fn (Loop filename) = projectDir s ++ "/loops/" ++ filename
-
 -- (a -> m b) -> t a -> m (t b)
 -- (a -> IO b) -> [a] -> IO [b]
 -- Given a weighted list of collections, return the collections' contents, with the same weights

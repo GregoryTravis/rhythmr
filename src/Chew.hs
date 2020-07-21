@@ -16,14 +16,10 @@ import Util
 import Zounds
 
 renderLoopGrid :: State -> [[Loop]] -> IO Zound
-renderLoopGrid (State { soundLoader }) loopGrid = do
+renderLoopGrid s loopGrid = do
   let numLoops = length (nubOrd (concat loopGrid))
   msp ("loopgrid", numLoops)
-  let filenameGrid :: [[String]]
-      filenameGrid = map (map loopFilename) loopGrid
-      rah :: IO [[Zound]]
-      rah =  mapM (mapM soundLoader) filenameGrid
-  zoundGrid <- ((mapM (mapM soundLoader) filenameGrid) :: IO [[Zound]])
+  zoundGrid <- ((mapM (mapM (loadLoopZound s)) loopGrid) :: IO [[Zound]])
   let mix :: Zound
       mix = renderGrid zoundGrid bpm
   return mix
@@ -33,15 +29,7 @@ loadGrid :: State -> [[Loop]] -> IO [[Zound]]
 loadGrid s loopGrid = do
   let numLoops = length (nubOrd (concat loopGrid))
   msp ("loopgrid", numLoops)
-  let filenameGrid :: [[String]]
-      filenameGrid = map (map loopFilename) loopGrid
-      rah :: IO [[Zound]]
-      rah =  mapM (mapM (soundLoader s)) filenameGrid
-      -- rooh :: IO [[Zound]]
-      -- rooh = mapM (mapM (ExternalFx (resampleZoundProcessor loopLengthFrames))) rah
-      -- reh :: IO [[Zound]]
-      -- reh = mapM (mapM render) rooh
-  ugh <- rah
+  ugh <- mapM (mapM (loadLoopZound s)) loopGrid
   let ugh' :: [[Zound]]
       ugh' = map (map (Scale loopLengthFrames)) ugh
   mapM (mapM render) ugh'
@@ -217,7 +205,7 @@ dnb s = do
   msp ("likes", head $ S.toList $ likes s)
   let [zf, z2f, z3f] = twoOrThree $ head $ S.toList $ likes s
   msp ("um", zf, z2f, z3f)
-  [z', z2', z3'] <- mapM (soundLoader s) $ map loopFilename [zf, z2f, z3f]
+  [z', z2', z3'] <- mapM (loadLoopZound s) [zf, z2f, z3f]
   msp ("um", z', z2', z3')
   [z'', z2'', z3''] <- mapM render [z', z2', z3']
   msp ("um", z'', z2'', z3'')

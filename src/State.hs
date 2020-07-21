@@ -13,6 +13,8 @@ module State
   , pushStackN
   , edlog
   , renderEdLog
+  , loadLoopZound
+  , loadLoopZounds
   ) where
 
 import Control.Monad (replicateM)
@@ -216,3 +218,10 @@ edlog st msg = st { editorLog = take editorLogLength (msg : editorLog st) }
 
 renderEdLog :: State -> [String]
 renderEdLog (State { editorLog = lines }) = reverse lines
+
+loadLoopZound ::State -> Loop -> IO Zound
+loadLoopZound s loop = (soundLoader s) (fn loop)
+  where fn (Loop filename) = projectDir s ++ "/loops/" ++ filename
+loadLoopZounds ::State -> [Loop] -> IO [Zound] 
+loadLoopZounds s loops = mapM (loadLoopZound s) loops
+
