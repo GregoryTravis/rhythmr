@@ -3,7 +3,7 @@ Installation
 
 ## Install brew
 
-[Install brew](https://brew.sh/)
+[Install brew](https://brew.sh/).
 
 ## Install Python 3
 
