@@ -38,7 +38,7 @@ search' pageToken searchString count = do
       nextPageToken = objLookupMaybe search "nextPageToken"
       durationMap = getDurationMap videos
       ids = filter (durationIsOk durationMap) $ map strGet $ V.toList $ arrMap getId (arrFilter isVideo items)
-   in do msp $ M.map parseDuration $ esp durationMap
+   in do msp $ M.map parseDuration durationMap
          return (nextPageToken, ids)
   where getId item = objLookups item ["id", "videoId"]
         isVideo item = strGet (objLookups item ["id", "kind"]) == "youtube#video"

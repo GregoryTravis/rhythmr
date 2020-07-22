@@ -323,7 +323,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
       stacks = rotateMod affinityCycle (S.toList likes)
       loopGrid :: [[Loop]]
-      loopGrid = concat $ map gridShow $ (map mini stacks)
+      loopGrid = concat $ (map mini stacks)
    in take desiredLengthLoops loopGrid
   where mini :: (Show a, Ord a) => [a] -> [[a]]
         mini xs =
