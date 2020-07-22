@@ -54,7 +54,7 @@ module Util
 
 import Control.Exception
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (group, groupBy, maximumBy, minimumBy, sort)
+import Data.List (group, groupBy, maximumBy, minimumBy, sort, isSuffixOf)
 import qualified Data.Map.Strict as M
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
@@ -311,3 +311,10 @@ gridShow xses = map esp xses
 -- gridShow xses = unsafePerformIO $ do
 --   mapM_ esp xses
 --   return xses
+
+-- Remove the suffix if it is there, otherwise return unchanged.
+removeSuffix :: String -> String -> String
+removeSuffix suffix s =
+  if isSuffixOf suffix s
+    then take (length s - length suffix) s
+    else s

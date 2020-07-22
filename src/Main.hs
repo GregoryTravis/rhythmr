@@ -43,8 +43,11 @@ doStuff ["zound"] = zoundMain
 --   -- z'' <- readZound "hoy.wav"
 --   -- msp ("finally", numFrames z, numFrames z', numFrames z'')
 
-cleanupArgs :: [String] -> [String]
-cleanupArgs (command : projectDir : rest) = command : (cleanupProjectDir projectDir) : rest 
+cleanupArgs :: [String] -> IO [String]
+cleanupArgs (command : projectDir : rest) = do
+  projectDir' <- initProject projectDir
+  return $ command : projectDir' : rest 
+
 defaultArgs :: [String] -> [String]
 defaultArgs [] = defaultArgs'
   where defaultArgs' = ["aff", "chitty", "chitty", "1", "jazz-drum-solo", "1"]
@@ -56,7 +59,7 @@ main = withPortaudio $ do
   putStrLn $ "numCapabilities: " ++ show numCapabilities
   np <- getNumProcessors
   putStrLn $ "getNumProcessors: " ++ show np
-  args <- cleanupArgs <$> defaultArgs <$> getArgs
+  args <- (defaultArgs <$> getArgs) >>= cleanupArgs
   msp $ "++ " ++ (show args)
   doStuff args
   msp "hi"

@@ -95,10 +95,9 @@ scanCollections s = mapM scan (collections s)
   where scan :: (Double, String) -> IO (Double, [String])
         scan (w, collection) = do
           loopDir <- getLoopDir (projectDir s) collection
-          --msp ("LD", loopDir)
           basenames <- listDirectory loopDir
-          --msp ("loopDir", loopDir)
-          --msp ("basenames", basenames)
+          msp ("loopDir", loopDir)
+          msp ("basenames", basenames)
           let paths :: [FilePath]
               paths = map ((collection ++ "/") ++) basenames
           --msp ("paths", paths)
@@ -112,6 +111,7 @@ loadRandomLoops s n = do
 
 initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
 initState projectDir soundLoader looper collections = do
+  msp ("YEP2", projectDir)
   let mat = identity :: Mat
   matRef <- newIORef mat
   newPool $ State { projectDir, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
