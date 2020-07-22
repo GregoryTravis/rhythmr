@@ -26,4 +26,4 @@ getLoopDirs projectDir = do
   return dirs
 
 cleanupProjectDir :: FilePath -> FilePath
-cleanupProjectDir = dropTrailingPathSeparator
+cleanupProjectDir = faresp dropTrailingPathSeparator

@@ -71,6 +71,7 @@ makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
 makeLoader projectDir soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
+  msp ("YEP", projectDir)
   return $ State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
                    currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
@@ -94,13 +95,13 @@ scanCollections s = mapM scan (collections s)
   where scan :: (Double, String) -> IO (Double, [String])
         scan (w, collection) = do
           loopDir <- getLoopDir (projectDir s) collection
-          msp ("LD", loopDir)
+          --msp ("LD", loopDir)
           basenames <- listDirectory loopDir
-          msp ("loopDir", loopDir)
-          msp ("basenames", basenames)
+          --msp ("loopDir", loopDir)
+          --msp ("basenames", basenames)
           let paths :: [FilePath]
               paths = map ((collection ++ "/") ++) basenames
-          msp ("paths", paths)
+          --msp ("paths", paths)
           return (w, paths)
 
 loadRandomLoops :: State -> Int -> IO [Loop]

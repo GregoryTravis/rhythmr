@@ -44,7 +44,7 @@ doStuff ["zound"] = zoundMain
 --   -- msp ("finally", numFrames z, numFrames z', numFrames z'')
 
 cleanupArgs :: [String] -> [String]
-cleanupArgs (projectDir : rest) = (cleanupProjectDir projectDir) : rest 
+cleanupArgs (command : projectDir : rest) = command : (cleanupProjectDir projectDir) : rest 
 defaultArgs :: [String] -> [String]
 defaultArgs [] = defaultArgs'
   where defaultArgs' = ["aff", "chitty", "chitty", "1", "jazz-drum-solo", "1"]
