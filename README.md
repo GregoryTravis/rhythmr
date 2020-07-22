@@ -8,7 +8,7 @@ Rhythmr, Or Semi-Automated Audio Loops
 </p>
 
 ## TL;DR
-[Installation](Installation.md)
+[Installation](Installation.md).
 
 ## Introduction
 
