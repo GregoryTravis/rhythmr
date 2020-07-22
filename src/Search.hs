@@ -31,7 +31,7 @@ searchNoPaging searchString count = do
 
 search' :: Maybe String -> String -> Int -> IO (Maybe String, [String])
 search' pageToken searchString count = do
-  Just d <- cachedJsonCommand "python" ["get-mp3s.py", searchString, show count, pageTokenParam pageToken]
+  Just d <- cachedJsonCommand "python3" ["get-mp3s.py", searchString, show count, pageTokenParam pageToken]
   let search = objLookup d "search"
       videos = objLookup d "videos"
       items = objLookup search "items"
