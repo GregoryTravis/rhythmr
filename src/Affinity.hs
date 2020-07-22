@@ -107,9 +107,7 @@ scanCollections s = mapM scan (collections s)
 loadRandomLoops :: State -> Int -> IO [Loop]
 loadRandomLoops s n = do
   weightedFileLists <- scanCollections s
-  msp ("WEF", weightedFileLists)
   filenames <- replicateM n (weightedRandFromLists weightedFileLists)
-  msp ("HAHA", filenames)
   return $ map Loop filenames
 
 initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
