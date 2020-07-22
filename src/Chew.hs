@@ -201,16 +201,16 @@ dnb :: State -> IO Zound
 dnb s = do
   -- z <- readZound "hey.wav" >>= yah
   -- z2 <- readZound "hay.wav" >>= yah
-  msp ("likes", S.toList $ likes s)
-  msp ("likes", head $ S.toList $ likes s)
+  --msp ("likes", S.toList $ likes s)
+  --msp ("likes", head $ S.toList $ likes s)
   let [zf, z2f, z3f] = twoOrThree $ head $ S.toList $ likes s
-  msp ("um", zf, z2f, z3f)
+  --msp ("um", zf, z2f, z3f)
   [z', z2', z3'] <- mapM (loadLoopZound s) [zf, z2f, z3f]
-  msp ("um", z', z2', z3')
+  --msp ("um", z', z2', z3')
   [z'', z2'', z3''] <- mapM render [z', z2', z3']
-  msp ("um", z'', z2'', z3'')
+  --msp ("um", z'', z2'', z3'')
   [z, z2, z3] <- mapM yah [z'', z2'', z3'']
-  msp ("um", z, z2)
+  --msp ("um", z, z2)
   let shunts = take 10 $ shuntMadness [0..15]
       shunteds = map (\s -> sprinkle 16 s z) shunts
       grid = map (:[z2, z3]) shunteds

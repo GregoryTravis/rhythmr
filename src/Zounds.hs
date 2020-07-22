@@ -20,7 +20,6 @@ module Zounds
 , render
 , renderGrid
 , strictRender
-, zoundMain
 , readZound
 , readZoundZeroCrossings
 , readZoundFadeEnds
@@ -330,7 +329,7 @@ render = fastRender
 strictRender :: Zound -> IO Zound
 strictRender z = do
   z' <- render z
-  msp $ SV.length (samples z')
+  --msp $ SV.length (samples z')
   return z'
 
 -- -- Factor out with external fx?
@@ -491,13 +490,13 @@ sineWave hz len = MonoSynth f (Bounds 0 len)
   where f x = sin (fromIntegral x * k)
         k = 2 * pi * (hz / 44100.0)
 
-zoundMain = do
-  msp "start"
-  -- let file = "loops/loop-download-57803dd2f53e0df8575cbcd4404b748d-2f51032daba140d5df8775f70bf232ea.wav"
-  -- z <- readZoundFadeEnds file
-  let z = sineWave 440 88200
-  let grid = [[z], [z], [z], [z]]
-      z' = renderGrid grid bpm
-  rendered <- render z'
-  writeZound "foo.wav" rendered
-  msp "zhi"
+-- zoundMain = do
+--   msp "start"
+--   -- let file = "loops/loop-download-57803dd2f53e0df8575cbcd4404b748d-2f51032daba140d5df8775f70bf232ea.wav"
+--   -- z <- readZoundFadeEnds file
+--   let z = sineWave 440 88200
+--   let grid = [[z], [z], [z], [z]]
+--       z' = renderGrid grid bpm
+--   rendered <- render z'
+--   writeZound "foo.wav" rendered
+--   msp "zhi"

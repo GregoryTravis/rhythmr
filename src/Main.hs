@@ -49,7 +49,7 @@ doStuff ("aff" : projectDir : collections) = affinityMain projectDir 2345 (parse
         parse (c : w : etc) = (read w, c) : parse etc
 -- doStuff ["g"] = gfxMain
 -- doStuff ["hy"] = hypercubeMain
-doStuff ["zound"] = zoundMain
+-- doStuff ["zound"] = zoundMain
 
 -- main = do
 --   z <- readZound "hey.wav"
