@@ -89,7 +89,6 @@ loadHistoryAndSurviveSomehow filename loader = do
   -- load filename loader
 
   h <- load filename loader
-  msp ("len", length (toList h))
 
   -- wait this one is good
   -- let [s0, s1] = take 2 (toList h)

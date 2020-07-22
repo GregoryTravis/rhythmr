@@ -528,7 +528,7 @@ stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
         addBounds stack [] = stack
         addBounds stack (b:bs) = addBounds (addBound stack b) bs
         addBound :: [[(Bounds, Zound)]] -> (Bounds, Zound) -> [[(Bounds, Zound)]]
-        addBound stack b = eesp fep $ overBest (++ [b]) (closest b) stack
+        addBound stack b = overBest (++ [b]) (closest b) stack
           where fep = ("fep", fst b, map (closest b) stack, map gep stack)
                 gep [] = -100
                 gep xs = getEnd $ fst $ last xs
