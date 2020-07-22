@@ -210,7 +210,7 @@ randFromList xs = do
 randFromListPure :: RandomGen g => g -> [a] -> (a, g)
 randFromListPure g as =
   let (i, g') = randomR (0, length as - 1) g
-   in eesp (length as, i) $ (as !! i, g')
+   in (as !! i, g')
 
 randFromListPureN :: RandomGen g => g -> [a] -> Int -> ([a], g)
 randFromListPureN g as 0 = ([], g)
