@@ -4,10 +4,10 @@
 
 # Construct a song
 # rm song.wav loop?.wav
-# (stack build rhythmr && stack exec rhythmr -- "$@") 2>&1 | tee out
+(stack build rhythmr && stack exec rhythmr -- "$@") 2>&1 | tee out
 
-profargs="--library-profiling --executable-profiling --profile"
-(stack build $profargs rhythmr && stack exec rhythmr $profargs -- "$@" +RTS -xc -RTS) 2>&1 | tee out
+# profargs="--library-profiling --executable-profiling --profile"
+# (stack build $profargs rhythmr && stack exec rhythmr $profargs -- "$@" +RTS -xc -RTS) 2>&1 | tee out
 
 stty sane
 

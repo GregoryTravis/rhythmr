@@ -193,7 +193,6 @@ weightedRandFromList :: [(Double, a)] -> IO a
 weightedRandFromList weightedElems = do
   let weightSum = sum (map fst weightedElems)
   n <- getStdRandom (randomR (0, weightSum))
-  msp ("oy", map fst weightedElems, n)
   return $ pick weightedElems n
     where pick :: [(Double, a)] -> Double -> a
           pick [] n = error "Bad pickList"
@@ -216,7 +215,7 @@ randFromListPure g as =
 randFromListPureN :: RandomGen g => g -> [a] -> Int -> ([a], g)
 randFromListPureN g as 0 = ([], g)
 randFromListPureN g as n =
-  let (a', g') = eesp ("oy", length as, n) $ randFromListPure g as
+  let (a', g') = randFromListPure g as
       (as', g'') = randFromListPureN g' as (n-1)
    in (a':as', g'')
 

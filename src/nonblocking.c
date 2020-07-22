@@ -109,7 +109,8 @@ void init_audio(void)
     PaError err;
     int i;
 
-    printf("PortAudio Test: output sine wave. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
+    //printf("PortAudio Test: output sine wave. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
+    printf("Portuadio starting\n");
 
     /* initialise sinusoidal wavetable */
     for( i=0; i<TABLE_SIZE; i++ )
@@ -180,7 +181,7 @@ void write_audio(float *buffer, int num_frames)
 
 void term_audio(void) {
     PaError err;
-    printf("term\n");
+    printf("Portuadio shutdown\n");
     //printf("Play for %d seconds.\n", NUM_SECONDS );
     //Pa_Sleep( NUM_SECONDS * 1000 );
 
@@ -205,6 +206,7 @@ error:
     exit(1);
 }
 
+#if 0
 int mmain()
 {
     init_audio();
@@ -226,3 +228,4 @@ int mmain()
     // Not reached
     term_audio();
 }
+#endif

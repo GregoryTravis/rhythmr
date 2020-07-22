@@ -71,7 +71,7 @@ makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
 makeLoader projectDir soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
-  msp ("YEP", projectDir)
+  --msp ("YEP", projectDir)
   return $ State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
                    currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
@@ -96,8 +96,8 @@ scanCollections s = mapM scan (collections s)
         scan (w, collection) = do
           loopDir <- getLoopDir (projectDir s) collection
           basenames <- listDirectory loopDir
-          msp ("loopDir", loopDir)
-          msp ("basenames", basenames)
+          --msp ("loopDir", loopDir)
+          --msp ("basenames", basenames)
           let paths :: [FilePath]
               paths = map ((collection ++ "/") ++) basenames
           --msp ("paths", paths)
@@ -111,7 +111,7 @@ loadRandomLoops s n = do
 
 initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
 initState projectDir soundLoader looper collections = do
-  msp ("YEP2", projectDir)
+  --msp ("YEP2", projectDir)
   let mat = identity :: Mat
   matRef <- newIORef mat
   newPool $ State { projectDir, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
@@ -204,7 +204,7 @@ newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
       loopsToKeep = concat (S.toList likes) -- ++ S.toList dislikes)
-  msp ("eep", poolSize, length loopsToKeep)
+  --msp ("eep", poolSize, length loopsToKeep)
   newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
@@ -264,7 +264,7 @@ writeCurrentSongSeparateTracks' s = do
   renderedStems <- mapM render stems
   zipWithM_ writeIt renderedStems [0..]
     where writeIt z i = do
-            msp $ "stem " ++ filename
+            --msp $ "stem " ++ filename
             writeZound filename z
             where filename = "stem-" ++ (show i) ++ ".wav"
 
@@ -323,7 +323,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
       stacks = rotateMod affinityCycle (S.toList likes)
       loopGrid :: [[Loop]]
-      loopGrid = concat $ eesp "GRID" $ map gridShow $ (map mini stacks)
+      loopGrid = concat $ map gridShow $ (map mini stacks)
    in take desiredLengthLoops loopGrid
   where mini :: (Show a, Ord a) => [a] -> [[a]]
         mini xs =
@@ -353,8 +353,8 @@ buildStemLoopGrids s =
 renderStems :: State -> IO [Zound]
 renderStems s = do
   let loopGrids = buildStemLoopGrids s
-  msp "HEY"
-  msp loopGrids
+  --msp "HEY"
+  --msp loopGrids
   mapM (renderLoopGrid s) loopGrids
 
 renderLoopGrid :: State -> [[Loop]] -> IO Zound
@@ -401,7 +401,7 @@ cycleLikesSong s = do
 
 setSong :: State -> Zound -> IO (GuiCommand State)
 setSong s mix = do
-  mapM (msp . ("hey",)) (getAllSegments mix)
+  --mapM (msp . ("hey",)) (getAllSegments mix)
   z <- strictRender mix
   let s' = s { currentSong = Just (mix, z), currentGroup = [] }
   setZound (looper s') z
@@ -515,7 +515,7 @@ displayer s = intercalate "\n" lines
 
 cleanupMemoMaybe :: IO ()
 cleanupMemoMaybe = do
-  msp ("CD", cacheDownloads rc)
+  --msp ("CD", cacheDownloads rc)
   if cacheDownloads rc
     then return ()
     else emptyMemoDir
@@ -526,7 +526,7 @@ cleanupMemoMaybe = do
 scanForCollections :: FilePath -> [(Double, String)] -> IO [(Double, String)]
 scanForCollections projectDir provided = do
   projectLoopDirs <- getLoopDirs projectDir
-  msp ("WUT", projectLoopDirs)
+  --msp ("WUT", projectLoopDirs)
   let defaultWeights = M.fromList (zip projectLoopDirs (repeat 1))
       providedWeights = M.fromList (map swap provided)
       combinedWeights = providedWeights `M.union` defaultWeights
@@ -534,9 +534,9 @@ scanForCollections projectDir provided = do
 
 affinityMain :: String -> Int -> [(Double, String)] -> IO ()
 affinityMain projectDir seed collections = do
-  msp ("before", collections)
+  --msp ("before", collections)
   collections <- scanForCollections projectDir collections
-  msp ("after", collections)
+  --msp ("after", collections)
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader projectDir soundLoader looper

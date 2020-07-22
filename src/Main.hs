@@ -73,12 +73,12 @@ cleanupArgs (command : projectDir : rest) = do
 main :: IO ()
 main = withPortaudio $ do
   noBuffering
-  getGCFlags >>= msp
-  putStrLn $ "numCapabilities: " ++ show numCapabilities
-  np <- getNumProcessors
-  putStrLn $ "getNumProcessors: " ++ show np
+  --getGCFlags >>= msp
+  --putStrLn $ "numCapabilities: " ++ show numCapabilities
+  --np <- getNumProcessors
+  --putStrLn $ "getNumProcessors: " ++ show np
   args <- getArgs
-  msp $ "++ " ++ (show args)
+  msp $ "++ rhythmr " ++ (show args)
   if null args
     then do doHelp
             exitSuccess

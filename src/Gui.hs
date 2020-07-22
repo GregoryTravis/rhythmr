@@ -50,7 +50,7 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
       eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v lastH) = do
         --msp ("EV", ev)
         command <- keyboardHandler (cur h) (key, modifiers)
-        msp ("COMMAND", command)
+        --msp ("COMMAND", command)
         h' <- execute command h lastH saver loader onExit
         --msp ("boing", length (currentGroup (cur h)), length (currentGroup (cur h')))
         -- If we just saved, then replace lastSave with current history
