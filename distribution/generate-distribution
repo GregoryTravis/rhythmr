@@ -1,0 +1,12 @@
+#!/bin/bash
+root=`stack path --local-install-root`
+exe=$root/bin/rhythmr
+app=Rhythmr.app
+
+if [ -e "$app" ]; then
+  echo $app already exists
+  exit 1
+fi
+
+cp -r distribution/app-template/$app .
+cp $exe $app/Contents/MacOS/rhythmr-e

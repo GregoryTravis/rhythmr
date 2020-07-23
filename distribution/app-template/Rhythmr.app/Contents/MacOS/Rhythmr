@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#date >> /Users/gmt/rhythmr/boo
+/Users/gmt/rhythmr/Rhythmr.app/Contents/MacOS/rhythmr-e aff /Users/gmt/rhythmr/koop-it-again.rhythmr/
+#echo hey >> /Users/gmt/rhythmr/boo
