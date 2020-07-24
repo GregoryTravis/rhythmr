@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIconFile</key>
+  <string>Rhythmr.icns</string>
+  <key>CFBundleDocumentTypes</key>
+  <array>
+          <dict>
+                  <key>CFBundleTypeExtensions</key>
+                  <array>
+                          <string>rhythmr</string>
+                  </array>
+                  <key>CFBundleTypeIconFile</key>
+                  <string>Rhythmr.icns</string>
+                  <key>CFBundleTypeName</key>
+                  <string>Rhythmr Project</string>
+                  <key>CFBundleTypeRole</key>
+                  <string>Editor</string>
+          </dict>
+  </array>
+</dict>
+</plist>
