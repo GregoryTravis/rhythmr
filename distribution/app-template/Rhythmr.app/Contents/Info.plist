@@ -17,7 +17,25 @@
                   <string>Rhythmr Project</string>
                   <key>CFBundleTypeRole</key>
                   <string>Editor</string>
+                  <key>LSTypeIsPackage</key>
+                  <true/>
           </dict>
+  </array>
+  <key>UTExportedTypeDeclarations</key>
+  <array>
+      <dict>
+          <key>UTTypeIdentifier</key>
+          <string>com.rhythmr.rhythmr</string>
+          <key>UTTypeTagSpecification</key>
+          <dict>
+              <key>public.filename-extension</key>
+              <array>
+                  <string>rhythmr</string>
+              </array>
+          </dict>
+          <key>UTTypeIconFile</key>
+          <string>Rhythmr.icns</string>
+      </dict>
   </array>
 </dict>
 </plist>

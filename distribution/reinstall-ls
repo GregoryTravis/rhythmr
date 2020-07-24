@@ -1,0 +1,11 @@
+# Remove and reinstall the app with launch services
+./distribution/generate-distribution
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u Rhythmr.app/
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -u distribution/app-template/Rhythmr.app
+echo should be empty
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump | grep -i rhythmr
+echo should be empty.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister Rhythmr.app/
+echo should not be empty
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump | grep -i rhythmr
+echo should not be empty.
