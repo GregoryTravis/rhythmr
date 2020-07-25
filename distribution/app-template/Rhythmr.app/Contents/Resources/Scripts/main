@@ -11,21 +11,9 @@ log=$HOME/rhythmr/boo
 exec 1>$log
 exec 2>&1
 
-## Put your script below. Don't take out the part above.
-echo args $*
-date
-pwd
-echo 0 $0
 thisScript=$0
 echo $thisScript
 contents=`dirname $(dirname $(dirname $thisScript))`
 exe=$contents/MacOS/rhythmr
 doc=$1
-echo exe $exe
-ls $exe
-file $exe
-echo doc $doc
-ls $doc
-file "$doc"
 $exe aff $doc
-echo bye
