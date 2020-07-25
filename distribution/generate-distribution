@@ -11,5 +11,5 @@ app=Rhythmr.app
 rm -r Rhythmr.app
 
 cp -r distribution/app-template/$app .
-cp $exe $app/Contents/MacOS/rhythmr-e
+cp $exe $app/Contents/MacOS/rhythmr
 ./distribution/generate-icns

@@ -1,3 +1,6 @@
+./distribution/reinstall-ls
+exit
+
 # cp distribution/app-template/Rhythmr.app/Contents/MacOS/Rhythmr Rhythmr.app/Contents/MacOS/
 # exit
 
