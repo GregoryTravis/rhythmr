@@ -1,3 +1,6 @@
+# cp distribution/app-template/Rhythmr.app/Contents/MacOS/Rhythmr Rhythmr.app/Contents/MacOS/
+# exit
+
 # separate music & rhythm
 # rm -f out?.wav
 # python audiolabs-erlangen.py
