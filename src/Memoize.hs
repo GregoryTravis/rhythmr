@@ -86,4 +86,7 @@ memoizeIO f = do
   return memoizedF
 
 emptyMemoDir :: IO ()
-emptyMemoDir = removeDirectoryRecursive memoDir
+emptyMemoDir = do
+  b <- doesFileExist memoDir
+  if b then removeDirectoryRecursive memoDir
+       else return ()

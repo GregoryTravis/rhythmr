@@ -6,7 +6,7 @@ set -o nounset
 # Exit if any statement returns a non-true return value (non-zero).
 set -o errexit
 
-log=$HOME/rhythmr/boo
+log=/tmp/rhythmr.log
 
 exec 1>$log
 exec 2>&1
