@@ -2,6 +2,7 @@
 root=`stack path --local-install-root`
 exe=$root/bin/rhythmr
 app=Rhythmr.app
+app_template=$app-template
 
 # if [ -e "$app" ]; then
 #   echo $app already exists
@@ -10,6 +11,6 @@ app=Rhythmr.app
 
 rm -r Rhythmr.app
 
-cp -r distribution/app-template/$app .
+cp -r distribution/app-template/$app_template ./$app
 cp $exe $app/Contents/MacOS/rhythmr
 ./distribution/generate-icns
