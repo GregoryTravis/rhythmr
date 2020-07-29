@@ -23,10 +23,8 @@ else
   #echo already
   doc=$1
 fi
-echo doc $doc
 
 thisScript=$0
-echo $thisScript
 contents=`dirname $(dirname $(dirname $thisScript))`
 exe=$contents/MacOS/rhythmr
 echo exe $exe doc $doc
