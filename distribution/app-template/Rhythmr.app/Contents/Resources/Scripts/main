@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
 
+log=/tmp/rhythmr.log
+exec 1>$log
+exec 2>&1
+
 ## No bash script should be considered releasable until it has this! ##
 # Exit on use of an uninitialized variable
-set -o nounset
+# set -o nounset
 # Exit if any statement returns a non-true return value (non-zero).
 set -o errexit
 
-log=/tmp/rhythmr.log
+doc=''
 
-exec 1>$log
-exec 2>&1
+if [ -z "$1" ]; then
+  #echo dialog
+  doc=`osascript <<END
+  set theImage to choose file with prompt "Please select an image to process:" of type {"rhythmr"}
+  set a to posix path of theImage
+  return a
+END`
+else
+  #echo already
+  doc=$1
+fi
+echo doc $doc
 
 thisScript=$0
 echo $thisScript
 contents=`dirname $(dirname $(dirname $thisScript))`
 exe=$contents/MacOS/rhythmr
-doc=$1
+echo exe $exe doc $doc
 $exe aff $doc
