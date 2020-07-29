@@ -11,6 +11,6 @@ app_template=$app-template
 
 rm -r Rhythmr.app
 
-cp -r distribution/app-template/$app_template ./$app
+cp -r build/app-template/$app_template ./$app
 cp $exe $app/Contents/MacOS/rhythmr
-./distribution/generate-icns
+./build/generate-icns

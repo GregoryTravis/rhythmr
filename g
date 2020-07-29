@@ -1,5 +1,5 @@
-# ./distribution/reinstall-ls
-# exit
+./build/reinstall-ls
+exit
 
 # separate music & rhythm
 # rm -f out?.wav

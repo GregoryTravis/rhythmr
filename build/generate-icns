@@ -2,7 +2,7 @@
 
 # From https://stackoverflow.com/questions/12306223/how-to-manually-create-icns-files-using-iconutil/20703594#20703594
 
-ICON=distribution/icon.png
+ICON=build/icon.png
 ICONSET=Rhythmr.iconset
 mkdir $ICONSET
 sips -z 16 16     $ICON --out $ICONSET/icon_16x16.png
