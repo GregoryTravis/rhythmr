@@ -9,8 +9,13 @@ app_template=$app-template
 #   exit 1
 # fi
 
-rm -r Rhythmr.app
+rm -rf dist
+mkdir dist
 
-cp -r build/app-template/$app_template ./$app
-cp $exe $app/Contents/MacOS/rhythmr
+cp -r build/app-template/$app_template ./dist/$app
+cp $exe dist/$app/Contents/MacOS/rhythmr
 ./build/generate-icns
+cp -r 60smotown.rhythmr dist
+cp -r koop-it-again.rhythmr dist
+zip -r dist.zip dist
+rm -r dist

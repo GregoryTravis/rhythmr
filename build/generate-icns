@@ -17,5 +17,5 @@ sips -z 512 512   $ICON --out $ICONSET/icon_512x512.png
 cp $ICON $ICONSET/icon_512x512@2x.png
 iconutil -c icns $ICONSET
 rm -R $ICONSET
-mkdir -p Rhythmr.app/Contents/Resources
-mv Rhythmr.icns Rhythmr.app/Contents/Resources
+mkdir -p dist/Rhythmr.app/Contents/Resources
+mv Rhythmr.icns dist/Rhythmr.app/Contents/Resources

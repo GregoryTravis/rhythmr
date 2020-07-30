@@ -15,9 +15,12 @@ doc=''
 if [ -z "$1" ]; then
   #echo dialog
   doc=`osascript <<END
-  set theImage to choose file with prompt "Please select an image to process:" of type {"rhythmr"}
-  set a to posix path of theImage
-  return a
+  tell Application "System Events"
+    activate
+    set theImage to choose file with prompt "Please select a Rhythmr project:" of type {"rhythmr"}
+    set a to posix path of theImage
+    return a
+  end tell
 END`
 else
   #echo already
