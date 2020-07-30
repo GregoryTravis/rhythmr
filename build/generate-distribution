@@ -17,5 +17,15 @@ cp $exe dist/$app/Contents/MacOS/rhythmr
 ./build/generate-icns
 cp -r 60smotown.rhythmr dist
 cp -r koop-it-again.rhythmr dist
-zip -r dist.zip dist
+
+how=zip
+
+if [ "$how" = "zip" ]; then
+  echo creating zip
+  zip -r dist.zip dist
+else
+  echo creating dmg
+  hdiutil create -volname Rythmr -srcfolder dist -ov -format UDZO Rhythmr.dmg
+fi
+
 rm -r dist
