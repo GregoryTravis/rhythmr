@@ -21,5 +21,4 @@ sips -z 512 512   $ICON --out $tmpdir/icon_256x256@2x.png
 sips -z 512 512   $ICON --out $tmpdir/icon_512x512.png
 cp $ICON $tmpdir/icon_512x512@2x.png
 iconutil -c icns -o $ICNS $tmpdir
-exit
 rm -r $tmpdir

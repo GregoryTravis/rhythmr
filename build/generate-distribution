@@ -10,7 +10,8 @@ app_template=$app-template
 # fi
 
 rm -rf dist
-cp -r build/folder-template dist
+mkdir dist
+#cp -r build/folder-template dist
 
 cp -r build/app-template/$app_template ./dist/$app
 cp $exe dist/$app/Contents/MacOS/rhythmr
@@ -21,7 +22,7 @@ mkdir -p dist/Rhythmr.app/Contents/Resources
 cp -r 60smotown.rhythmr dist
 cp -r koop-it-again.rhythmr dist
 
-how=zip
+how=folder
 
 case $how in
   zip)
