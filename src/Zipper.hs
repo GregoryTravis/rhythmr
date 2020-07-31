@@ -7,6 +7,8 @@ module Zipper
 , cur
 , up
 , down
+, upFully
+, downFully
 , upMaybe
 , downMaybe
 , removeTop
@@ -64,6 +66,16 @@ up (Zipper (x:xs) c bot) = Zipper xs x (c:bot)
 
 down :: Zipper a -> Zipper a
 down (Zipper top c (x:xs)) = Zipper (c:top) x xs
+
+-- lazy lazy
+upFully :: Zipper a -> Zipper a
+upFully z@(Zipper [] _ _) = z
+upFully z = upFully (up z)
+
+-- lazy lazy
+downFully :: Zipper a -> Zipper a
+downFully z@(Zipper _ _ []) = z
+downFully z = downFully (down z)
 
 upMaybe :: Zipper a -> Zipper a
 upMaybe z@(Zipper [] _ _) = z

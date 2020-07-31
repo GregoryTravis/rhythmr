@@ -36,7 +36,7 @@ windowDim = V2 windowWidth windowHeight
 data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, lastSave :: History s }
 
 -- lol "Save String"
-data GuiCommand s = NewState s | Save FilePath | Load FilePath | Undo | Redo | Quit | QuitWithoutSaving | SaveAndQuit FilePath | GuiCommands [GuiCommand s] | DoNothing
+data GuiCommand s = NewState s | Save FilePath | Load FilePath | Undo | Redo | UndoFully | RedoFully | Quit | QuitWithoutSaving | SaveAndQuit FilePath | GuiCommands [GuiCommand s] | DoNothing
   deriving Show
 
 guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
@@ -152,6 +152,8 @@ execute command h lastH saver loader onExit =
                   --                     return h'
                   Undo -> return $ undo h
                   Redo -> return $ redo h
+                  UndoFully -> return $ toBeginning h
+                  RedoFully -> return $ toEnd h
                   QuitWithoutSaving -> do onExit
                                           exitSuccess
                   Quit -> do  msp ("clean?", hWhere h, hWhere lastH)

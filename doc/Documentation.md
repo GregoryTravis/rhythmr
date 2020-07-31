@@ -11,6 +11,8 @@ Details at the bottom.
 * **Shift-Control-Q** - quit without saving
 * **u** - undo
 * **Control-R** - redo
+* **Shift-Control-u** - undo all the way (complete reset)
+* **Shift-Control-R** - redo all the way (latest state)
 * **c** - cycle affinities
 * **right arrow** - like
 * **left arrow** - dislike

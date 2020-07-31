@@ -180,7 +180,9 @@ keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
 --  --let s' = nextFromStack s
 --  setState s'
 keyboardHandler s (Char 'u', m) | noM m = retCommand Undo
+keyboardHandler s (Char '\NAK', m) | shiftCtrlM m = retCommand UndoFully
 keyboardHandler s (Char '\DC2', m) | ctrlM m = retCommand Redo
+keyboardHandler s (Char '\DC2', m) | shiftCtrlM m = retCommand RedoFully
 keyboardHandler s (Char '\DC3', m) | ctrlM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ Save projectFile

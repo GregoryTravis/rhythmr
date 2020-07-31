@@ -3,6 +3,8 @@
 module History
 ( History
 , start
+, toEnd
+, toBeginning
 , fromList
 , toList
 , update
@@ -33,6 +35,14 @@ instance Functor History where
 
 start :: s -> History s
 start = History . Z.makeZipper
+
+toEnd :: History s -> History s
+-- What am I doing wrong?
+--toEnd h = Z.upFully <$> h
+toEnd (History z) = History $ Z.upFully z
+
+toBeginning :: History s -> History s
+toBeginning (History z) = History $ Z.downFully z
 
 fromList :: [s] -> History s
 fromList = History . Z.fromList
