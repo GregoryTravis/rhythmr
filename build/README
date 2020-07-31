@@ -1,2 +1,8 @@
 To generate folder icon:
 ./build/generate-icns build/folder-icon.png RhythmrFolder.icns
+
+Currently-registered apps:
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump | grep -i rhythmr|grep path
+
+Remove them, via list:
+cat paths-list | xn1 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -R -f -u
