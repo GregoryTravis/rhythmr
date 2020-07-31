@@ -30,7 +30,8 @@ helpText = unlines
   , "rhythmr barsId project-dir collection id"
   , "rhythmr barsIdFile project-dir collection filename [filename, filename, ...]"
   , "rhythmr barsFile project-dir collection filename [filename, filename, ...]"
-  , "rhythmr aff project-dir collection weight [collection weight, ...]" ]
+  , "rhythmr aff project-dir collection weight [collection weight, ...]"
+  , "rhythmr credits" ]
 
 doHelp :: IO ()
 doHelp = putStrLn helpText
@@ -70,6 +71,16 @@ cleanupArgs (command : projectDir : rest) = do
 --   where defaultArgs' = ["aff", "chitty", "chitty", "1", "jazz-drum-solo", "1"]
 -- defaultArgs x = x
 
+credits :: String
+credits = unlines 
+  [ "Thanks to:"
+  , "* Icon made by Freepik from www.flaticon.com"
+  , "* MacOS icon scripting from user 'valexa' (https://stackoverflow.com/a/20703594/5265393)"
+  , "* MacOS app template from RichardBronosky (https://github.com/RichardBronosky/AppleScript-droplet)" ]
+
+doCredits :: IO ()
+doCredits = putStrLn credits
+
 main :: IO ()
 main = withPortaudio $ do
   noBuffering
@@ -79,8 +90,8 @@ main = withPortaudio $ do
   --putStrLn $ "getNumProcessors: " ++ show np
   args <- getArgs
   msp $ "++ rhythmr " ++ (show args)
-  if null args
-    then do doHelp
-            exitSuccess
-    else do args' <- cleanupArgs args
-            doStuff args'
+  case args of [] -> do doHelp
+                        exitSuccess
+               ["credits"] -> doCredits
+               args -> do args' <- cleanupArgs args
+                          doStuff args'
