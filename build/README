@@ -4,5 +4,8 @@ To generate folder icon:
 Currently-registered apps:
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump | grep -i rhythmr|grep path
 
-Remove them, via list:
+Unregister one:
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -R -f -u /Users/gmt/Desktop/dist/Rhythmr.app
+
+Unregister many, via list:
 cat paths-list | xn1 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -R -f -u

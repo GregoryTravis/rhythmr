@@ -19,10 +19,12 @@ cp $exe dist/$app/Contents/MacOS/rhythmr
 mkdir -p dist/Rhythmr.app/Contents/Resources
 ./build/generate-icns build/icon.png dist/Rhythmr.app/Contents/Resources/Rhythmr.icns
 
+./build/generate-icns build/document-icon.png dist/Rhythmr.app/Contents/Resources/RhythmrDocument.icns
+
 cp -r 60smotown.rhythmr dist
 cp -r koop-it-again.rhythmr dist
 
-how=folder
+how=zip
 
 case $how in
   zip)

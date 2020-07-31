@@ -14,7 +14,7 @@
                                 <string>rhythmr</string>
 			</array>
                         <key>CFBundleTypeIconFile</key>
-                        <string>Rhythmr.icns</string>
+                        <string>RhythmrDocument.icns</string>
 			<key>CFBundleTypeName</key>
                         <string>Rhythmr Project</string>
 			<key>CFBundleTypeRole</key>
