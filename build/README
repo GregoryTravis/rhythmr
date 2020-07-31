@@ -1,0 +1,2 @@
+To generate folder icon:
+./build/generate-icns build/folder-icon.png RhythmrFolder.icns

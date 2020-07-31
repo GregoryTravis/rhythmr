@@ -10,22 +10,30 @@ app_template=$app-template
 # fi
 
 rm -rf dist
-mkdir dist
+cp -r build/folder-template dist
 
 cp -r build/app-template/$app_template ./dist/$app
 cp $exe dist/$app/Contents/MacOS/rhythmr
-./build/generate-icns
+
+mkdir -p dist/Rhythmr.app/Contents/Resources
+./build/generate-icns build/icon.png dist/Rhythmr.app/Contents/Resources/Rhythmr.icns
+
 cp -r 60smotown.rhythmr dist
 cp -r koop-it-again.rhythmr dist
 
 how=zip
 
-if [ "$how" = "zip" ]; then
-  echo creating zip
-  zip -r dist.zip dist
-else
-  echo creating dmg
-  hdiutil create -volname Rythmr -srcfolder dist -ov -format UDZO Rhythmr.dmg
-fi
-
-rm -r dist
+case $how in
+  zip)
+    echo creating zip
+    zip -r dist.zip dist
+    rm -r dist
+    ;;
+  dmg)
+    echo creating dmg
+    hdiutil create -volname Rythmr -srcfolder dist -ov -format UDZO Rhythmr.dmg
+    rm -r dist
+    ;;
+  folder)
+    # Do nothing
+esac
