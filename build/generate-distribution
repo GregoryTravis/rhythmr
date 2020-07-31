@@ -11,7 +11,7 @@ app_template=$app-template
 
 rm -rf dist
 mkdir dist
-#cp -r build/folder-template dist
+#fileicon set dist build/folder-icon.png
 
 cp -r build/app-template/$app_template ./dist/$app
 cp $exe dist/$app/Contents/MacOS/rhythmr
