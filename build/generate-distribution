@@ -9,33 +9,33 @@ app_template=$app-template
 #   exit 1
 # fi
 
-rm -rf dist
-mkdir dist
-#fileicon set dist build/folder-icon.png
+rm -rf Rhythmr
+mkdir Rhythmr
+#fileicon set Rhythmr build/folder-icon.png
 
-cp -r build/app-template/$app_template ./dist/$app
-cp $exe dist/$app/Contents/MacOS/rhythmr
+cp -r build/app-template/$app_template ./Rhythmr/$app
+cp $exe Rhythmr/$app/Contents/MacOS/rhythmr
 
-mkdir -p dist/Rhythmr.app/Contents/Resources
-./build/generate-icns build/icon.png dist/Rhythmr.app/Contents/Resources/Rhythmr.icns
+mkdir -p Rhythmr/Rhythmr.app/Contents/Resources
+./build/generate-icns build/icon.png Rhythmr/Rhythmr.app/Contents/Resources/Rhythmr.icns
 
-./build/generate-icns build/document-icon.png dist/Rhythmr.app/Contents/Resources/RhythmrDocument.icns
+./build/generate-icns build/document-icon.png Rhythmr/Rhythmr.app/Contents/Resources/RhythmrDocument.icns
 
-cp -r 60smotown.rhythmr dist
-cp -r koop-it-again.rhythmr dist
+cp -r 60smotown.rhythmr Rhythmr
+cp -r koop-it-again.rhythmr Rhythmr
 
 how=zip
 
 case $how in
   zip)
     echo creating zip
-    zip -r dist.zip dist
-    rm -r dist
+    zip -r Rhythmr.zip Rhythmr
+    rm -r Rhythmr
     ;;
   dmg)
     echo creating dmg
-    hdiutil create -volname Rythmr -srcfolder dist -ov -format UDZO Rhythmr.dmg
-    rm -r dist
+    hdiutil create -volname Rythmr -srcfolder Rhythmr -ov -format UDZO Rhythmr.dmg
+    rm -r Rhythmr
     ;;
   folder)
     # Do nothing
