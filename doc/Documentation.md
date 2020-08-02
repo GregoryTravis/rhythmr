@@ -1,7 +1,7 @@
 Documentation
 ======
 
-** Overview 
+## Overview 
 
 When using Rhythmr, you are presented with a set of loops, playing in unison. If you like what you hear, hit the right arrow, and you'll get another one to listen to. If you don't like it, hit the left arrow.
 
@@ -11,7 +11,7 @@ When you start up, a pool of loops is selected, shown in the upper left. This is
 
 "Cycle affinities" (the "c" key) generates another song using the same groups of loops, but in different combinations. Sometimes it sounds very similar, sometimes very different.
 
-** User interface
+## User interface
 
 Rhythmr only uses the keyboard -- no mouse or menus.
 
@@ -40,7 +40,7 @@ Deprecated commands:
 * **d** - new group, divide-and-conquer
 * **A** - make the first affinity the current group
 
-** Running at the command-line
+## Running at the command-line
 
     # Go into the Rhythmr folder
 
