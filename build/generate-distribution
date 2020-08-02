@@ -1,4 +1,8 @@
 #!/bin/bash
+
+how=${1:-"zip"}
+echo how $how
+
 root=`stack path --local-install-root`
 exe=$root/bin/rhythmr
 app=Rhythmr.app
@@ -24,8 +28,6 @@ mkdir -p Rhythmr/Rhythmr.app/Contents/Resources
 cp -r 60smotown.rhythmr Rhythmr
 cp -r koop-it-again.rhythmr Rhythmr
 
-how=zip
-
 case $how in
   zip)
     echo creating zip
@@ -38,5 +40,5 @@ case $how in
     rm -r Rhythmr
     ;;
   folder)
-    # Do nothing
+    # Do nothing, just leave the app there
 esac
