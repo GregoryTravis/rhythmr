@@ -42,34 +42,34 @@ Deprecated commands:
 
 ** Running at the command-line
 
-# Go into the Rhythmr folder
+    # Go into the Rhythmr folder
 
-$ cd Rhythmr/
+    $ cd Rhythmr/
 
-# You'll see the app and two Rhythmr projects
+    # You'll see the app and two Rhythmr projects
 
-$ ls
-60smotown.rhythmr/	Rhythmr.app/		koop-it-again.rhythmr/
+    $ ls
+    60smotown.rhythmr/	Rhythmr.app/		koop-it-again.rhythmr/
 
-# Run the executable directly, with no arguments. It prints out help info
+    # Run the executable directly, with no arguments. It prints out help info
 
-$ Rhythmr.app/Contents/MacOS/rhythmr
-Portuadio starting
-"++ rhythmr []"
-rhythmr command project-dir [arg, arg, arg, ...]
+    $ Rhythmr.app/Contents/MacOS/rhythmr
+    Portuadio starting
+    "++ rhythmr []"
+    rhythmr command project-dir [arg, arg, arg, ...]
 
-Commands include:
+    Commands include:
 
-rhythmr barsSearch project-dir collection-name search-string num-tracks
-rhythmr barsId project-dir collection id
-rhythmr barsIdFile project-dir collection filename [filename, filename, ...]
-rhythmr barsFile project-dir collection filename [filename, filename, ...]
-rhythmr aff project-dir collection weight [collection weight, ...]
-rhythmr credits
+    rhythmr barsSearch project-dir collection-name search-string num-tracks
+    rhythmr barsId project-dir collection id
+    rhythmr barsIdFile project-dir collection filename [filename, filename, ...]
+    rhythmr barsFile project-dir collection filename [filename, filename, ...]
+    rhythmr aff project-dir collection weight [collection weight, ...]
+    rhythmr credits
 
-Portuadio shutdown
-Test finished.
+    Portuadio shutdown
+    Test finished.
 
-# Run one of the projects
+    # Run one of the projects
 
-$ Rhythmr.app/Contents/MacOS/rhythmr aff koop-it-again.rhythmr/
+    $ Rhythmr.app/Contents/MacOS/rhythmr aff koop-it-again.rhythmr/
