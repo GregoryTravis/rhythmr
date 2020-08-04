@@ -53,7 +53,7 @@ executable rhythmr
                        -- This works
                        --gl >= 0.5,
                        generic-deriving,
-                       GLFW-b,
+                       --GLFW-b,
                        gloss,
                        --GLUT,
 --cabal install gloss --flags="GLFW -GLUT"
