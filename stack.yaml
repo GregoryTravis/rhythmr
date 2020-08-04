@@ -64,7 +64,8 @@ extra-deps:
 # flags: {}
 # flags:
 #   gloss:
-#     GLUT: true
+#     GLFW: true
+#     GLUT: false
 
 # Extra package databases containing global packages
 # extra-package-dbs: []

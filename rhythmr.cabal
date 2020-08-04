@@ -26,7 +26,7 @@ executable rhythmr
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Util, External, Aubio, Resample, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Affinity, Constants, Graph,
-                       Looper, Zipper, FX, Gui, FPS, State, Ascii, Bars, Viz, Diag, History, SaveLoad, Loop, Animate, Gfx, Hypercube, Zounds, Chew, Hash, BandLimitedInterpolator, Rc,
+                       Looper, Zipper, FX, Gui, FPS, State, Ascii, Bars, Viz, History, SaveLoad, Loop, Animate, Hypercube, Zounds, Chew, Hash, BandLimitedInterpolator, Rc,
                        Project
   --ghc-options:         -threaded -rtsopts "-with-rtsopts=-N"
 
@@ -42,25 +42,20 @@ executable rhythmr
   c-sources:           src/nonblocking.c, src/nblint.c
   build-depends:       base >= 4.7 && < 5,
                        aeson,
-                       ansi-terminal >= 0.9,
                        base16-bytestring,
                        binary,
                        bytestring,
                        containers,
                        cryptohash-md5,
-                       diagrams,
-                       diagrams-contrib,
-                       diagrams-lib,
-                       diagrams-svg,
                        directory,
                        dir-traverse,
                        filepath,
-                       --GLFW-b,
                        -- This works
                        --gl >= 0.5,
                        generic-deriving,
+                       GLFW-b,
                        gloss,
-                       GLUT,
+                       --GLUT,
 --cabal install gloss --flags="GLFW -GLUT"
                        hsndfile >= 0.8.0,
                        hsndfile-storablevector >= 0.5.2,
@@ -71,7 +66,7 @@ executable rhythmr
                        --MissingH,
                        --pa,
                        linear,
-                       network >= 3.1.1.1,
+                       --network >= 3.1.1.1,
                        portaudio >= 0.2.4,
                        pretty-simple,
                        process,

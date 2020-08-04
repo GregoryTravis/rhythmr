@@ -12,8 +12,6 @@ import Affinity
 import Analysis
 import BandLimitedInterpolator
 import Bars
-import Diag
-import Gfx
 import Hypercube
 import Looper (withPortaudio)
 import Project
@@ -48,7 +46,6 @@ doStuff ("aff" : projectDir : collections) = affinityMain projectDir 2345 (parse
   where parse :: [String] -> [(Double, String)]
         parse [] = []
         parse (c : w : etc) = (read w, c) : parse etc
--- doStuff ["g"] = gfxMain
 -- doStuff ["hy"] = hypercubeMain
 -- doStuff ["zound"] = zoundMain
 

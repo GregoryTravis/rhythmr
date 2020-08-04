@@ -22,7 +22,6 @@ import GHC.Generics (Generic)
 import Graphics.Gloss.Interface.IO.Game (SpecialKey(..), Key(..), Modifiers(..), KeyState(..))
 import Linear
 import Linear.Matrix (identity)
-import System.Console.ANSI (clearScreen, setCursorPosition)
 import System.Directory (listDirectory)
 import System.Random
 
@@ -480,11 +479,6 @@ playCurrent s = do
 --   groupSize <- getStdRandom (randomR (2,4)) :: IO Int
 --   indices <- mapM (\_ -> randFromList unused) [0..groupSize-1]
 --   return indices
-
-setCursorPos x y = setCursorPosition y x
-resetTerm = do
-  setCursorPos 0 0
-  clearScreen
 
 displayer :: State -> String
 displayer s = intercalate "\n" lines
