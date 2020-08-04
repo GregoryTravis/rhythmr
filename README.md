@@ -12,3 +12,5 @@ Rhythmr is an interactive system, implemented in Haskell, for creating good-soun
 [Documentation](doc/Documentation.md).
 
 [About](doc/About.md).
+
+[Credits](doc/Credits.md).
