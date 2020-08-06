@@ -67,6 +67,10 @@ extra-deps:
 #     GLFW: true
 #     GLUT: false
 
+# flags:
+#   portaudio:
+#     enable-shared: false
+
 # Extra package databases containing global packages
 # extra-package-dbs: []
 
@@ -84,6 +88,9 @@ extra-deps:
 # Extra directories used by stack for building
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
+extra-lib-dirs: [/usr/local/opt/portaudio/lib]
+# extra-libraries:
+#   - /usr/local/opt/portaudio/lib/libportaudio.a
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
