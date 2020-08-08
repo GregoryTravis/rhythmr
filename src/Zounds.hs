@@ -345,9 +345,10 @@ readZound filename = do
   (info, Just (buffer :: BV.Buffer Float)) <- SF.readFile filename
   massert "sections != 1" (sections info == 1) 
   massert ("channels: " ++ filename) (channels info == 1 || channels info == 2)
-  return $ Segment { samples = stereoize (channels info) $ BV.fromBuffer buffer
-                   , offset = 0
-                   , source = Just $ Source [filename] }
+  let z = Segment { samples = stereoize (channels info) $ BV.fromBuffer buffer
+                 , offset = 0
+                 , source = Just $ Source [filename] }
+  return $ normalize z
   where stereoize :: Int -> SV.Vector Float -> Samples
         stereoize 1 fs = SV.map realToFrac $ SV.interleave [fs, fs]
         stereoize 2 fs = SV.map realToFrac fs
