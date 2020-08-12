@@ -24,27 +24,33 @@ cp $exe Rhythmr/$app/Contents/MacOS/rhythmr
 
 # Use dynamic libraries
 mkdir Rhythmr/$app/Contents/Frameworks
-for dylib in \
-  /usr/local/opt/libsndfile/lib/libsndfile.1.dylib \
-  /usr/local/opt/flac/lib/libFLAC.8.dylib \
-  /usr/local/opt/libogg/lib/libogg.0.dylib \
-  /usr/local/opt/libvorbis/lib/libvorbis.0.dylib \
-  /usr/local/opt/libvorbis/lib/libvorbisenc.2.dylib \
-  /usr/local/opt/portaudio/lib/libportaudio.2.dylib
-do
-    echo localizing $dylib
-    cp $dylib Rhythmr/$app/Contents/Frameworks
-    install_name_tool -change $dylib @loader_path/../Frameworks/$(basename $dylib) Rhythmr/$app/Contents/MacOS/rhythmr
-done
-otool -L Rhythmr/$app/Contents/MacOS/rhythmr
+./build/localize-dylibs.rb Rhythmr.app
+# for dylib in \
+#   /usr/local/opt/libsndfile/lib/libsndfile.1.dylib \
+#   /usr/local/opt/flac/lib/libFLAC.8.dylib \
+#   /usr/local/opt/libogg/lib/libogg.0.dylib \
+#   /usr/local/opt/libvorbis/lib/libvorbis.0.dylib \
+#   /usr/local/opt/libvorbis/lib/libvorbisenc.2.dylib \
+#   /usr/local/opt/portaudio/lib/libportaudio.2.dylib
+# do
+#     echo localizing $dylib
+#     cp $dylib Rhythmr/$app/Contents/Frameworks
+#     install_name_tool -change $dylib @loader_path/../Frameworks/$(basename $dylib) Rhythmr/$app/Contents/MacOS/rhythmr
+# done
+# otool -L Rhythmr/$app/Contents/MacOS/rhythmr
 
 mkdir -p Rhythmr/Rhythmr.app/Contents/Resources
 ./build/generate-icns build/icon.png Rhythmr/Rhythmr.app/Contents/Resources/Rhythmr.icns
 
 ./build/generate-icns build/document-icon.png Rhythmr/Rhythmr.app/Contents/Resources/RhythmrDocument.icns
 
-cp -r 60smotown.rhythmr Rhythmr
-cp -r koop-it-again.rhythmr Rhythmr
+for proj in \
+  60smotown.rhythmr \
+  koop-it-again.rhythmr
+do
+  cp -r $proj Rhythmr
+  rm Rhythmr/$proj/history
+done
 
 case $how in
   zip)
