@@ -24,6 +24,7 @@ module Util
 , mappily
 , mcompose
 , time
+, unsafeTime
 , noBuffering
 , die
 , predSplit
@@ -166,6 +167,9 @@ time s a = do
     let diff = (systemToUTCTime end) `diffUTCTime` (systemToUTCTime start)
     printf "%s %s\n" s (show diff)
     return v
+
+unsafeTime :: String -> a -> a
+unsafeTime s x = unsafePerformIO (time s (return x))
 
 noBuffering = do
   hSetBuffering stdout NoBuffering

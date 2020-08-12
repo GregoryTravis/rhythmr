@@ -3,6 +3,7 @@ module Looper
 , withPortaudio
 , withLooper
 , setZound
+, noSound
 , getProgress
 ) where
 
@@ -56,6 +57,15 @@ setZound l sound = do
      else do swapMVar sv samplesF
              return ()
   writeIORef lv (numFrames sound * 2)
+
+noSound :: Looper -> IO ()
+noSound (Looper sv iv _) = do
+  msp "clearing"
+  empty <- isEmptyMVar sv
+  if empty
+     then return ()
+     else do takeMVar sv
+             return ()
 
 loop :: Looper -> IO ()
 loop looper = loop' looper 0
