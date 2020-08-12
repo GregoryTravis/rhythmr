@@ -24,10 +24,18 @@ cp $exe Rhythmr/$app/Contents/MacOS/rhythmr
 
 # Use dynamic libraries
 mkdir Rhythmr/$app/Contents/Frameworks
-cp /usr/local/opt/portaudio/lib/libportaudio.2.dylib Rhythmr/$app/Contents/Frameworks
-cp /usr/local/opt/libsndfile/lib/libsndfile.1.dylib Rhythmr/$app/Contents/Frameworks
-install_name_tool -change /usr/local/opt/portaudio/lib/libportaudio.2.dylib @loader_path/../Frameworks/libportaudio.2.dylib Rhythmr/$app/Contents/MacOS/rhythmr
-install_name_tool -change /usr/local/opt/libsndfile/lib/libsndfile.1.dylib @loader_path/../Frameworks/libsndfile.1.dylib Rhythmr/$app/Contents/MacOS/rhythmr
+for dylib in \
+  /usr/local/opt/libsndfile/lib/libsndfile.1.dylib \
+  /usr/local/opt/flac/lib/libFLAC.8.dylib \
+  /usr/local/opt/libogg/lib/libogg.0.dylib \
+  /usr/local/opt/libvorbis/lib/libvorbis.0.dylib \
+  /usr/local/opt/libvorbis/lib/libvorbisenc.2.dylib \
+  /usr/local/opt/portaudio/lib/libportaudio.2.dylib
+do
+    echo localizing $dylib
+    cp $dylib Rhythmr/$app/Contents/Frameworks
+    install_name_tool -change $dylib @loader_path/../Frameworks/$(basename $dylib) Rhythmr/$app/Contents/MacOS/rhythmr
+done
 otool -L Rhythmr/$app/Contents/MacOS/rhythmr
 
 mkdir -p Rhythmr/Rhythmr.app/Contents/Resources
