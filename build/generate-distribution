@@ -3,6 +3,8 @@
 how=${1:-"zip"}
 echo how $how
 
+stack build rhythmr
+
 root=`stack path --local-install-root`
 exe=$root/bin/rhythmr
 app=Rhythmr.app
@@ -19,6 +21,14 @@ mkdir Rhythmr
 
 cp -r build/app-template/$app_template ./Rhythmr/$app
 cp $exe Rhythmr/$app/Contents/MacOS/rhythmr
+
+# Use dynamic libraries
+mkdir Rhythmr/$app/Contents/Frameworks
+cp /usr/local/opt/portaudio/lib/libportaudio.2.dylib Rhythmr/$app/Contents/Frameworks
+cp /usr/local/opt/libsndfile/lib/libsndfile.1.dylib Rhythmr/$app/Contents/Frameworks
+install_name_tool -change /usr/local/opt/portaudio/lib/libportaudio.2.dylib @loader_path/../Frameworks/libportaudio.2.dylib Rhythmr/$app/Contents/MacOS/rhythmr
+install_name_tool -change /usr/local/opt/libsndfile/lib/libsndfile.1.dylib @loader_path/../Frameworks/libsndfile.1.dylib Rhythmr/$app/Contents/MacOS/rhythmr
+otool -L Rhythmr/$app/Contents/MacOS/rhythmr
 
 mkdir -p Rhythmr/Rhythmr.app/Contents/Resources
 ./build/generate-icns build/icon.png Rhythmr/Rhythmr.app/Contents/Resources/Rhythmr.icns
