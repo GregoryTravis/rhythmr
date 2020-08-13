@@ -22,7 +22,8 @@ import GHC.Generics (Generic)
 import Graphics.Gloss.Interface.IO.Game (SpecialKey(..), Key(..), Modifiers(..), KeyState(..))
 import Linear
 import Linear.Matrix (identity)
-import System.Directory (listDirectory)
+import System.Environment (getEnv)
+import System.Directory (listDirectory, getCurrentDirectory)
 import System.Random
 
 import Animate
@@ -249,7 +250,12 @@ writeCurrentSong :: State -> IO ()
 writeCurrentSong s = do
   let mix = snd $ fromJust (currentSong s)
   MkSystemTime { systemSeconds } <- getSystemTime
-  let filename = "song-" ++ show systemSeconds ++ ".wav"
+  home <- getEnv "HOME"
+  let filename = desktop ++ "/song-" ++ show systemSeconds ++ ".wav"
+      desktop = home ++ "/Desktop"
+  cwd <- getCurrentDirectory
+  msp ("CWD", cwd)
+  msp ("writing to", filename)
   writeZound filename mix
 -- writeCurrentSong s = do
 --   let loopGrid = buildLoopGrid s
