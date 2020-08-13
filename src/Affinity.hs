@@ -11,7 +11,7 @@ import Control.Monad (replicateM, zipWithM_)
 import Data.Binary
 import Data.Containers.ListUtils (nubOrd)
 import Data.IORef
-import Data.List (intercalate, intersect, transpose, sortOn, elemIndex, nub, inits)
+import Data.List (intercalate, intersect, transpose, sortOn, elemIndex, nub, inits, isInfixOf)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
@@ -160,8 +160,10 @@ keyboardHandler s (Char 'A', m) | noM m = do
                                    setState s'
 keyboardHandler s (Char 'W', m) | shiftM m = do
   writeCurrentSong s
-  writeCurrentSongSeparateTracks' s
-  writeClick
+  -- -- writeCurrentSongSeparateTracks' writes to the desktop, if run from desktop
+  -- -- but writeClick can't read clik.wav so it won't work in that case
+  -- writeCurrentSongSeparateTracks' s
+  -- writeClick
   setState s
 keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
@@ -246,15 +248,26 @@ respondToStateChange s s' = do
 --   setZound (looper s) mix
 -- playCurrentSong s@(State { currentSong = Nothing }) = return ()
 
+-- HACK: if the current directory contains "Rhythmr.app" then we're probably
+-- running from the icon so write to the desktop. Otherwise, write to the
+-- current directory.
+getWriteDir :: IO FilePath
+getWriteDir = do
+  cwd <- getCurrentDirectory
+  home <- getEnv "HOME"
+  let desktop = home ++ "/Desktop"
+  msp ("CWD", cwd)
+  msp ("HOME", home)
+  if "Rhythmr.app" `isInfixOf` cwd
+    then return desktop
+    else return cwd
+
 writeCurrentSong :: State -> IO ()
 writeCurrentSong s = do
   let mix = snd $ fromJust (currentSong s)
   MkSystemTime { systemSeconds } <- getSystemTime
-  home <- getEnv "HOME"
-  let filename = desktop ++ "/song-" ++ show systemSeconds ++ ".wav"
-      desktop = home ++ "/Desktop"
-  cwd <- getCurrentDirectory
-  msp ("CWD", cwd)
+  dir <- getWriteDir
+  let filename = dir ++ "/song-" ++ show systemSeconds ++ ".wav"
   msp ("writing to", filename)
   writeZound filename mix
 -- writeCurrentSong s = do
@@ -267,20 +280,23 @@ writeCurrentSong s = do
 
 writeCurrentSongSeparateTracks' :: State -> IO ()
 writeCurrentSongSeparateTracks' s = do
+  dir <- getWriteDir
   stems <- renderStems s
   renderedStems <- mapM render stems
-  zipWithM_ writeIt renderedStems [0..]
-    where writeIt z i = do
+  zipWithM_ (writeIt dir) renderedStems [0..]
+    where writeIt dir z i = do
             --msp $ "stem " ++ filename
+            msp ("writing to", filename)
             writeZound filename z
-            where filename = "stem-" ++ (show i) ++ ".wav"
+            where filename = dir ++ "/stem-" ++ (show i) ++ ".wav"
 
 writeClick :: IO ()
 writeClick = do
+  dir <- getWriteDir
   clik <- readZound "wavs/clik.wav"
   let z = renderGrid (take desiredLengthLoops (repeat [clik])) bpm
   mix <- render z
-  writeZound "click.wav" mix
+  writeZound (dir ++ "/click.wav") mix
 
 --writeCurrentSongSeparateTracks :: State -> IO ()
 --writeCurrentSongSeparateTracks s@(State { currentSong = Just (score, loops) }) = do
