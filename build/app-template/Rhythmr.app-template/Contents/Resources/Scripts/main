@@ -33,4 +33,27 @@ fi
 
 exe=$contents/MacOS/rhythmr
 echo exe $exe doc $doc
-$exe aff $doc
+$exe aff $doc&
+
+osascript<<END
+tell application "Finder" 
+  repeat while (((name of every process) contains "rhythmr") = false)
+    log "waiting..."
+    delay 0.1
+  end repeat
+  delay 0.1
+  repeat 3 times
+    try
+      log "try"
+      with timeout of 1 second
+        tell application "Rhythmr" to activate
+      end timeout
+      exit repeat
+    on error errorMessage number errorNumber
+      log ("errorMessage: " & errorMessage & ", errorNumber: " & errorNumber)
+    end try
+    delay 0.1
+  end repeat
+  log "done"
+end tell
+END
