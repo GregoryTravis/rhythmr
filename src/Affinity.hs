@@ -196,11 +196,18 @@ keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
 keyboardHandler s (Char 'c', m) | noM m = cycleLikesSong s' >>= setSong s'
   where s' = s { affinityCycle = affinityCycle s + 1 }
-keyboardHandler s (Char c, _) = do
+keyboardHandler s (Char c, m) | noM m && c >= '0' && c <= '9' = setVolume' c s
+keyboardHandler s (Char c, _) | otherwise = do
   msp $ ("?? " ++ (show c))
   return DoNothing
 keyboardHandler _ _ = do
   return DoNothing
+
+setVolume' :: Char -> State -> IO (GuiCommand State)
+setVolume' c s = do --msp ("volume", c, volume, fromEnum c - 48)
+                    setVolume volume (looper s)
+                    return DoNothing
+  where volume = fromIntegral (fromEnum c - 48) * (1.0 / 9.0)
 
 -- Replace the pool with a new random selection -- except keep the ones that
 -- have already been liked/disliked

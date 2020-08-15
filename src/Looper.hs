@@ -5,6 +5,7 @@ module Looper
 , setZound
 , noSound
 , getProgress
+, setVolume
 ) where
 
 import Control.Concurrent (forkIO, killThread)
@@ -28,7 +29,7 @@ foreign import ccall "term_audio" term_audio :: IO ()
 -- granularity = 64
 granularity = 16 * 64
 
-data Looper = Looper (MVar FSamples) (IORef Int) (IORef Int)
+data Looper = Looper (MVar FSamples) (IORef Int) (IORef Int) (IORef Float)
 
 withPortaudio :: IO a -> IO a
 withPortaudio action = do
@@ -40,7 +41,8 @@ withLooper action = do
   sv <- newEmptyMVar
   iv <- newIORef 0
   lv <- newIORef 1
-  let looper = Looper sv iv lv
+  vv <- newIORef 1.0
+  let looper = Looper sv iv lv vv
   threadId <- forkIO $ loop looper
   let cleanup = killThread threadId
   (action looper) `finally` cleanup
@@ -49,7 +51,7 @@ setZound :: Looper -> Zound -> IO ()
 setZound l sound = do
   --msp ("set", SV.length (amples sound))
   -- Dum way to make sure the sound is evaluated before putting it in the mvar
-  let (Looper sv _ lv) = (samples sound) `seq` l
+  let (Looper sv _ lv vv) = (samples sound) `seq` l
       samplesF = samplesAsFloats sound
   empty <- isEmptyMVar sv
   if empty
@@ -59,7 +61,7 @@ setZound l sound = do
   writeIORef lv (numFrames sound * 2)
 
 noSound :: Looper -> IO ()
-noSound (Looper sv iv _) = do
+noSound (Looper sv iv _ _) = do
   msp "clearing"
   empty <- isEmptyMVar sv
   if empty
@@ -70,23 +72,24 @@ noSound (Looper sv iv _) = do
 loop :: Looper -> IO ()
 loop looper = loop' looper 0
 loop' :: Looper -> Int -> IO ()
-loop' l@(Looper sv iv _) currentIndex = do
+loop' l@(Looper sv iv _ vv) currentIndex = do
   --msp currentIndex
   buffer <- readMVar sv
+  volume <- readIORef vv
   let grain = SV.take granularity (SV.drop currentIndex buffer)
       grainLength = SV.length grain
       nextCurrentIndex = (currentIndex + (grainLength * 1)) `mod` (SV.length buffer)
   if nextCurrentIndex < currentIndex
      then msp "loop restarting"
      else return ()
-  writeAudioAllAtOnce grain
+  writeAudioAllAtOnce volume grain
   writeIORef iv currentIndex
   --msp ("wrote", currentIndex)
   loop' l nextCurrentIndex
 
 -- returns 0..1
 getProgress :: Looper -> IO Float
-getProgress (Looper _ iv lv) = do
+getProgress (Looper _ iv lv vv) = do
   currentIndex <- readIORef iv
   length <- readIORef lv
   return $ fromIntegral currentIndex / fromIntegral length
@@ -102,10 +105,17 @@ getProgress (Looper _ iv lv) = do
   ----let numGrains = SV.length buffer
   ----return $ fromIntegral currentIndex / fromIntegral numGrains
 
-writeAudioAllAtOnce :: Vector Float -> IO ()
-writeAudioAllAtOnce v = do
+writeAudioAllAtOnce :: Float -> Vector Float -> IO ()
+writeAudioAllAtOnce volume v' = do
+  --msp ("scale", volume)
+  let v = SV.map (* volume) v' :: Vector Float
   let (fpAll, startFloats, length) = SVB.toForeignPtr v
       startBytes = startFloats * 4
       fp = fpAll `plusForeignPtr` startBytes
   --msp ("oh", startBytes, length, fp)
   withForeignPtr fp (\ptr -> write_audio ptr (length `div` 2))
+
+setVolume :: Float -> Looper -> IO ()
+setVolume volume (Looper _ _ _ vv)
+  | volume >= 0.0 && volume <= 1.0 = writeIORef vv volume
+  | otherwise = return ()

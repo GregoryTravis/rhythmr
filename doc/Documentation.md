@@ -34,6 +34,7 @@ Details at the bottom.
 * **W** - write current song to disk
 * **S** - generate song
 * **J** - generate drum-n-bass-style song
+* **0-9** - volume
 
 Deprecated commands:
 * **s** - new group, subsets
