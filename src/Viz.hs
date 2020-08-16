@@ -250,8 +250,12 @@ renderViz t s (Viz pics fiz) = do
   return $ Pictures $ [hc] ++ seqPics ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
-renderFiz s fiz = (fizEdges s fiz) ++ map toPic (loops s)
-  where toPic :: Loop -> Picture
+renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked
+  where likedSet = S.unions $ map S.fromList (S.toList (likes s))
+        unlikedSet = (S.fromList (loops s)) `S.difference` likedSet
+        liked = S.toList likedSet
+        unliked = S.toList unlikedSet
+        toPic :: Loop -> Picture
         toPic loop = Translate x y $ rect (colorFor loop) black
           where V2 x y = getPos fiz loop
         allLiked = S.unions (map S.fromList (S.toList (likes s)))
@@ -262,7 +266,7 @@ fizEdges :: State -> Fiz Loop -> [Picture]
 fizEdges s fiz = map (groupEdges fiz) (S.toList (likes s))
 
 groupEdges :: Fiz Loop -> [Loop] -> Picture
-groupEdges fiz loops = Line ptsClosed
+groupEdges fiz loops = Polygon ptsClosed
   where ptsClosed = take (length pts + 1) (cycle pts)
         pts = map toPoint (map (getPos fiz) loops)
         toPoint (V2 x y) = (x, y)

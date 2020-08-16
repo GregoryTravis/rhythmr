@@ -27,6 +27,9 @@ speed = 100
 groupRadius :: F
 groupRadius = 40
 
+tiny :: F
+tiny = 1.75
+
 -- positions: map from elements to locations.
 data Fiz a = Fiz { positions :: M.Map a Pos }
   deriving Show
@@ -79,12 +82,17 @@ nudgeElement dt fiz target n i x = Nudge x (nudgeFromTo dt (radialSpread i n (ge
 -- - scale it by dt
 -- - zero it if it's small, so we don't get wiggle
 nudgeFromTo :: Float -> Pos -> Pos -> Pos
-nudgeFromTo dt x x' = crop (x' - x) (dt * speed)
+nudgeFromTo dt x x' = crop (noTiny tiny (x' - x)) (dt * speed)
 
 -- if v is longer than len, crop to len, otherwise return it unmodified
 crop :: V2 F -> F -> V2 F
 crop v len | norm v > len = signorm v ^* len
-            | otherwise = v
+           | otherwise = v
+
+-- If v is shorter than len, crop to 0, otherwise return it unmodified
+noTiny :: F -> V2 F -> V2 F
+noTiny len v | norm v < len = V2 0 0
+             | otherwise = v
 
 centerOfGravity :: Ord a => Fiz a -> [a] -> Pos
 centerOfGravity fiz [] = error "centerOfGravity of empty list"
