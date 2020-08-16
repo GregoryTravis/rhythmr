@@ -14,6 +14,7 @@ module Viz
 import Data.IORef
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import qualified Data.Vector as V
 import Data.Maybe (fromJust, fromMaybe)
 import Graphics.Gloss
@@ -27,6 +28,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 import Animate
 import Constants
+import Fiz
 import Gui
 import qualified Hash as H
 import Hypercube
@@ -36,6 +38,8 @@ import Memoize
 import State
 import Util
 import Zounds hiding (Translate, Scale)
+
+useFiz = True
 
 instance Ord Color where
   compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
@@ -156,7 +160,7 @@ mapSquish f (MarkP tag pos) = [f pos]
 mapSquish f (CurP tag pos _) = [f pos]
 
 gcReport :: Viz -> [Int]
-gcReport (Viz pics) = concat $ map (mapSquish aValSize) pics
+gcReport (Viz pics _) = concat $ map (mapSquish aValSize) pics
 
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
@@ -210,16 +214,16 @@ colorInterpolator' t s e color color' = makeColor r'' g'' b'' a''
 -- pef :: Show (c _) => Pic c
 -- pef = undefined
 
-data Viz = Viz [Pic AVal]
+data Viz = Viz [Pic AVal] (Fiz Loop)
   deriving Show
 initViz :: Viz
-initViz = Viz []
+initViz = Viz [] emptyFiz
 
 -- Match old and new Pics via id; new ones are just initialized via const
 updateViz :: Float -> Viz -> [Pic AVal] -> Viz
-updateViz t (Viz oldPics) newPics =
+updateViz t (Viz oldPics fiz) newPics =
   let oldAndNew = filter hasNew $ pairUp oldPics newPics getTag getTag
-   in Viz $ map merge oldAndNew
+   in Viz (map merge oldAndNew) fiz
   where hasNew (_, Nothing) = False
         hasNew _ = True
         merge (Just oldPic, Just newPic) = updatePic t (t+duration) oldPic newPic
@@ -229,7 +233,7 @@ unR2 (V2 x y) = (x, y)
 
 -- TODO: This matrix ioref in the state is a crime against nature
 renderViz :: Float -> State -> Viz -> IO Picture
-renderViz t s (Viz pics) = do
+renderViz t s (Viz pics fiz) = do
   mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
       (hc, mat') = renderHypercube s mat t
@@ -240,7 +244,15 @@ renderViz t s (Viz pics) = do
   -- (tx, cursor) <- sequenceCursor s
   let seqPics = map (Translate (-progress) 0) $ map renderPic $ map (mapPic (aValToId t)) $ renderCurrentSong progress s
   --msp ("renderViz", cursor)
-  return $ Pictures $ [hc] ++ seqPics ++ anims ++ [strategy] ++ labels
+  let fizMaybe = if useFiz then renderFiz s fiz else []
+      animsMaybe = if useFiz then [] else anims
+  return $ Pictures $ [hc] ++ seqPics ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
+
+renderFiz :: State -> Fiz Loop -> [Picture]
+renderFiz s fiz = map toPic (loops s)
+  where toPic :: Loop -> Picture
+        toPic loop = Translate x y $ rect (loopColor loop) black
+          where V2 x y = getPos fiz loop
 
 renderLabels :: [Picture]
 renderLabels = [ at (-335) (350) "Loops"
@@ -417,14 +429,14 @@ vRect width color borderColor = Pictures [bg, border]
 vRectBorder :: Float -> Color -> Picture
 vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 width rectHeight)
 
-rectBorder :: Color -> Picture
---rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
-rectBorder color = Color color $ thickBorder rectThickness (V2 0 0) rectDim
+--rectBorder :: Color -> Picture
+----rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
+--rectBorder color = Color color $ thickBorder rectThickness (V2 0 0) rectDim
 
-rectAt :: V2 Float -> V2 Float -> Picture
-rectAt a b = Translate tx ty $ Polygon $ rectanglePath w h
-  where V2 w h = b - a
-        V2 tx ty = ((b - a) / 2) + a
+--rectAt :: V2 Float -> V2 Float -> Picture
+--rectAt a b = Translate tx ty $ Polygon $ rectanglePath w h
+--  where V2 w h = b - a
+--        V2 tx ty = ((b - a) / 2) + a
 
 thickLine :: Float -> V2 Float -> V2 Float -> Picture
 thickLine thickness a b = Polygon (map unR2 pts)
@@ -643,7 +655,14 @@ reportViz = id
 --reportViz v = eesp (gcReport v) v
 
 stateToViz :: State -> Viz -> State -> Float -> Viz
-stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
+stateToViz oldS v s t = reportViz $ updateFizOfViz s (updateViz t v (stateToPics t oldS s))
+
+-- Update the Fiz part of the Viz
+updateFizOfViz :: State -> Viz -> Viz
+updateFizOfViz s (Viz pics fiz) = Viz pics (updateFiz s fiz)
+
+updateFiz :: State -> Fiz Loop -> Fiz Loop
+updateFiz s fiz = update (loops s) (S.toList $ likes s) fiz
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =

@@ -3,7 +3,9 @@
 
 module Fiz
 ( Fiz
+, emptyFiz
 , update
+, getPos
 ) where
 
 import qualified Data.Map.Strict as M
@@ -14,15 +16,20 @@ import System.Random
 import Loop
 import Util
 
-type F = Double 
+type F = Float 
 type Pos = V2 F
 data Nudge a = Nudge a (V2 F)
+  deriving Show
 
 speed :: F
 speed = 1.0
 
 -- positions: map from elements to locations.
 data Fiz a = Fiz { positions :: M.Map a Pos }
+  deriving Show
+
+emptyFiz :: Fiz a
+emptyFiz = Fiz { positions = M.empty }
 
 -- Assumes we have a value for this element
 getPos :: Ord a => Fiz a -> a -> Pos
@@ -33,7 +40,7 @@ modPos fiz f x = Fiz { positions = M.insert x p' (positions fiz) }
   where p' = f (getPos fiz x)
 
 -- Update elements to move towards the centers of gravity of the groups they are in.
-update :: Ord a => [a] -> [[a]] -> Fiz a -> Fiz a
+update :: (Show a, Ord a) => [a] -> [[a]] -> Fiz a -> Fiz a
 update xs groups f =
   let f' = updatePositionSet xs f
    in applyNudges f' (nudges f' groups)
@@ -52,15 +59,15 @@ updatePositionSet xs fiz = Fiz positions'
 -- For each element in each group, calculate a delta that moves it towards the
 -- cog of that group. Since an element can be in multiple groups, there can be
 -- multiple nudges per element.
-nudges :: Ord a => Fiz a -> [[a]] -> [Nudge a]
+nudges :: (Show a, Ord a) => Fiz a -> [[a]] -> [Nudge a]
 nudges f groups = concat (map (nudgeGroup f) groups)
-nudgeGroup :: Ord a => Fiz a -> [a] -> [Nudge a]
-nudgeGroup fiz xs = map (nudgeElement fiz cog) xs
+nudgeGroup :: (Show a, Ord a) => Fiz a -> [a] -> [Nudge a]
+nudgeGroup fiz xs = {-eesp ("up", xs, cog) $-} map (nudgeElement fiz cog) xs
   where cog = centerOfGravity fiz xs
 nudgeElement :: Ord a => Fiz a -> Pos -> a -> Nudge a
 nudgeElement fiz target x = Nudge x (nudgeFromTo (getPos fiz x) target)
 nudgeFromTo :: Pos -> Pos -> Pos
-nudgeFromTo x x' = x + (signorm (x' - x) ^* speed)
+nudgeFromTo x x' = eeesp (x, x', x' - x, speed, signorm (x' - x)) $ ((signorm (x' - x)) ^* speed)
 
 centerOfGravity :: Ord a => Fiz a -> [a] -> Pos
 centerOfGravity fiz [] = error "centerOfGravity of empty list"
@@ -79,7 +86,8 @@ applyNudge fiz (Nudge x v) = modPos fiz (+v) x
 -- positions.
 randomPositions :: [Pos]
 randomPositions =
-  let rands = randomRs (-10, 10) (mkStdGen 37)
+  let rands = randomRs (-size, size) (mkStdGen 37)
    in posUp rands
   where posUp :: [F] -> [Pos]
         posUp (x:y:rest) = V2 x y : posUp rest
+        size = 200
