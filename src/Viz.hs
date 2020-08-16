@@ -266,10 +266,19 @@ fizEdges :: State -> Fiz Loop -> [Picture]
 fizEdges s fiz = map (groupEdges fiz) (S.toList (likes s))
 
 groupEdges :: Fiz Loop -> [Loop] -> Picture
-groupEdges fiz loops = Polygon ptsClosed
+groupEdges fiz loops = Color color $ Polygon ptsClosed
   where ptsClosed = take (length pts + 1) (cycle pts)
         pts = map toPoint (map (getPos fiz) loops)
         toPoint (V2 x y) = (x, y)
+        color = withAlpha 0.15 $ mixColors' (map loopColor loops)
+
+mixColors' :: [Color] -> Color
+mixColors' [] = error "mixColors: empty"
+mixColors' colors =
+  let tuples = map rgbaOfColor colors
+      vs = map (\(r, g, b, a) -> V4 r g b a) tuples
+      mixedV = sum vs / (fromIntegral $ length vs)
+   in case mixedV of V4 r g b a -> makeColor r g b a
 
 renderLabels :: [Picture]
 renderLabels = [ at (-335) (350) "Loops"
