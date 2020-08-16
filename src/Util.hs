@@ -51,6 +51,7 @@ module Util
 , applyMaybes
 , trace
 , gridShow
+, imap
 ) where
 
 import Control.Exception
@@ -321,3 +322,6 @@ removeSuffix suffix s =
   if isSuffixOf suffix s
     then take (length s - length suffix) s
     else s
+
+imap :: (Int -> a -> b) -> [a] -> [b]
+imap f xs = zipWith f [0..] xs

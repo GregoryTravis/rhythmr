@@ -65,18 +65,21 @@ updatePositionSet xs fiz = Fiz positions'
 nudges :: (Show a, Ord a) => Float -> Fiz a -> [[a]] -> [Nudge a]
 nudges dt f groups = concat (map (nudgeGroup dt f) groups)
 nudgeGroup :: (Show a, Ord a) => Float -> Fiz a -> [a] -> [Nudge a]
-nudgeGroup dt fiz xs = {-eesp ("up", xs, cog) $-} map (nudgeElement dt fiz cog) xs
+nudgeGroup dt fiz xs = {-eesp ("up", xs, cog) $-} imap (nudgeElement dt fiz cog (length xs)) xs
   where cog = centerOfGravity fiz xs
-nudgeElement :: Ord a => Float -> Fiz a -> Pos -> a -> Nudge a
-nudgeElement dt fiz target x = Nudge x (nudgeFromTo dt (getPos fiz x) target)
+nudgeElement :: Ord a => Float -> Fiz a -> Pos -> Int -> Int -> a -> Nudge a
+nudgeElement dt fiz target n i x = Nudge x (nudgeFromTo dt (radialSpread i n (getPos fiz x)) target)
+  where -- Place around the circle at location i of n
+        radialSpread :: Int -> Int -> Pos -> Pos
+        radialSpread i n p = p + (rot ^* groupRadius)
+          where ang = (2 * pi * (fromIntegral i)) / (fromIntegral n)
+                rot = V2 (cos ang) (sin ang)
 -- To nudge towards a target cog, we:
 -- - move back from the cog, since we don't want to actually have them all move to the same spot
 -- - scale it by dt
 -- - zero it if it's small, so we don't get wiggle
 nudgeFromTo :: Float -> Pos -> Pos -> Pos
-nudgeFromTo dt x x' =
-  let x'' = x' + (signorm (x - x') ^* groupRadius)
-   in crop (x'' - x) (dt * speed)
+nudgeFromTo dt x x' = crop (x' - x) (dt * speed)
 
 -- if v is longer than len, crop to len, otherwise return it unmodified
 crop :: V2 F -> F -> V2 F
