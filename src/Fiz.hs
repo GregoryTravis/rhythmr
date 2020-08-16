@@ -67,7 +67,7 @@ nudgeGroup fiz xs = {-eesp ("up", xs, cog) $-} map (nudgeElement fiz cog) xs
 nudgeElement :: Ord a => Fiz a -> Pos -> a -> Nudge a
 nudgeElement fiz target x = Nudge x (nudgeFromTo (getPos fiz x) target)
 nudgeFromTo :: Pos -> Pos -> Pos
-nudgeFromTo x x' = eeesp (x, x', x' - x, speed, signorm (x' - x)) $ ((signorm (x' - x)) ^* speed)
+nudgeFromTo x x' = (signorm (x' - x)) ^* speed
 
 centerOfGravity :: Ord a => Fiz a -> [a] -> Pos
 centerOfGravity fiz [] = error "centerOfGravity of empty list"

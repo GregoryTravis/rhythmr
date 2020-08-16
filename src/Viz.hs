@@ -9,6 +9,7 @@ module Viz
   ( stateToViz
   , initViz
   , renderViz
+  , updateFiz
   ) where
 
 import Data.IORef
@@ -655,14 +656,11 @@ reportViz = id
 --reportViz v = eesp (gcReport v) v
 
 stateToViz :: State -> Viz -> State -> Float -> Viz
-stateToViz oldS v s t = reportViz $ updateFizOfViz s (updateViz t v (stateToPics t oldS s))
+stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
 
--- Update the Fiz part of the Viz
-updateFizOfViz :: State -> Viz -> Viz
-updateFizOfViz s (Viz pics fiz) = Viz pics (updateFiz s fiz)
-
-updateFiz :: State -> Fiz Loop -> Fiz Loop
-updateFiz s fiz = update (loops s) (S.toList $ likes s) fiz
+updateFiz :: State -> Viz -> Viz
+updateFiz s (Viz pics fiz) = Viz pics fiz'
+  where fiz' = update (loops s) (S.toList $ likes s) fiz
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =

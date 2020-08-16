@@ -39,12 +39,12 @@ data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, las
 data GuiCommand s = NewState s | Save FilePath | Load FilePath | Undo | Redo | UndoFully | RedoFully | Quit | QuitWithoutSaving | SaveAndQuit FilePath | GuiCommands [GuiCommand s] | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> IO Picture) ->
+guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (s -> v -> v) -> (Float -> s -> v -> IO Picture) ->
                                              (s -> (Key, Modifiers) -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO () -> IO ()
-guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz keyboardHandler respondToStateChange onExit = do
+guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz renderViz keyboardHandler respondToStateChange onExit = do
   initHistory <- loadOrDefault loader defaultState filenameMaybe
   let s = cur initHistory
-
+      initViz = updateViz s initViz'
       initWorld = GuiState initHistory 0 (stateToViz (cur initHistory) initViz s 0) initHistory
       worldToPicture (GuiState h t v _) = renderViz t (cur h) v
       eventHandler ev@(EventKey key Down modifiers _) gs@(GuiState h t v lastH) = do
@@ -64,7 +64,7 @@ guiMain defaultState filenameMaybe initViz saver loader stateToViz renderViz key
       eventHandler e gs = do
         --msp $ "?? " ++ (show e)
         return gs
-      stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) v lastH
+      stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) (updateViz (cur h) v) lastH
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (810, 10)
         bgColor = white
