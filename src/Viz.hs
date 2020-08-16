@@ -658,9 +658,9 @@ reportViz = id
 stateToViz :: State -> Viz -> State -> Float -> Viz
 stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
 
-updateFiz :: State -> Viz -> Viz
-updateFiz s (Viz pics fiz) = Viz pics fiz'
-  where fiz' = update (loops s) (S.toList $ likes s) fiz
+updateFiz :: Float -> State -> Viz -> Viz
+updateFiz dt s (Viz pics fiz) = Viz pics fiz'
+  where fiz' = update dt (loops s) (S.toList $ likes s) fiz
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =

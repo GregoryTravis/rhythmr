@@ -22,7 +22,7 @@ data Nudge a = Nudge a (V2 F)
   deriving Show
 
 speed :: F
-speed = 1
+speed = 100
 
 groupRadius :: F
 groupRadius = 40
@@ -43,10 +43,10 @@ modPos fiz f x = Fiz { positions = M.insert x p' (positions fiz) }
   where p' = f (getPos fiz x)
 
 -- Update elements to move towards the centers of gravity of the groups they are in.
-update :: (Show a, Ord a) => [a] -> [[a]] -> Fiz a -> Fiz a
-update xs groups f =
+update :: (Show a, Ord a) => Float -> [a] -> [[a]] -> Fiz a -> Fiz a
+update dt xs groups f =
   let f' = updatePositionSet xs f
-   in applyNudges f' (nudges f' groups)
+   in applyNudges f' (nudges dt f' groups)
 
 -- The set of elements can change at each update. Remove all the elements that
 -- are no longer in the element set, and for all new elements, add them with a
@@ -62,21 +62,21 @@ updatePositionSet xs fiz = Fiz positions'
 -- For each element in each group, calculate a delta that moves it towards the
 -- cog of that group. Since an element can be in multiple groups, there can be
 -- multiple nudges per element.
-nudges :: (Show a, Ord a) => Fiz a -> [[a]] -> [Nudge a]
-nudges f groups = concat (map (nudgeGroup f) groups)
-nudgeGroup :: (Show a, Ord a) => Fiz a -> [a] -> [Nudge a]
-nudgeGroup fiz xs = {-eesp ("up", xs, cog) $-} map (nudgeElement fiz cog) xs
+nudges :: (Show a, Ord a) => Float -> Fiz a -> [[a]] -> [Nudge a]
+nudges dt f groups = concat (map (nudgeGroup dt f) groups)
+nudgeGroup :: (Show a, Ord a) => Float -> Fiz a -> [a] -> [Nudge a]
+nudgeGroup dt fiz xs = {-eesp ("up", xs, cog) $-} map (nudgeElement dt fiz cog) xs
   where cog = centerOfGravity fiz xs
-nudgeElement :: Ord a => Fiz a -> Pos -> a -> Nudge a
-nudgeElement fiz target x = Nudge x (nudgeFromTo (getPos fiz x) target)
+nudgeElement :: Ord a => Float -> Fiz a -> Pos -> a -> Nudge a
+nudgeElement dt fiz target x = Nudge x (nudgeFromTo dt (getPos fiz x) target)
 -- To nudge towards a target cog, we:
 -- - move back from the cog, since we don't want to actually have them all move to the same spot
 -- - scale it by dt
 -- - zero it if it's small, so we don't get wiggle
-nudgeFromTo :: Pos -> Pos -> Pos
-nudgeFromTo x x' =
+nudgeFromTo :: Float -> Pos -> Pos -> Pos
+nudgeFromTo dt x x' =
   let x'' = x' + (signorm (x - x') ^* groupRadius)
-   in (signorm (x'' - x)) ^* speed
+   in (signorm (x'' - x)) ^* (dt * speed)
 
 centerOfGravity :: Ord a => Fiz a -> [a] -> Pos
 centerOfGravity fiz [] = error "centerOfGravity of empty list"
