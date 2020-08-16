@@ -76,7 +76,12 @@ nudgeElement dt fiz target x = Nudge x (nudgeFromTo dt (getPos fiz x) target)
 nudgeFromTo :: Float -> Pos -> Pos -> Pos
 nudgeFromTo dt x x' =
   let x'' = x' + (signorm (x - x') ^* groupRadius)
-   in (signorm (x'' - x)) ^* (dt * speed)
+   in crop (x'' - x) (dt * speed)
+
+-- if v is longer than len, crop to len, otherwise return it unmodified
+crop :: V2 F -> F -> V2 F
+crop v len | norm v > len = signorm v ^* len
+            | otherwise = v
 
 centerOfGravity :: Ord a => Fiz a -> [a] -> Pos
 centerOfGravity fiz [] = error "centerOfGravity of empty list"
