@@ -252,8 +252,11 @@ renderViz t s (Viz pics fiz) = do
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic (loops s)
   where toPic :: Loop -> Picture
-        toPic loop = Translate x y $ rect (loopColor loop) black
+        toPic loop = Translate x y $ rect (colorFor loop) black
           where V2 x y = getPos fiz loop
+        allLiked = S.unions (map S.fromList (S.toList (likes s)))
+        colorFor loop | S.member loop allLiked = loopColor loop
+                      | otherwise = alphaLoopColor loop
 
 renderLabels :: [Picture]
 renderLabels = [ at (-335) (350) "Loops"
