@@ -22,7 +22,10 @@ data Nudge a = Nudge a (V2 F)
   deriving Show
 
 speed :: F
-speed = 1.0
+speed = 1
+
+groupRadius :: F
+groupRadius = 40
 
 -- positions: map from elements to locations.
 data Fiz a = Fiz { positions :: M.Map a Pos }
@@ -66,8 +69,14 @@ nudgeGroup fiz xs = {-eesp ("up", xs, cog) $-} map (nudgeElement fiz cog) xs
   where cog = centerOfGravity fiz xs
 nudgeElement :: Ord a => Fiz a -> Pos -> a -> Nudge a
 nudgeElement fiz target x = Nudge x (nudgeFromTo (getPos fiz x) target)
+-- To nudge towards a target cog, we:
+-- - move back from the cog, since we don't want to actually have them all move to the same spot
+-- - scale it by dt
+-- - zero it if it's small, so we don't get wiggle
 nudgeFromTo :: Pos -> Pos -> Pos
-nudgeFromTo x x' = (signorm (x' - x)) ^* speed
+nudgeFromTo x x' =
+  let x'' = x' + (signorm (x - x') ^* groupRadius)
+   in (signorm (x'' - x)) ^* speed
 
 centerOfGravity :: Ord a => Fiz a -> [a] -> Pos
 centerOfGravity fiz [] = error "centerOfGravity of empty list"
