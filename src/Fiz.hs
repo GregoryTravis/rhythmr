@@ -22,13 +22,13 @@ data Nudge a = Nudge a (V2 F)
   deriving Show
 
 speed :: F
-speed = 100
+speed = 450
 
 groupRadius :: F
-groupRadius = 40
+groupRadius = 100
 
 tiny :: F
-tiny = 1.75
+tiny = 2.5
 
 -- positions: map from elements to locations.
 data Fiz a = Fiz { positions :: M.Map a Pos }
@@ -115,4 +115,4 @@ randomPositions =
    in posUp rands
   where posUp :: [F] -> [Pos]
         posUp (x:y:rest) = V2 x y : posUp rest
-        size = 200
+        size = 350
