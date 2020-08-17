@@ -338,9 +338,10 @@ ramps :: [a] -> [[a]]
 ramps = concat . tail . inits . tail . inits
 
 oneTwoThree :: [a] -> [[a]]
-oneTwoThree xs = dub [[one], [one, two]] ++ dub [[one, three], [one, two, three]]
-  where [one, two, three] = xs
-        dub xs = xs ++ xs
+oneTwoThree [one, two] = dub [[one], [one, two]]
+  where dub xs = xs ++ xs
+oneTwoThree [one, two, three] = dub [[one], [one, two]] ++ dub [[one, three], [one, two, three]]
+  where dub xs = xs ++ xs
 
 cycles :: [a] -> [[a]]
 cycles xs = xs : cycles (tail (cycle xs))
@@ -357,6 +358,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
       loopGrid = concat $ (map mini stacks)
    in take desiredLengthLoops loopGrid
   where mini :: (Show a, Ord a) => [a] -> [[a]]
+        mini xs@[_, _] = oneTwoThree xs
         mini xs =
           let --cycled :: [a]
               cycled = cycle xs
@@ -365,7 +367,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
               --firstThrees :: [[a]]
               firstThrees = map (take 3) cycles
               justOneFirstThree = [head firstThrees]
-           in concat $ map (map nubOrd) $ map oneTwoThree justOneFirstThree
+           in concat $ nubOrd $ map (map nubOrd) $ eeesp ("um", justOneFirstThree) $ map oneTwoThree justOneFirstThree
 
 groupBySourceTrack :: [Loop] -> [[Loop]]
 --groupBySourceTrack = groupUsing getSourceTrackHash
