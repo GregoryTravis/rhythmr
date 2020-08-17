@@ -40,8 +40,6 @@ import State
 import Util
 import Zounds hiding (Translate, Scale)
 
-useFiz = True
-
 instance Ord Color where
   compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
 
@@ -245,8 +243,8 @@ renderViz t s (Viz pics fiz) = do
   -- (tx, cursor) <- sequenceCursor s
   let seqPics = map (Translate (-progress) 0) $ map renderPic $ map (mapPic (aValToId t)) $ renderCurrentSong progress s
   --msp ("renderViz", cursor)
-  let fizMaybe = if useFiz then renderFiz s fiz else []
-      animsMaybe = if useFiz then [] else anims
+  let fizMaybe = if (useFiz s) then renderFiz s fiz else []
+      animsMaybe = if (useFiz s) then [] else anims
   return $ Pictures $ [hc] ++ seqPics ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]

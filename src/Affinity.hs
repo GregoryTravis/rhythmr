@@ -74,7 +74,7 @@ makeLoader projectDir soundLoader looper (StateRep { repLoops, repLikes, repDisl
   --msp ("YEP", projectDir)
   return $ State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
                    stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
-                   currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections }
+                   currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
@@ -117,7 +117,7 @@ initState projectDir soundLoader looper collections = do
   newPool $ State { projectDir, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
-                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing }
+                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, useFiz = False }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -145,6 +145,7 @@ keyboardHandler :: State -> (Key, Modifiers) -> IO (GuiCommand State)
 --  setState s'
 keyboardHandler s (Char 'E', m) | shiftM m = do s' <- newPool s
                                                 setState s'
+keyboardHandler s (Char 'F', m) | shiftM m = do setState (s { useFiz = not (useFiz s) })
 keyboardHandler s (SpecialKey KeySpace, m) | noM m = setState $ skip s (Just RandomStrategy)
 keyboardHandler s (SpecialKey KeyRight, m) | noM m = setState $ like s Nothing
 keyboardHandler s (Char 'r', m) | noM m = setState $ skip s (Just RandomStrategy)

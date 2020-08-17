@@ -48,7 +48,8 @@ data State =
         , affinityCycle :: Int
         , currentHypercubeMat :: IORef Mat
         , rand :: StdGen
-        , strategy :: Maybe String }
+        , strategy :: Maybe String
+        , useFiz :: Bool }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
