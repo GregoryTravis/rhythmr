@@ -367,7 +367,7 @@ buildLoopGrid s@(State { affinityCycle, likes }) =
               --firstThrees :: [[a]]
               firstThrees = map (take 3) cycles
               justOneFirstThree = [head firstThrees]
-           in concat $ nubOrd $ map (map nubOrd) $ eeesp ("um", justOneFirstThree) $ map oneTwoThree justOneFirstThree
+           in concat $ nubOrd $ map (map nubOrd) $ map oneTwoThree justOneFirstThree
 
 groupBySourceTrack :: [Loop] -> [[Loop]]
 --groupBySourceTrack = groupUsing getSourceTrackHash

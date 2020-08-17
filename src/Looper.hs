@@ -29,6 +29,11 @@ foreign import ccall "term_audio" term_audio :: IO ()
 -- granularity = 64
 granularity = 16 * 64
 
+-- Looper sv iv lv vv
+--   sv: the samples
+--   iv: played so far; only used by getProgress
+--   lv: the length of the current sound
+--   vv: volume
 data Looper = Looper (MVar FSamples) (IORef Int) (IORef Int) (IORef Float)
 
 withPortaudio :: IO a -> IO a
