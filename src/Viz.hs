@@ -525,7 +525,7 @@ playHeadMaybe :: State -> [Picture]
 playHeadMaybe (State { currentSong = Nothing }) = []
 playHeadMaybe _ = [playHead]
   where playHead = Translate 0 ht $ downTri
-        ht = (-(fromIntegral windowHeight / 4)) + 20
+        ht = (-(fromIntegral windowHeight / 4)) + 25
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong progress (State { currentSong = Nothing }) = []
