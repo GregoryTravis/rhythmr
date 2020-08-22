@@ -66,7 +66,7 @@ guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz re
         return gs
       stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) (updateViz dt (cur h) v) lastH
    in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
-  where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (810, 10)
+  where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (440, 125)
         bgColor = white
 
 loadOrDefault :: (Binary t, Read t) => Loader s t -> s -> Maybe FilePath -> IO (History s)
