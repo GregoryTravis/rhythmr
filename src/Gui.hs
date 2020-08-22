@@ -136,6 +136,11 @@ loadHistoryAndSurviveSomehow filename loader = do
   -- Throw away giant history, fixes cpu pinning
   -- Load filename -> do fmap (start . cur) $ load filename loader
 
+displayUndoState :: History s -> IO (History s)
+displayUndoState h = do
+  putStrLn $ show $ hWhere h
+  return h
+
 execute :: (Eq s, Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> History s -> Saver s t -> Loader s t -> IO () -> IO (History s)
 execute command h lastH saver loader onExit =
   case command of NewState s -> return $ update h s
@@ -150,8 +155,8 @@ execute command h lastH saver loader onExit =
                   --                     msp ("len", length (toList h))
                   --                     let h' = fromList (take 1 (toList h))
                   --                     return h'
-                  Undo -> return $ undo h
-                  Redo -> return $ redo h
+                  Undo -> displayUndoState $ undo h
+                  Redo -> displayUndoState $ redo h
                   UndoFully -> return $ toBeginning h
                   RedoFully -> return $ toEnd h
                   QuitWithoutSaving -> do onExit
