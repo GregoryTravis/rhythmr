@@ -245,7 +245,8 @@ renderViz t s (Viz pics fiz) = do
   --msp ("renderViz", cursor)
   let fizMaybe = if (useFiz s) then renderFiz s fiz else []
       animsMaybe = if (useFiz s) then [] else anims
-  return $ Pictures $ [hc] ++ seqPics ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
+  let ph = playHeadMaybe s
+  return $ Pictures $ [hc] ++ seqPics ++ ph ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked
@@ -486,6 +487,9 @@ upTri = Color black $ Scale scale scale $ Polygon pts
   where pts = [(0.0, 0.5), (0.5, (-0.5)), ((-0.5), (-0.5))]
         scale = 10
 
+downTri :: Picture
+downTri = Scale (-1) (-1) upTri
+
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
 renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
@@ -516,6 +520,12 @@ currentsToPics s@(State { loops }) = map toPic loops
           where pos = fromJust $ applyMaybes [(curs M.!?), (aps M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
                 curs = currentPositions s
+
+playHeadMaybe :: State -> [Picture]
+playHeadMaybe (State { currentSong = Nothing }) = []
+playHeadMaybe _ = [playHead]
+  where playHead = Translate 0 ht $ downTri
+        ht = (-(fromIntegral windowHeight / 4)) + 20
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong progress (State { currentSong = Nothing }) = []
