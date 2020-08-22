@@ -55,6 +55,7 @@ executable rhythmr
                        generic-deriving,
                        --GLFW-b,
                        gloss,
+                       gloss-juicy,
                        --GLUT,
 --cabal install gloss --flags="GLFW -GLUT"
                        hsndfile >= 0.8.0,
