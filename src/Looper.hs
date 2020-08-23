@@ -29,6 +29,8 @@ foreign import ccall "term_audio" term_audio :: IO ()
 -- granularity = 64
 granularity = 64 * 64
 
+initVolume = 0.11111111
+
 -- Looper sv iv lv vv
 --   sv: the samples
 --   iv: played so far; only used by getProgress
@@ -46,7 +48,7 @@ withLooper action = do
   sv <- newEmptyMVar
   iv <- newIORef 0
   lv <- newIORef 1
-  vv <- newIORef 1.0
+  vv <- newIORef initVolume
   let looper = Looper sv iv lv vv
   threadId <- forkIO $ loop looper
   let cleanup = killThread threadId
@@ -122,5 +124,5 @@ writeAudioAllAtOnce volume v' = do
 
 setVolume :: Float -> Looper -> IO ()
 setVolume volume (Looper _ _ _ vv)
-  | volume >= 0.0 && volume <= 1.0 = writeIORef vv volume
+  | volume >= 0.0 && volume <= 1.0 = writeIORef vv (eeesp ("volume", volume) (volume * volume))
   | otherwise = return ()
