@@ -27,7 +27,7 @@ foreign import ccall "term_audio" term_audio :: IO ()
 
 -- This used to work
 -- granularity = 64
-granularity = 16 * 64
+granularity = 64 * 64
 
 -- Looper sv iv lv vv
 --   sv: the samples
