@@ -3,10 +3,10 @@ n=$1
 
 case $n in
   1)
-    proj='brubeck-64-66.rhythmr'
+    proj='moves-like-final.rhythmr'
     ;;
   2)
-    proj='moves-like-final.rhythmr'
+    proj='brubeck-64-66.rhythmr'
     ;;
   *)
     echo "??" $n
