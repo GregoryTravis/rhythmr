@@ -1,0 +1,17 @@
+#!/bin/bash
+n=$1
+
+case $n in
+  1)
+    proj='brubeck-64-66.rhythmr'
+    ;;
+  2)
+    proj='moves-like-final.rhythmr'
+    ;;
+  *)
+    echo "??" $n
+    exit 1
+esac
+
+cp farm-performance-histories/$proj/history $proj/history
+g aff $proj
