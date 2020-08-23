@@ -14,4 +14,4 @@ case $n in
 esac
 
 cp farm-performance-histories/$proj/history $proj/history
-g aff $proj
+g demo $proj

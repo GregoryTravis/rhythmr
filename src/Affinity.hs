@@ -134,6 +134,38 @@ ctrlM m = m == Modifiers { shift = Up, ctrl = Down, alt = Up }
 shiftCtrlM :: Modifiers -> Bool
 shiftCtrlM m = m == Modifiers { shift = Down, ctrl = Down, alt = Up }
 
+demoModeKeys :: [(Key, Modifiers -> Bool)]
+demoModeKeys =
+  [ (Char 'u', noM)
+  , (Char '\NAK', shiftCtrlM)
+  , (Char '\DC2', ctrlM)
+  , (Char '\DC2', shiftCtrlM)
+  , (SpecialKey KeyEsc, noM)
+  , (Char 'S', shiftM)
+  , (Char 'c', noM)
+  , (Char '0', noM)
+  , (Char '1', noM)
+  , (Char '2', noM)
+  , (Char '3', noM)
+  , (Char '4', noM)
+  , (Char '5', noM)
+  , (Char '6', noM)
+  , (Char '7', noM)
+  , (Char '8', noM)
+  , (Char '9', noM)
+  ]
+
+restrictToKeys :: [(Key, Modifiers -> Bool)] ->
+                  (State -> (Key, Modifiers) -> IO (GuiCommand State)) ->
+                  (State -> (Key, Modifiers) -> IO (GuiCommand State))
+restrictToKeys allowed h s input | any (match input) allowed = h s input
+                                 | otherwise = return DoNothing
+  where match :: (Key, Modifiers) -> (Key, Modifiers -> Bool) -> Bool
+        match (k, m) (k', mp) = k == k' && mp m
+
+demoKeyboardHandler :: State -> (Key, Modifiers) -> IO (GuiCommand State)
+demoKeyboardHandler = restrictToKeys demoModeKeys keyboardHandler
+
 -- TODO maybe function type aliases are not good
 keyboardHandler :: State -> (Key, Modifiers) -> IO (GuiCommand State)
 --keyboardHandler :: KeyboardHandler State
@@ -560,16 +592,18 @@ scanForCollections projectDir provided = do
       combinedWeights = providedWeights `M.union` defaultWeights
   return $ map swap (M.toList combinedWeights)
 
-affinityMain :: String -> Int -> [(Double, String)] -> IO ()
-affinityMain projectDir seed collections = do
+affinityMain :: Bool -> String -> Int -> [(Double, String)] -> IO ()
+affinityMain demoMode projectDir seed collections = do
+  msp $ "demo mode: " ++ show demoMode
   --msp ("before", collections)
   collections <- scanForCollections projectDir collections
   --msp ("after", collections)
+  let kh = if demoMode then demoKeyboardHandler else keyboardHandler
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
                     let loader = makeLoader projectDir soundLoader looper
                     s <- initState projectDir soundLoader looper collections
                     projectFile <- getProjectFile projectDir
-                    guiMain s (Just projectFile) initViz saver loader stateToViz updateFiz renderViz keyboardHandler respondToStateChange cleanupMemoMaybe
+                    guiMain s (Just projectFile) initViz saver loader stateToViz updateFiz renderViz kh respondToStateChange cleanupMemoMaybe
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

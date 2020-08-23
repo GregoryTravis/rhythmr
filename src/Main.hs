@@ -29,6 +29,7 @@ helpText = unlines
   , "rhythmr barsIdFile project-dir collection filename [filename, filename, ...]"
   , "rhythmr barsFile project-dir collection filename [filename, filename, ...]"
   , "rhythmr aff project-dir collection weight [collection weight, ...]"
+  , "rhythmr demo project-dir collection weight [collection weight, ...]"
   , "rhythmr credits" ]
 
 doHelp :: IO ()
@@ -42,10 +43,13 @@ doStuff ["barsSearch", projectDir, collection, searchString, numTracks] = barsSe
 doStuff ["barsId", projectDir, collection, id] = barsId projectDir collection id
 doStuff ("barsIdFile" : projectDir : collection : filenames) = barsIdFile projectDir collection filenames
 doStuff ("barsFile" : projectDir : collection : filenames) = barsFile projectDir collection filenames
-doStuff ("aff" : projectDir : collections) = affinityMain projectDir 2345 (parse collections)
-  where parse :: [String] -> [(Double, String)]
-        parse [] = []
-        parse (c : w : etc) = (read w, c) : parse etc
+doStuff ("aff" : projectDir : collections) = affinityMain False projectDir 2345 (parseCollections collections)
+doStuff ("demo" : projectDir : collections) = affinityMain True projectDir 2345 (parseCollections collections)
+
+parseCollections :: [String] -> [(Double, String)]
+parseCollections [] = []
+parseCollections (c : w : etc) = (read w, c) : parseCollections etc
+
 -- doStuff ["hy"] = hypercubeMain
 -- doStuff ["zound"] = zoundMain
 
