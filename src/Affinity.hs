@@ -437,7 +437,7 @@ setSong s mix = do
   noSound (looper s)
   z <- strictRender mix
   let s' = s { currentSong = Just (mix, z), currentGroup = [] }
-  setZound (looper s') z
+  setZoundFromTheTop (looper s') z
   setState s'
 
 -- Of all acceptable groups, pick the last one that has at least 4 elements
