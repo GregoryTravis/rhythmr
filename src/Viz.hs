@@ -47,6 +47,8 @@ duration = 0.5
 
 logo :: Picture
 logo = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/64.png"
+logoName :: Picture
+logoName = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/logo-name.png"
 
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
@@ -249,11 +251,12 @@ renderViz t s (Viz pics fiz) = do
   let fizMaybe = if (useFiz s) then renderFiz s fiz else []
       animsMaybe = if (useFiz s) then [] else anims
   let ph = playHeadMaybe s
-      logo' = Translate w h $ logo
-        where w = (fromIntegral $ windowWidth `div` 2) - margin - 0
-              h = (-((fromIntegral $ windowHeight `div` 2) - margin)) + (-4)
-              margin = 32 + 16
-  return $ Pictures $ [hc] ++ seqPics ++ ph ++ [logo'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
+      w = (fromIntegral $ windowWidth `div` 2) - margin - 0
+      h = (-((fromIntegral $ windowHeight `div` 2) - margin)) + (-4)
+      margin = 32 + 16
+      logo' = Translate w h logo
+      logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
+  return $ Pictures $ [hc] ++ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked
