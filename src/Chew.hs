@@ -5,7 +5,8 @@ module Chew
 , hiChew ) where
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (sortOn)
+import Data.List (sortOn, maximumBy)
+import Data.Ord (comparing)
 import qualified Data.Set as S
 import Data.Tuple (swap)
 import System.Random
@@ -239,17 +240,46 @@ interleave n = (evens, odds)
         odds = map (oddOr (-1)) ns
 
 alternate :: Int -> Zound -> Zound -> Zound
-alternate n z z' =
-  let (s, s') = interleave n
-   in Mix [sprinkle n s z, sprinkle n s' z']
+-- alternate n z z' =
+--   let (s, s') = interleave n
+--    in Mix [sprinkle n s z, sprinkle n s' z']
+alternate n = merge (map isEven [0..n-1])
+  where isEven x = x `mod` 2 == 0
+
+-- bs say whether to take a part from the first or the second. # of bools
+-- determines the # of pieces.
+merge :: [Bool] -> Zound -> Zound -> Zound
+merge bs z z' =
+  let zis = map (\(b, i) -> if b then i else (-1)) (zip bs [0..n-1])
+      z'is = map (\(b, i) -> if not b then i else (-1)) (zip bs [0..n-1])
+      n = length bs
+   in Mix [sprinkle n zis z, sprinkle n z'is z']
+
+hiChewers :: [Zound -> Zound -> Zound]
+hiChewers =
+  [ merge [True, False]
+  , merge [True, False, True, False]
+  , merge [True, True, False, True, True, False, True, False]
+  , merge [True, True, False, True, True, False, True, True, False, True, True, False, True, True, False, True]
+  ]
 
 hiChew :: State -> IO Zound
 hiChew s = do
-  z <- readZound "one.wav" >>= yah
-  z' <- readZound "two.wav" >>= yah
-  let s = sprinkle 4 [0, -1, 2, -1] z
-      s' = sprinkle 4 [-1, 1, -1, 3] z'
-  let grid = [[z], [z'], [s], [s'], [s, s'], [alternate 4 z z']]
+  -- z <- readZound "one.wav" >>= yah
+  -- z' <- readZound "two.wav" >>= yah
+  -- let s = sprinkle 4 [0, -1, 2, -1] z
+  --     s' = sprinkle 4 [-1, 1, -1, 3] z'
+  let stackLoops :: [Loop]
+      stackLoops = maximumBy (comparing length) (affinities s)
+  stacks <- loadGrid s [stackLoops]
+  let stack = stacks !! 0
+  msp ("stack", length stack)
+  let successivePairs = zip stack (tail stack)
+      chewed :: [[Zound]]
+      chewed = zipWith (\(z, z') f -> [f z z']) successivePairs (cycle hiChewers)
+  let -- grid = [[z], [z'], [s], [s'], [s, s'], [alternate 4 z z'], [merge [True, False, True, False] z z'], [(hiChewers !! 0) z z']]
+      grid = chewed
+      -- chewed = map (\f -> [f z z']) hiChewers
       score = renderZGrid grid
   return score
   where yah z = render (Scale loopLengthFrames z)
