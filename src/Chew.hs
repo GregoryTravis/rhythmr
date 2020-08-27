@@ -7,6 +7,7 @@ module Chew
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (sortOn)
 import qualified Data.Set as S
+import Data.Tuple (swap)
 import System.Random
 
 import Constants
@@ -221,13 +222,34 @@ dnb s = do
         twoOrThree (x:y:z:_) = [x, y, z]
         twoOrThree [x, y] = [x, y, y]
 
+-- plan: list of fns taking 2 zounds and returning a zound, applied to successive pairs 0,1; 1,2; etc
+-- cycle the inputs in case we don't have enough, probably won't repeate
+-- this gives us a list of new sounds, so cycle them in, up to 4 of them, then out
+-- ? before all this, take the first one and use as basis?
+
+-- Generate 0, 2, 4... and 1, 3, 5..., interspersed with -1s
+interleave :: Int -> ([Int], [Int])
+interleave n = (evens, odds)
+  where ns = [0..n-1]
+        isEven x = x `mod` 2 == 0
+        isOdd x = not (isEven x)
+        evenOr v x = if isEven x then x else v
+        oddOr v x = if isOdd x then x else v
+        evens = map (evenOr (-1)) ns
+        odds = map (oddOr (-1)) ns
+
+alternate :: Int -> Zound -> Zound -> Zound
+alternate n z z' =
+  let (s, s') = interleave n
+   in Mix [sprinkle n s z, sprinkle n s' z']
+
 hiChew :: State -> IO Zound
 hiChew s = do
   z <- readZound "one.wav" >>= yah
   z' <- readZound "two.wav" >>= yah
   let s = sprinkle 4 [0, -1, 2, -1] z
       s' = sprinkle 4 [-1, 1, -1, 3] z'
-  let grid = [[z], [z'], [s], [s'], [s, s']]
+  let grid = [[z], [z'], [s], [s'], [s, s'], [alternate 4 z z']]
       score = renderZGrid grid
   return score
   where yah z = render (Scale loopLengthFrames z)
