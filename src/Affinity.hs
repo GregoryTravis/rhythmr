@@ -186,11 +186,11 @@ keyboardHandler s (SpecialKey KeyLeft, m) | noM m = setState $ dislike s Nothing
 keyboardHandler s (Char 's', m) | noM m = setState $ dislike s (Just SubsetsStrategy)
 keyboardHandler s (Char 'd', m) | noM m = setState $ dislike s (Just DNCStrategy)
 -- Hear the top affinity group
-keyboardHandler s (Char 'A', m) | noM m = do
-  case affinities s of [] -> setState s
-                       (g:gs) -> do
-                                   let s' = s { currentGroup = g }
-                                   setState s'
+-- keyboardHandler s (Char 'A', m) | noM m = do
+--   case affinities s of [] -> setState s
+--                        (g:gs) -> do
+--                                    let s' = s { currentGroup = g }
+--                                    setState s'
 keyboardHandler s (Char 'W', m) | shiftM m = do
   writeCurrentSong s
   -- -- writeCurrentSongSeparateTracks' writes to the desktop, if run from desktop
@@ -200,6 +200,7 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
   setState s
 keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
+keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
 keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ SaveAndQuit projectFile

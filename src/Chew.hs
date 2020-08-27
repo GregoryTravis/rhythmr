@@ -1,7 +1,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Chew
-( chew ) where
+( chew
+, hiChew ) where
 
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (sortOn)
@@ -219,6 +220,17 @@ dnb s = do
   where yah z = render (Scale loopLengthFrames z)
         twoOrThree (x:y:z:_) = [x, y, z]
         twoOrThree [x, y] = [x, y, y]
+
+hiChew :: State -> IO Zound
+hiChew s = do
+  z <- readZound "one.wav" >>= yah
+  z' <- readZound "two.wav" >>= yah
+  let s = sprinkle 4 [0, -1, 2, -1] z
+      s' = sprinkle 4 [-1, 1, -1, 3] z'
+  let grid = [[z], [z'], [s], [s'], [s, s']]
+      score = renderZGrid grid
+  return score
+  where yah z = render (Scale loopLengthFrames z)
 
 chew = dnb
 _chew s = do
