@@ -259,10 +259,15 @@ hiChewers :: [Zound -> Zound -> Zound]
 hiChewers =
   [ first
   , useFirst (sprinkle 16 [0, 2, 2, 1, 2, 2, 4, 5, 5, 6, 5, 5, 2, 4, 2, 4])
+  , first
   , merge [True, False]
+  , first
+  , useFirst (sprinkle 8 [0, 3, 6, 1, 4, 7, 2, 5])
+  , first 
   , merge [True, False, True, False]
   , first
   , merge [True, True, False, True, True, False, True, False]
+  , first
   , merge [True, True, False, True, True, False, True, True, False, True, True, False, True, True, False, True]
   ]
   where first x _ = x
@@ -280,7 +285,7 @@ hiChew s = do
   --     s' = sprinkle 4 [-1, 1, -1, 3] z'
   msp ("roll", rollThrough 3 [0..8])
   let stackLoops :: [Loop]
-      stackLoops = maximumBy (comparing length) (affinities s)
+      stackLoops = rotate (affinityCycle s) $ maximumBy (comparing length) (affinities s)
   stacks <- loadGrid s [stackLoops]
   let stack = stacks !! 0
   msp ("stack", length stack)

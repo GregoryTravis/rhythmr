@@ -143,6 +143,8 @@ demoModeKeys =
   , (SpecialKey KeyEsc, noM)
   , (Char 'S', shiftM)
   , (Char 'c', noM)
+  , (Char 'A', noM)
+  , (Char 'a', noM)
   , (Char '0', noM)
   , (Char '1', noM)
   , (Char '2', noM)
@@ -201,6 +203,8 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
 keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
 keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
+keyboardHandler s (Char 'a', m) | noM m = hiChew s' >>= setSong s'
+  where s' = s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ SaveAndQuit projectFile
