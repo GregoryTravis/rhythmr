@@ -52,6 +52,8 @@ module Util
 , trace
 , gridShow
 , imap
+, takeLast
+, prefixes
 ) where
 
 import Control.Exception
@@ -325,3 +327,10 @@ removeSuffix suffix s =
 
 imap :: (Int -> a -> b) -> [a] -> [b]
 imap f xs = zipWith f [0..] xs
+
+takeLast :: Int -> [a] -> [a]
+takeLast n = reverse . (take n) . reverse
+
+prefixes :: [a] -> [[a]]
+prefixes [] = []
+prefixes (x:xs) = [x] : (map (x:) (prefixes xs))

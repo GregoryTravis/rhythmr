@@ -258,6 +258,7 @@ merge bs z z' =
 hiChewers :: [Zound -> Zound -> Zound]
 hiChewers =
   [ first
+  , useFirst (sprinkle 16 [0, 2, 2, 1, 2, 2, 4, 5, 5, 6, 5, 5, 2, 4, 2, 4])
   , merge [True, False]
   , merge [True, False, True, False]
   , first
@@ -265,6 +266,11 @@ hiChewers =
   , merge [True, True, False, True, True, False, True, True, False, True, True, False, True, True, False, True]
   ]
   where first x _ = x
+        useFirst f x _ = f x
+
+-- introduce elements up to a total of n, cycling new ones in and the old ones out
+rollThrough :: Int -> [a] -> [[a]]
+rollThrough n xs = map (takeLast n) (prefixes xs)
 
 hiChew :: State -> IO Zound
 hiChew s = do
@@ -272,16 +278,17 @@ hiChew s = do
   -- z' <- readZound "two.wav" >>= yah
   -- let s = sprinkle 4 [0, -1, 2, -1] z
   --     s' = sprinkle 4 [-1, 1, -1, 3] z'
+  msp ("roll", rollThrough 3 [0..8])
   let stackLoops :: [Loop]
       stackLoops = maximumBy (comparing length) (affinities s)
   stacks <- loadGrid s [stackLoops]
   let stack = stacks !! 0
   msp ("stack", length stack)
   let successivePairs = zip stack (tail stack)
-      chewed :: [[Zound]]
-      chewed = zipWith (\(z, z') f -> [f z z']) successivePairs (cycle hiChewers)
+      chewed :: [Zound]
+      chewed = zipWith (\(z, z') f -> f z z') (cycle successivePairs) (cycle hiChewers)
   let -- grid = [[z], [z'], [s], [s'], [s, s'], [alternate 4 z z'], [merge [True, False, True, False] z z'], [(hiChewers !! 0) z z']]
-      grid = chewed
+      grid = rollThrough 4 $ take 20 $ chewed
       -- chewed = map (\f -> [f z z']) hiChewers
       score = renderZGrid grid
   return score
