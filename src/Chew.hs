@@ -257,11 +257,14 @@ merge bs z z' =
 
 hiChewers :: [Zound -> Zound -> Zound]
 hiChewers =
-  [ merge [True, False]
+  [ first
+  , merge [True, False]
   , merge [True, False, True, False]
+  , first
   , merge [True, True, False, True, True, False, True, False]
   , merge [True, True, False, True, True, False, True, True, False, True, True, False, True, True, False, True]
   ]
+  where first x _ = x
 
 hiChew :: State -> IO Zound
 hiChew s = do
