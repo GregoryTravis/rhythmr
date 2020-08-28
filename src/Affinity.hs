@@ -375,10 +375,10 @@ ramps :: [a] -> [[a]]
 ramps = concat . tail . inits . tail . inits
 
 oneTwoThree :: [a] -> [[a]]
-oneTwoThree [one, two] = dub [[one], [one, two]]
-  where dub xs = xs ++ xs
-oneTwoThree [one, two, three] = dub [[one], [one, two]] ++ dub [[one, three], [one, two, three]]
-  where dub xs = xs ++ xs
+oneTwoThree [one, two] = [[one], [one, two]]
+  --where dub xs = xs ++ xs
+oneTwoThree [one, two, three] = [[one], [one, two]] ++ [[one, three], [one, two, three]]
+  --where dub xs = xs ++ xs
 
 cycles :: [a] -> [[a]]
 cycles xs = xs : cycles (tail (cycle xs))
@@ -390,7 +390,7 @@ allFirstThrees xs = take n (map (take 3) (cycles xs))
 buildLoopGrid :: State -> [[Loop]]
 buildLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
-      stacks = rotateMod affinityCycle (S.toList likes)
+      stacks = esp $ nubOrd $ esp $ map (take 3) $ rotateMod affinityCycle (S.toList likes)
       loopGrid :: [[Loop]]
       loopGrid = concat $ (map mini stacks)
    in take desiredLengthLoops loopGrid
