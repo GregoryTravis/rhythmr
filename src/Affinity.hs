@@ -374,11 +374,13 @@ writeClick = do
 ramps :: [a] -> [[a]]
 ramps = concat . tail . inits . tail . inits
 
-oneTwoThree :: [a] -> [[a]]
-oneTwoThree [one, two] = [[one], [one, two]]
-  --where dub xs = xs ++ xs
-oneTwoThree [one, two, three] = [[one], [one, two]] ++ [[one, three], [one, two, three]]
-  --where dub xs = xs ++ xs
+dub :: [a] -> [a]
+dub xs = xs ++ xs
+-- Used for the FARM peformance
+-- dub = id
+
+oneTwoThree [one, two] = dub [[one], [one, two]]
+oneTwoThree [one, two, three] = dub [[one], [one, two]] ++ dub [[one, three], [one, two, three]]
 
 cycles :: [a] -> [[a]]
 cycles xs = xs : cycles (tail (cycle xs))

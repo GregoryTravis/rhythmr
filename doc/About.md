@@ -7,7 +7,7 @@ Rhythmr, Or Semi-Automated Audio Loops
 
 ## Introduction
 
-Rhythmr is an interactive system, implemented in Haskell, for creating good-sounding rhythm loops from randomly-acquired audio files. The user iterates through an unending stream of randomly combined music loops, swiping left or right on each one to indicate whether you like them or not. Rhythmr derives a model of which combinations sounds good, and from that, it produces a complete song by inserting the chosen combinations into a predefined score.
+Rhythmr is an interactive system, implemented in Haskell, for creating good-sounding rhythm loops from randomly-acquired audio files. The user iterates through an unending stream of randomly combined music loops, swiping left or right on each one to indicate whether they like them or not. Rhythmr derives a model of which combinations sounds good, and from that, it produces a complete song by inserting the chosen combinations into a predefined score.
 
 In a previous project, I generated songs from a pool of musical loops completely automatically. I generated thousands of these songs and picked sixteen and called it an album. However, Rhythmr takes this concept a step further, placing the user in the middle of the process, having them select individual elements before they are combined randomly.
 

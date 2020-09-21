@@ -43,7 +43,9 @@ import Zounds hiding (Translate, Scale)
 instance Ord Color where
   compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
 
-duration = 1.5
+-- demo mode
+-- duration = 1.5
+duration = 0.5
 
 logo :: Picture
 logo = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/64.png"
