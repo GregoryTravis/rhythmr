@@ -33,6 +33,7 @@ module Zounds
 , normalize
 , toOrigin
 , channelsToSegment
+, speedTest
 ) where
 
 import Control.Monad.ST
@@ -501,3 +502,51 @@ sineWave hz len = MonoSynth f (Bounds 0 len)
 --   rendered <- render z'
 --   writeZound "foo.wav" rendered
 --   msp "zhi"
+
+-- Add array of samples to array of samples
+speedTest :: IO ()
+speedTest = do
+  let seconds :: Int
+      nTimes :: Int
+      seconds = 60
+      nTimes = 5 * 30
+      -- seconds = 1800
+      -- nTimes = 5
+      numSamples :: Int
+      numSamples = 44100 * 2 * seconds
+      totalSeconds :: Int
+      totalSeconds = seconds * nTimes
+      v0 :: SV.Vector Double
+      v0 = SV.replicate numSamples 0
+      v1 :: SV.Vector Double
+      v1 = SV.replicate numSamples 0
+      addNTimes :: Int -> SV.Vector Double -> SV.Vector Double -> ST s (SV.Vector Double)
+      addNTimes numTimes v0 v1 = do
+        mv0 <- MSV.thaw v0
+        mapM (\_ -> mixOnto mv0 v1) (take numTimes [0..])
+        MSV.freeze mv0
+        --return ()
+      -- addOnce :: SV.Vector Double -> SV.Vector Double -> ST s ()
+      -- addOnce = do
+      --   mixOnto mv0 v1
+      --   MSV.freeze mv0
+      mixOnto :: MSV.Vector s Double -> SV.Vector Double -> ST s ()
+      mixOnto mix v = do
+        --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
+        mapM mixSample indices
+        return ()
+        where indices = take (SV.length v) [0..]
+              mixSample i = do
+                mixSample <- MSV.read mix i
+                let vSample = SV.index v i
+                MSV.write mix i (mixSample + vSample)
+  (_, duration) <- cpuTime $ do
+    let v0' :: SV.Vector Double
+        v0' = runST $ addNTimes nTimes v0 v1
+        aSample :: Double
+        aSample = SV.index v0' 0
+    msp aSample
+    return $ v0'
+  let secondsPerSecond = (fromIntegral totalSeconds) / duration
+  msp duration
+  msp $ "secondsPerSecond " ++ (show secondsPerSecond)

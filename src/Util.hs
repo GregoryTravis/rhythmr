@@ -1,3 +1,4 @@
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Util
@@ -24,6 +25,7 @@ module Util
 , mappily
 , mcompose
 , time
+, cpuTime
 , unsafeTime
 , noBuffering
 , die
@@ -67,6 +69,7 @@ import Data.Time.Clock.System (getSystemTime, systemToUTCTime)
 import Data.Typeable (typeOf)
 import qualified Debug.Trace as TR
 import GHC.Conc
+import System.CPUTime (getCPUTime)
 import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, stderr, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
@@ -170,6 +173,15 @@ time s a = do
     let diff = (systemToUTCTime end) `diffUTCTime` (systemToUTCTime start)
     printf "%s %s\n" s (show diff)
     return v
+
+-- Return duration in seconds
+cpuTime :: IO a -> IO (a, Double)
+cpuTime action = do
+  beforePicoseconds <- getCPUTime
+  x <- action
+  afterPicoseconds <- getCPUTime
+  let duration = (fromIntegral (afterPicoseconds - beforePicoseconds)) / 1_000_000_000_000.0
+  return (x, duration)
 
 unsafeTime :: String -> a -> a
 unsafeTime s x = unsafePerformIO (time s (return x))
