@@ -27,7 +27,7 @@ executable rhythmr
   main-is:             Main.hs
   other-modules:       Util, External, Aubio, Resample, Search, Download, Memoize, Analysis, ISO8601Duration, AesonHelpers, Spleeter, Affinity, Constants, Graph,
                        Looper, Zipper, FX, Gui, FPS, State, Ascii, Bars, Viz, History, SaveLoad, Loop, Animate, Hypercube, Zounds, Chew, Hash, BandLimitedInterpolator, Rc,
-                       Project, Fiz
+                       Project, Fiz, Rand, Blossom, ZoundCAW
   --ghc-options:         -threaded -rtsopts "-with-rtsopts=-N"
 
   ghc-options:

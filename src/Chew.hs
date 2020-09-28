@@ -9,11 +9,12 @@ import Data.List (sortOn, maximumBy)
 import Data.Ord (comparing)
 import qualified Data.Set as S
 import Data.Tuple (swap)
-import System.Random
+--import System.Random
 
 import Constants
 import Loop
 import Looper
+import Rand
 import State
 import Util
 import Zounds
@@ -174,15 +175,6 @@ wackyStacks zs = map wackyStack $ map (flip rotate zs) [0..n-1]
 shunt :: Int -> a -> [a] -> [a]
 shunt i e xs = init $ (take i xs) ++ [e] ++ (drop i xs)
 
-randParam :: (Int, Int) -> (Int -> f) -> [f]
-randParam range f = zipWith ($) (repeat f) rands
-  where rands = randomRs range (mkStdGen 37)
-
-randParam2 :: (Int, Int) -> (Int -> Int -> f) -> [f]
-randParam2 range f = zipWith ($) (zipWith ($) (repeat f) rands) rands'
-  where rands = randomRs range (mkStdGen 37)
-        rands' = randomRs range (mkStdGen 2036)
-
 -- Apply first function to value, pass result to second, etc, and return all
 -- values (including the initial one)
 runThrough :: [a -> a] -> a -> [a]
@@ -198,7 +190,7 @@ odds xs = odds' False xs
 -- Shunt and shunt again. 'odds' makes we do two shunts per step
 shuntMadness :: [Int] -> [[Int]]
 shuntMadness xs = odds $ runThrough randShunt xs
-  where randShunt = randParam2 (0, length xs-1) shunt
+  where randShunt = randParam2same (0, length xs-1) shunt
 
 dnb :: State -> IO Zound
 dnb s = do

@@ -56,6 +56,8 @@ module Util
 , imap
 , takeLast
 , prefixes
+, runList
+, runList_
 ) where
 
 import Control.Exception
@@ -346,3 +348,13 @@ takeLast n = reverse . (take n) . reverse
 prefixes :: [a] -> [[a]]
 prefixes [] = []
 prefixes (x:xs) = [x] : (map (x:) (prefixes xs))
+
+runList :: [IO a] -> IO [a]
+runList (io : ios) = do
+  (:) <$> io <*> runList ios
+runList [] = return []
+
+runList_ :: [IO a] -> IO ()
+runList_ xs = do
+  runList xs
+  return ()

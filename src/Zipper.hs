@@ -20,6 +20,8 @@ module Zipper
 import Data.Binary
 import GHC.Generics (Generic)
 
+import Util
+
 -- This might not be a proper list zipper.
 -- [1 2, 3, 4, 5, 6} with 4 selected is:
 --   Zipper [3, 2, 1] 4 [5, 6]
@@ -102,8 +104,3 @@ fromList (x:xs) = Zipper [] x xs
 runEm :: Zipper (IO a) -> IO (Zipper a)
 runEm (Zipper top cur bot) = do
   Zipper <$> runList top <*> cur <*> runList bot
-
-runList :: [IO a] -> IO [a]
-runList (io : ios) = do
-  (:) <$> io <*> runList ios
-runList [] = return []

@@ -4,7 +4,8 @@ module Loop
 ( Loop(..)
 , loopFilename
 , getHash
-, getSourceTrackHash ) where
+, getSourceTrackHash
+, getSourceTrackName ) where
 
 import Data.Binary
 import Data.List.Split (splitOn)
@@ -32,3 +33,7 @@ getHash = unsafePerformIO (memoizePure getHash')
 
 getSourceTrackHash :: Loop -> String
 getSourceTrackHash = (!! 2) . parseFilename
+
+getSourceTrackName :: Loop -> String
+getSourceTrackName loop =
+  case parseFilename loop of [_, x, y, _] -> x ++ "-" ++  y

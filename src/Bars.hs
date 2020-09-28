@@ -17,6 +17,7 @@ import Project
 import Search
 import State
 import Zounds
+import ZoundCAW
 import Spleeter
 import Util
 
@@ -86,19 +87,15 @@ extractLoops projectDir collection filename = do
   bars <- barBeat filename
   original <- readZound filename
   let originalLoops = splitIntoLoops original bars
-  originalFilenames <- writeZounds dir originalLoops
+  originalFilenames <- writeZounds fileStub dir originalLoops
   msp originalFilenames
-  if doSpleeter
-     then do spleetered <- spleeter original
-             let spleeteredLoops = splitIntoLoops spleetered bars
-             spleeteredFilenames <- writeZounds dir spleeteredLoops
-             msp spleeteredFilenames
-     else return ()
-  where writer :: Zound -> String -> IO ()
-        writer sound filename = writeZound filename sound
-        writeZounds :: FilePath -> [Zound] -> IO [String]
-        writeZounds dir sounds = mapM (contentAddressableWrite fileStub dir "wav" . writer) sounds
-        fileStub = "loop-" ++ takeBaseName filename
+  -- if doSpleeter
+  --    then do spleetered <- spleeter original
+  --            let spleeteredLoops = splitIntoLoops spleetered bars
+  --            spleeteredFilenames <- writeZounds fileStub dir spleeteredLoops
+  --            msp spleeteredFilenames
+  --    else return ()
+  where fileStub = "loop-" ++ takeBaseName filename
 
 splitIntoLoops :: Zound -> [Int] -> [Zound]
 splitIntoLoops sound bars =
