@@ -180,7 +180,7 @@ randomGroup :: State -> ([Loop], State)
 randomGroup s =
   let count :: Int
       s' :: State
-      (count, s') = randomR (2, 4) s
+      (count, s') = randomR (2, 8) s
       group :: [Loop]
       s'' :: State
       (group, s'') = randFromListPureN s' (loops s) count

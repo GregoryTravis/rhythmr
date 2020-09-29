@@ -4,13 +4,20 @@ module Rand
 , randParam2same
 , randListChoice
 , randListParam
-, randListParam2 ) where
+, randListParam2
+, randBools
+, randDoubles ) where
 
 import System.Random
 
 randParam :: (Int, Int) -> (Int -> f) -> [f]
 --randParam range f = zipWith ($) (repeat f) rands
 randParam range f = map f rands
+  where rands = randomRs range (mkStdGen 37)
+
+randParamD :: (Double, Double) -> (Double -> f) -> [f]
+--randParam range f = zipWith ($) (repeat f) rands
+randParamD range f = map f rands
   where rands = randomRs range (mkStdGen 37)
 
 randParam2 :: (Int, Int) -> (Int, Int) -> (Int -> Int -> f) -> [f]
@@ -31,3 +38,10 @@ randListParam f xs = map f (randListChoice xs)
 
 randListParam2 :: (a -> b -> c) -> [a] -> [b] -> [c]
 randListParam2 f xs ys = zipWith f (randListChoice xs) (randListChoice ys)
+
+-- Return an infinite list of bools with the given probability of being true, 0..1
+randBools :: Double -> [Bool]
+randBools prob = randParamD (0.0, 1.0) (< prob)
+
+randDoubles :: (Double, Double) -> [Double]
+randDoubles range = randomRs range (mkStdGen 934)

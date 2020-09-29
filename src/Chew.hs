@@ -2,7 +2,8 @@
 
 module Chew
 ( chew
-, hiChew ) where
+, hiChew
+, sprinkle ) where
 
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (sortOn, maximumBy)
@@ -187,7 +188,7 @@ odds xs = odds' False xs
   where odds' True (x:xs) = x : (odds' False xs)
         odds' False (x:xs) = odds' True xs
 
--- Shunt and shunt again. 'odds' makes we do two shunts per step
+-- Shunt and shunt again. 'odds' makes sure we do two shunts per step
 shuntMadness :: [Int] -> [[Int]]
 shuntMadness xs = odds $ runThrough randShunt xs
   where randShunt = randParam2same (0, length xs-1) shunt
