@@ -35,7 +35,20 @@ randFXs = interlaceFlattenInfinite
   [ randParam (800, 2400) Highpass
   , randParam (800, 2400) Lowpass
   , randParam2 (880, 3000) (200, 1200) Band
-  , randParam (40, 95) Reverb ]
+  , randParam (40, 95) Reverb
+  , r Chorus
+  , r NoiseGate
+  , r Squelch
+  , r Flange
+  , r MCompand
+  , r Phaser
+  , r Reverse
+  , randParam (150, 700) Echo
+  , randParam2 (15, 25) (15, 25) Overdrive
+  , randParam (-1200, 1200) Pitch
+  , randParam2 (2, 10) (20, 60) Tremolo
+  ]
+  where r = repeat
 
 -- assumes all lists are infinite
 interlaceFlattenInfinite :: [[a]] -> [a]
