@@ -9,6 +9,7 @@ import System.Environment (getArgs)
 import System.Exit (exitSuccess)
 
 import Affinity
+import Blossom
 import Analysis
 import BandLimitedInterpolator
 import Bars
@@ -45,6 +46,7 @@ doStuff ("barsIdFile" : projectDir : collection : filenames) = barsIdFile projec
 doStuff ("barsFile" : projectDir : collection : filenames) = barsFile projectDir collection filenames
 doStuff ("aff" : projectDir : collections) = affinityMain False projectDir 2345 (parseCollections collections)
 doStuff ("demo" : projectDir : collections) = affinityMain True projectDir 2345 (parseCollections collections)
+doStuff ["blossom", projectDir, srcCollection, destCollection, count] = blossomMain projectDir srcCollection destCollection (read count)
 
 parseCollections :: [String] -> [(Double, String)]
 parseCollections [] = []

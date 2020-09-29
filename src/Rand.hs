@@ -3,6 +3,7 @@ module Rand
 , randParam2
 , randParam2same
 , randListChoice
+, randListParam
 , randListParam2 ) where
 
 import System.Random
@@ -25,9 +26,8 @@ randParam2same range f = randParam2 range range f
 randListChoice :: [a] -> [a]
 randListChoice xs = randParam (0, length xs-1) (xs !!)
 
--- untried
--- randListParam :: (a -> b) -> [a] -> [b]
--- randListParam f xs = map f (randListChoice xs)
+randListParam :: (a -> b) -> [a] -> [b]
+randListParam f xs = map f (randListChoice xs)
 
 randListParam2 :: (a -> b -> c) -> [a] -> [b] -> [c]
 randListParam2 f xs ys = zipWith f (randListChoice xs) (randListChoice ys)

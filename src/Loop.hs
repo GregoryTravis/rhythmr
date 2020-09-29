@@ -28,11 +28,11 @@ parseFilename :: Loop -> [String]
 parseFilename (Loop filename) = splitOn "-" $ takeBaseName $ dropExtension filename
 
 getHash' :: Loop -> String
-getHash' = (!! 3) . parseFilename
+getHash' = (!!! 3) . parseFilename
 getHash = unsafePerformIO (memoizePure getHash')
 
 getSourceTrackHash :: Loop -> String
-getSourceTrackHash = (!! 2) . parseFilename
+getSourceTrackHash = (!!! 2) . parseFilename
 
 getSourceTrackName :: Loop -> String
 getSourceTrackName loop =

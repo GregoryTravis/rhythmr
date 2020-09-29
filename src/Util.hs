@@ -58,6 +58,8 @@ module Util
 , prefixes
 , runList
 , runList_
+, listDirectoryWithPath
+, (!!!)
 ) where
 
 import Control.Exception
@@ -72,6 +74,7 @@ import Data.Typeable (typeOf)
 import qualified Debug.Trace as TR
 import GHC.Conc
 import System.CPUTime (getCPUTime)
+import System.Directory (listDirectory)
 import System.Exit (die)
 import System.IO (appendFile, hFlush, stdout, stderr, hSetBuffering, BufferMode(..))
 import System.IO.Unsafe
@@ -358,3 +361,12 @@ runList_ :: [IO a] -> IO ()
 runList_ xs = do
   runList xs
   return ()
+
+listDirectoryWithPath :: FilePath -> IO [FilePath]
+listDirectoryWithPath dir = do
+  files <- listDirectory dir
+  return $ map ((dir ++ "/") ++) files
+
+(!!!) :: Show a => [a] -> Int -> a
+xs !!! i | i >= 0 && i < length xs = xs !! i
+         | otherwise = error (show xs ++ " !!! " ++ show i) 

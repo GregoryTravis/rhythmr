@@ -1,28 +1,32 @@
 module Blossom
-( blossomDir ) where
+( blossomMain ) where
 
 import Control.Monad (replicateM)
-import System.Directory (listDirectory)
 
 import FX
 import Loop
+import Project
 import Rand
 import Util
 import ZoundCAW
 import Zounds
 
+blossomMain :: FilePath -> String -> String -> Int -> IO ()
+blossomMain projectDir srcCollection destCollection count = do
+  srcDir <- getLoopDir projectDir srcCollection
+  destDir <- getLoopDir projectDir destCollection
+  blossomDir srcDir destDir count
+
 blossomDir :: FilePath -> FilePath -> Int -> IO ()
 blossomDir srcDir destDir numToGenerate = do
-  srcFiles <- listDirectory srcDir
-  runList_ $ take numToGenerate $ randListParam2 (blossomFile destDir) srcFiles randFXs
-
---writeZounds :: String -> FilePath -> [Zound] -> IO [String]
+  srcFiles <- listDirectoryWithPath srcDir
+  runList_ $ take numToGenerate $ zipWith ($) (randListParam (blossomFile destDir) srcFiles) randFXs
 
 blossomFile :: FilePath -> FilePath -> FX -> IO ()
 blossomFile destDir zoundFile fx = do
   z <- readZound zoundFile
   z' <- applyFX fx z
-  writeZounds (getSourceTrackName (Loop zoundFile)) destDir [z']
+  writeZounds ("loop-" ++ getSourceTrackName (Loop zoundFile)) destDir [z']
   return ()
 
 -- Infinite random list of random effects
