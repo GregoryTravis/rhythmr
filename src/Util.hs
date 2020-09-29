@@ -367,6 +367,7 @@ listDirectoryWithPath dir = do
   files <- listDirectory dir
   return $ map ((dir ++ "/") ++) files
 
+-- Like (!!) but don't be so coy
 (!!!) :: Show a => [a] -> Int -> a
 xs !!! i | i >= 0 && i < length xs = xs !! i
          | otherwise = error (show xs ++ " !!! " ++ show i) 
