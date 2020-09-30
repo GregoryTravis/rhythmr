@@ -184,7 +184,7 @@ randomGroup s =
       group :: [Loop]
       s'' :: State
       (group, s'') = randFromListPureN s' (loops s) count
-   in (group, s'')
+   in (eesp ("randomGroup", count, length group) group, s'')
 
 -- pushCurrentGroup :: State -> State
 -- pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
