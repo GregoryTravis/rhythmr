@@ -11,7 +11,7 @@ import Control.Monad (replicateM, zipWithM_)
 import Data.Binary
 import Data.Containers.ListUtils (nubOrd)
 import Data.IORef
-import Data.List (intercalate, intersect, transpose, sortOn, elemIndex, nub, inits, isInfixOf)
+import Data.List (intercalate, intersect, transpose, sortOn, elemIndex, nub, inits, isInfixOf, splitAt)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
@@ -201,6 +201,7 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
   -- writeClick
   setState s
 keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
+keyboardHandler s (Char 'T', m) | shiftM m = tallSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
 keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
 keyboardHandler s (Char 'a', m) | noM m = hiChew s' >>= setSong s'
@@ -470,6 +471,23 @@ renderLoopGrid s loopGrid = do
 cycleLikesSong :: State -> IO Zound
 cycleLikesSong s = do
   renderLoopGrid s (buildLoopGrid s)
+
+--renderLoopGrid :: State -> [[Loop]] -> IO Zound
+tallSong :: State -> IO Zound
+tallSong s = do
+  renderLoopGrid s (buildTallLoopGrid s)
+
+buildTallLoopGrid :: State -> [[Loop]]
+buildTallLoopGrid s = concat (map movement stacks)
+  where stacks = filter ((>= 4) . length) (S.toList $ likes s)
+        movement :: [Loop] -> [[Loop]]
+        movement stack = [b, b1, b2, b12]
+          where (b, a) = halve stack
+                (a1, a2) = halve a
+                b1 = b ++ a1
+                b2 = b ++ a2
+                b12 = b ++ a1 ++ a2
+                halve xs = splitAt (length xs `div` 2) xs
 
 setSong :: State -> Zound -> IO (GuiCommand State)
 setSong s mix = do
