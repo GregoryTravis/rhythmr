@@ -45,7 +45,7 @@ import Viz
 import Zounds
 import qualified Zounds as Z
 
-poolSize = 64
+poolSize = 100
 
 addClick :: Maybe String
 addClick = Nothing
@@ -254,8 +254,8 @@ newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
       loopsToKeep = concat (S.toList likes) -- ++ S.toList dislikes)
-  --msp ("eep", poolSize, length loopsToKeep)
   newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
+  msp ("newPool", poolSize, length loopsToKeep, newLoops)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
 -- Complete a list by adding enough elements to reach the given total. Since
