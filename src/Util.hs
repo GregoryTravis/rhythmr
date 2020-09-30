@@ -60,6 +60,7 @@ module Util
 , runList_
 , listDirectoryWithPath
 , (!!!)
+, removeElem
 ) where
 
 import Control.Exception
@@ -371,3 +372,10 @@ listDirectoryWithPath dir = do
 (!!!) :: Show a => [a] -> Int -> a
 xs !!! i | i >= 0 && i < length xs = xs !! i
          | otherwise = error (show xs ++ " !!! " ++ show i) 
+
+-- Remove the specified element and return it and the remaining list
+removeElem :: [a] -> Int -> (a, [a])
+removeElem xs i | i < 0 || i >= length xs = error (show ("removeElem", i))
+                | otherwise = go xs i
+  where go (x:xs) 0 = (x, xs)
+        go (x:xs) i = case go xs (i-1) of (x', xs') -> (x', x:xs')

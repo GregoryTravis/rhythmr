@@ -6,9 +6,12 @@ module Rand
 , randListParam
 , randListParam2
 , randBools
-, randDoubles ) where
+, randDoubles
+, shuffleList ) where
 
 import System.Random
+
+import Util
 
 randParam :: (Int, Int) -> (Int -> f) -> [f]
 --randParam range f = zipWith ($) (repeat f) rands
@@ -45,3 +48,11 @@ randBools prob = randParamD (0.0, 1.0) (< prob)
 
 randDoubles :: (Double, Double) -> [Double]
 randDoubles range = randomRs range (mkStdGen 934)
+
+-- Fisher-Yates shuffle
+shuffleList :: Int -> [a] -> [a]
+shuffleList seed xs = go (mkStdGen seed) xs
+  where go g [] = []
+        go g xs = let (i, g') = randomR (0, length xs - 1) g
+                      (x, xs') = removeElem xs i
+                   in x : (go g' xs')

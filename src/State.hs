@@ -28,6 +28,7 @@ import System.Random
 import Hypercube
 import Loop
 import Looper
+import Rand
 import Zounds
 import Util
 
@@ -183,7 +184,9 @@ randomGroup s =
       (count, s') = randomR (4, 8) s
       group :: [Loop]
       s'' :: State
-      (group, s'') = randFromListPureN s' (loops s) count
+      --(group, s'') = randFromListPureN s' (loops s) count
+      (seed, s'') = randomR (20, 20000) s'
+      group = take count (shuffleList seed (loops s))
    in (eesp ("randomGroup", count, length group) group, s'')
 
 -- pushCurrentGroup :: State -> State
