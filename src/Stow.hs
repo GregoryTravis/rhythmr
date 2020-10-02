@@ -11,6 +11,7 @@ import System.IO.Unsafe
 
 import Hash
 import Util
+--import Zounds
 
 stowDir :: String
 stowDir = ".stow"
@@ -67,13 +68,15 @@ retrieve (Indirect key Nothing) = x `seq` (Indirect key (Just x))
 retrieve ind = ind
 
 data W = W { ints :: [Int]
-           , string :: String }
+           , string :: String
+           , indInts :: Indirect [Int] }
   deriving (Read, Show)
 
+instance Stowable [Int]
 instance Stowable W
 
 stowMain = do
-  let w = W { ints = [1, 2], string = "asdf" }
+  let w = W { ints = [1, 2], string = "asdf", indInts = indirect [3, 4] }
   let saved = saveRoot w
   msp saved
   let w' :: W
