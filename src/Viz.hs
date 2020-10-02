@@ -294,7 +294,7 @@ mixColors' colors =
 renderLabels :: [Picture]
 renderLabels = [ at (-335) (350) "Loops"
                , at 30 (350) "Affinities"
-               , at (-60) (-75) "Current stack" ]
+               , at (-60) (-60) "Current stack" ]
   where at x y s = Translate x y $ Scale 0.15 0.15 $ Text s
 
 renderStrategy (State { strategy = Nothing }) = Blank
@@ -537,7 +537,7 @@ playHeadMaybe :: State -> [Picture]
 playHeadMaybe (State { currentSong = Nothing }) = []
 playHeadMaybe _ = [playHead]
   where playHead = Translate 0 ht $ downTri
-        ht = (-(fromIntegral windowHeight / 4)) + 25
+        ht = (-(fromIntegral windowHeight / 8)) + 25
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong progress (State { currentSong = Nothing }) = []
@@ -550,7 +550,7 @@ renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
       colorFor :: Zound -> Color
       colorFor z = stringColor (filenameOf z)
       segmentPos :: Int -> Bounds -> V2 Float
-      segmentPos row (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (rowOffset - (fromIntegral windowHeight / 4))
+      segmentPos row (Bounds s e) = V2 (toScreen (s + ((e - s) `div` 2))) (rowOffset - (fromIntegral windowHeight / 8))
         where rowOffset = (-(fromIntegral row * (rectWidth + 5)))
       segmentWidth :: Bounds -> Float
       segmentWidth (Bounds s e) = (toScreen e - toScreen s) - 4
@@ -613,7 +613,7 @@ stackBounds bs = addBounds (take numRows $ repeat []) (sortBounds bs)
         -- -- row as 0.
         -- closest b [] = (-(abs (getStart (fst b) - 0)))
         -- closest b bs = (-(abs (getStart (fst b) - getEnd (fst (last bs)))))
-        numRows = 4
+        numRows = 8
         sortBounds = L.sortOn (getStart . fst)
 
 -- Score each element of the list, and call the function on the one with the

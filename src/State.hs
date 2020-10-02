@@ -187,7 +187,7 @@ randomGroup s =
       --(group, s'') = randFromListPureN s' (loops s) count
       (seed, s'') = randomR (20, 20000) s'
       group = take count (shuffleList seed (loops s))
-   in (eesp ("randomGroup", count, length group) group, s'')
+   in (eesp ("randomGroup", count, length group, group) group, s'')
 
 -- pushCurrentGroup :: State -> State
 -- pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }

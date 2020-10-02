@@ -45,7 +45,7 @@ import Viz
 import Zounds
 import qualified Zounds as Z
 
-poolSize = 100
+poolSize = 256
 
 addClick :: Maybe String
 addClick = Nothing
