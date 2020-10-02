@@ -16,6 +16,7 @@ import Bars
 import Hypercube
 import Looper (withPortaudio)
 import Project
+import Stow
 import Util
 import Zounds
 
@@ -85,7 +86,8 @@ doCredits :: IO ()
 doCredits = putStrLn credits
 
 main :: IO ()
-main = withPortaudio $ do
+main = stowMain
+_main = withPortaudio $ do
   noBuffering
   --getGCFlags >>= msp
   --putStrLn $ "numCapabilities: " ++ show numCapabilities
