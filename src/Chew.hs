@@ -199,7 +199,7 @@ dnb s = do
   -- z2 <- readZound "hay.wav" >>= yah
   --msp ("likes", S.toList $ likes s)
   --msp ("likes", head $ S.toList $ likes s)
-  let [zf, z2f, z3f] = twoOrThree $ head $ S.toList $ likes s
+  let [zf, z2f, z3f] = twoOrThree $ head $ likes s
   --msp ("um", zf, z2f, z3f)
   [z', z2', z3'] <- mapM (loadLoopZound s) [zf, z2f, z3f]
   --msp ("um", z', z2', z3')
@@ -296,7 +296,7 @@ chew = dnb
 _chew s = do
   clik <- readZound "wavs/clik.wav"
   --let loops = S.toList (likes s)
-  let loops = S.toList $ likes s
+  let loops = likes s
   likes' <- loadGrid s loops
   let likes = reverse $ sortOn length likes'
   let grid = map (:[]) $ concat (map wackyStacks likes)

@@ -38,7 +38,7 @@ data State =
   State { projectDir :: String
         , collections :: [(Double, String)]
         , loops :: [Loop]
-        , likes :: S.Set [Loop]
+        , likes :: [[Loop]]
         , dislikes :: S.Set [Loop]
         , currentGroup :: [Loop]
         , looper :: Looper
@@ -79,7 +79,7 @@ instance RandomGen State where
 --   replicateM groupSize (randFromList (loops s))
 
 affinities :: State -> [[Loop]]
-affinities s = ((map S.toList) . removeDislikes s . components . fromComponents . S.toList . likes) s
+affinities s = ((map S.toList) . removeDislikes s . components . fromComponents . likes) s
 
 -- Removing a dislike group from a group means removing of its elements, but
 -- *only* if the group contains all of them
@@ -132,7 +132,7 @@ skip = flip doLikeStrategy
 
 like :: State -> Maybe LikeStrategy -> State
 like s strategy | length (currentGroup s) < 2 = doLikeStrategy strategy s 
-                | otherwise = doLikeStrategy strategy $ s { likes = S.insert (currentGroup s) (likes s) }
+                | otherwise = doLikeStrategy strategy $ s { likes = currentGroup s : likes s }
 
 dislike :: State -> Maybe DislikeStrategy -> State
 -- Don't store a dislike unless it's 2 or 1

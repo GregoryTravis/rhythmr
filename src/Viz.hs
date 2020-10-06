@@ -262,19 +262,19 @@ renderViz t s (Viz pics fiz) = do
 
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked
-  where likedSet = S.unions $ map S.fromList (S.toList (likes s))
+  where likedSet = S.unions $ map S.fromList (likes s)
         unlikedSet = (S.fromList (loops s)) `S.difference` likedSet
         liked = S.toList likedSet
         unliked = S.toList unlikedSet
         toPic :: Loop -> Picture
         toPic loop = Translate x y $ rect (colorFor loop) black
           where V2 x y = getPos fiz loop
-        allLiked = S.unions (map S.fromList (S.toList (likes s)))
+        allLiked = S.unions (map S.fromList (likes s))
         colorFor loop | S.member loop allLiked = loopColor loop
                       | otherwise = alphaLoopColor loop
 
 fizEdges :: State -> Fiz Loop -> [Picture]
-fizEdges s fiz = map (groupEdges fiz) (S.toList (likes s))
+fizEdges s fiz = map (groupEdges fiz) (likes s)
 
 groupEdges :: Fiz Loop -> [Loop] -> Picture
 groupEdges fiz loops = Color color $ Polygon ptsClosed
@@ -705,7 +705,7 @@ stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
 
 updateFiz :: Float -> State -> Viz -> Viz
 updateFiz dt s (Viz pics fiz) = Viz pics fiz'
-  where fiz' = update dt (loops s) (S.toList $ likes s) fiz
+  where fiz' = update dt (loops s) (likes s) fiz
 
 gridPosition :: Loop -> State -> V2 Float
 gridPosition loop (State { loops }) =

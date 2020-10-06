@@ -55,14 +55,14 @@ addClick = Nothing
 data StateRep = 
   StateRep { repCollections :: [(Double, String)]
            , repLoops :: [Loop]
-           , repLikes :: S.Set [Loop]
+           , repLikes :: [[Loop]]
            , repDislikes :: S.Set [Loop]
            , repCurrentGroup :: [Loop] }
   deriving (Read, Show, Generic)
 
 instance Binary StateRep
 
-emptyStateRep = StateRep { repLoops = [], repLikes = S.empty, repDislikes = S.empty, repCollections = [], repCurrentGroup = [] }
+emptyStateRep = StateRep { repLoops = [], repLikes = [], repDislikes = S.empty, repCollections = [], repCurrentGroup = [] }
 
 initRand :: StdGen
 initRand = mkStdGen 0
@@ -114,7 +114,7 @@ initState projectDir soundLoader looper collections = do
   --msp ("YEP2", projectDir)
   let mat = identity :: Mat
   matRef <- newIORef mat
-  newPool $ State { projectDir, soundLoader, looper, loops = [], likes = S.empty, dislikes = S.empty,
+  newPool $ State { projectDir, soundLoader, looper, loops = [], likes = [], dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
                     currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, useFiz = False }
@@ -253,7 +253,7 @@ setVolume' c s = do --msp ("volume", c, volume, fromEnum c - 48)
 newPool :: State -> IO State
 newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
-      loopsToKeep = concat (S.toList likes) -- ++ S.toList dislikes)
+      loopsToKeep = concat likes -- ++ S.toList dislikes)
   newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
   msp ("newPool", poolSize, length loopsToKeep, newLoops)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
@@ -393,7 +393,7 @@ allFirstThrees xs = take n (map (take 3) (cycles xs))
 buildLoopGrid :: State -> [[Loop]]
 buildLoopGrid s@(State { affinityCycle, likes }) =
   let stacks :: [[Loop]]
-      stacks = esp $ nubOrd $ esp $ map (take 3) $ rotateMod affinityCycle (S.toList likes)
+      stacks = esp $ nubOrd $ esp $ map (take 3) $ rotateMod affinityCycle likes
       loopGrid :: [[Loop]]
       loopGrid = concat $ (map mini stacks)
    in take desiredLengthLoops loopGrid
@@ -479,7 +479,7 @@ tallSong s = do
 
 buildTallLoopGrid :: State -> [[Loop]]
 buildTallLoopGrid s = concat (map movement stacks)
-  where stacks = filter ((>= 4) . length) (S.toList $ likes s)
+  where stacks = filter ((>= 4) . length) $ likes s
         movement :: [Loop] -> [[Loop]]
         movement stack = [b, b1, b2, b12]
           where (b, a) = halve stack
@@ -574,7 +574,7 @@ displayer s = intercalate "\n" lines
   where lines = [gridS, bar, currentS, likesS, dislikesS, stackS, bar, affS, logS]
         gridS = grid s
         currentS = "Current: " ++ showLoops (currentGroup s)
-        likesS = "Likes: " ++ showList (map showLoops (S.toList (likes s)))
+        likesS = "Likes: " ++ showList (map showLoops (likes s))
         dislikesS = "Dislikes: " ++ showList (map showLoops (S.toList (dislikes s)))
         stackS = "Stack: " ++ showList (map showLoops (stack s))
         affS = "Affinities:\n" ++ intercalate "\n" (map show ((map . map) inxOf (bigToSmall $ affinities s)))
