@@ -118,7 +118,7 @@ differenceIfContained a b = if b `S.isSubsetOf` a then a `S.difference` b else a
 setCurrentGroup :: State -> [Loop] -> State
 setCurrentGroup s group = s { currentGroup = group, currentSong = Nothing }
 
-data LikeStrategy = IncrementalStrategy | RandomStrategy
+data LikeStrategy = IncrementalStrategy | RandomStrategy | Incremental2Strategy | Random2Strategy
   deriving Show
 data DislikeStrategy = SubsetsStrategy | DNCStrategy
   deriving Show
@@ -163,12 +163,17 @@ doLikeStrategy (Just strategy) s =
    in _strat strategy $ setCurrentGroup s' group
   where doStrategy IncrementalStrategy = incrementallyDifferentGroup
         doStrategy RandomStrategy = randomGroup
--- If not, pop if you can
-doLikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
--- Otherwise, pick randomly
-doLikeStrategy Nothing s | otherwise =
-  let (strategy, s') = randFromListPure s [IncrementalStrategy, RandomStrategy]
-   in doLikeStrategy (Just strategy) s'
+        doStrategy Incremental2Strategy = incrementallyDifferentGroup2
+        doStrategy Random2Strategy = randomGroup2
+-- ORIG DEMO
+-- -- If not, pop if you can
+-- doLikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
+-- -- Otherwise, pick randomly
+-- doLikeStrategy Nothing s | otherwise =
+--   let (strategy, s') = randFromListPure s [IncrementalStrategy, RandomStrategy]
+--    in doLikeStrategy (Just strategy) s'
+-- AFF 2.0
+doLikeStrategy Nothing s = doLikeStrategy (Just Incremental2Strategy) s
 
 incrementallyDifferentGroup :: State -> ([Loop], State)
 incrementallyDifferentGroup s | length (currentGroup s) == 0 = ([], s)
@@ -188,6 +193,26 @@ randomGroup s =
       (seed, s'') = randomR (20, 20000) s'
       group = take count (shuffleList seed (loops s))
    in (eesp ("randomGroup", count, length group, group) group, s'')
+
+-- 4-8 loops:
+--   1/2 from most recent like
+--   1/4 from set of all liked loops
+--   1/4 from pool
+incrementallyDifferentGroup2 :: State -> ([Loop], State)
+incrementallyDifferentGroup2 = undefined
+-- incrementallyDifferentGroup2 s =
+--   -- this is dumb, I should use ST, or
+--   -- https://hackage.haskell.org/package/MonadRandom-0.5.2/docs/Control-Monad-Random-Lazy.html#v:evalRand
+--   let count :: Int
+--       s' :: State
+--       (count, s') = randomR (4, 8) s
+--       numFromMostRecent = count `div` 2
+--       numFromLiked = (count - numFromMostRecent) `div` 2
+--       numRandom = count - numFromMostRecent - numFromLiked
+--       group :: [Loop]
+
+randomGroup2 :: State -> ([Loop], State)
+randomGroup2 = undefined
 
 -- pushCurrentGroup :: State -> State
 -- pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
