@@ -188,22 +188,11 @@ incrementallyDifferentGroup s
 
 randomGroup :: State -> ([Loop], State)
 randomGroup s =
-  let foo :: State -> (Int, State)
-      foo s = randomR (4, 8) s
-      fooR :: Rand State Int
-      fooR = liftRand foo
-      ai :: Int
-      ss' :: State
-      lrr :: (Int, Int) -> Rand State Int
-      lrr (a, b) = liftRand (randomR (a, b))
-      --(ai, ss') = runRand (liftRand (randomR (4, 8))) s
-      (ai, ss') = runRand (lrr (4, 8)) s
-      --(ai, ss') = runRand (lrr (4, 8) >>= lrr (20, 20000)) s
-   in flip runRand s $ do
-        count <- liftRand $ randomR (4::Int, 8)
-        seed <- liftRand $ randomR (20::Int, 20000)
-        let group = take count (shuffleList seed (loops s))
-        return (eesp ("randomGroup", length group, group) group)
+   flip runRand s $ do
+     count <- liftRand $ randomR (4::Int, 8)
+     seed <- liftRand $ randomR (20::Int, 20000)
+     let group = take count (shuffleList seed (loops s))
+     return (eesp ("randomGroup", length group, group) group)
 
 -- 4-8 loops:
 --   1/2 from most recent like

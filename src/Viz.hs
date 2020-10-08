@@ -44,7 +44,8 @@ instance Ord Color where
   compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
 
 -- demo mode
-duration = 1.5
+--duration = 1.5
+duration = 1
 -- duration = 0.5
 
 logo :: Picture
