@@ -187,12 +187,11 @@ incrementallyDifferentGroup s
       return $ replaceInList (currentGroup s) loopToReplace newLoop
 
 randomGroup :: State -> ([Loop], State)
-randomGroup s =
-   flip runRand s $ do
-     count <- liftRand $ randomR (4::Int, 8)
-     seed <- liftRand $ randomR (20::Int, 20000)
-     let group = take count (shuffleList seed (loops s))
-     return (eesp ("randomGroup", length group, group) group)
+randomGroup s = flip runRand s $ do
+  count <- liftRand $ randomR (4::Int, 8)
+  seed <- liftRand $ randomR (20::Int, 20000)
+  let group = take count (shuffleList seed (loops s))
+  return (eesp ("randomGroup", length group, group) group)
 
 -- 4-8 loops:
 --   1/2 from most recent like
