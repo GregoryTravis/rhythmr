@@ -182,8 +182,10 @@ keyboardHandler s (Char 'E', m) | shiftM m = do s' <- newPool s
 keyboardHandler s (Char 'F', m) | shiftM m = do setState (s { useFiz = not (useFiz s) })
 keyboardHandler s (SpecialKey KeySpace, m) | noM m = setState $ skip s (Just RandomStrategy)
 keyboardHandler s (SpecialKey KeyRight, m) | noM m = setState $ like s Nothing
-keyboardHandler s (Char 'r', m) | noM m = setState $ skip s (Just RandomStrategy)
-keyboardHandler s (Char 'i', m) | noM m = setState $ skip s (Just IncrementalStrategy)
+keyboardHandler s (Char 'R', m) | shiftM m = setState $ skip s (Just RandomStrategy)
+keyboardHandler s (Char 'r', m) | noM m = setState $ skip s (Just Random2Strategy)
+keyboardHandler s (Char 'I', m) | shiftM m = setState $ skip s (Just IncrementalStrategy)
+keyboardHandler s (Char 'i', m) | noM m = setState $ skip s (Just Incremental2Strategy)
 keyboardHandler s (SpecialKey KeyLeft, m) | noM m = setState $ dislike s Nothing
 keyboardHandler s (Char 's', m) | noM m = setState $ dislike s (Just SubsetsStrategy)
 keyboardHandler s (Char 'd', m) | noM m = setState $ dislike s (Just DNCStrategy)

@@ -130,17 +130,17 @@ _strat :: Show a => a -> State -> State
 _strat strat s = s { strategy = Just $ show strat }
 
 skip :: State -> Maybe LikeStrategy -> State
-skip = flip doLikeStrategy
+skip s strategy = doLikeStrategy (esp strategy) s
 
 like :: State -> Maybe LikeStrategy -> State
-like s strategy | length (currentGroup s) < 2 = doLikeStrategy strategy s 
-                | otherwise = doLikeStrategy strategy $ s { likes = currentGroup s : likes s }
+like s strategy | length (currentGroup s) < 2 = doLikeStrategy (esp strategy) s 
+                | otherwise = doLikeStrategy (esp strategy) $ s { likes = currentGroup s : likes s }
 
 dislike :: State -> Maybe DislikeStrategy -> State
 -- Don't store a dislike unless it's 2 or 1
-dislike s strategy | len >= 1 && len <= 2 = doDislikeStrategy strategy $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
+dislike s strategy | len >= 1 && len <= 2 = doDislikeStrategy (esp strategy) $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
   where len = length $ currentGroup s
-dislike s strategy | otherwise = doDislikeStrategy strategy s
+dislike s strategy | otherwise = doDislikeStrategy (esp strategy) s
 
 doDislikeStrategy :: Maybe DislikeStrategy -> State -> State
 -- Can't do this with less than 3
@@ -155,8 +155,9 @@ doDislikeStrategy (Just strategy) s | otherwise = _strat strategy $ nextFromStac
         dncs :: [Loop] -> [[Loop]]
         dncs xs = filter ((>= 2) . length) $ case splitAt (length xs `div` 2) xs of (a, b) -> [a, b]
 -- Otherwise, default to DNC
-doDislikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
-                            | otherwise = doDislikeStrategy (Just DNCStrategy) s
+-- doDislikeStrategy Nothing s | (length $ stack s) > 0 = nextFromStack s
+--                             | otherwise = doDislikeStrategy (Just DNCStrategy) s
+doDislikeStrategy Nothing s = doLikeStrategy (Just Incremental2Strategy) s
 
 doLikeStrategy :: Maybe LikeStrategy -> State -> State
 -- If explicit, do that
@@ -203,14 +204,14 @@ incrementallyDifferentGroup2 s = flip runRand s $ do
       numFromLiked = (count - numFromMostRecent) `div` 2
       numRandom = count - numFromMostRecent - numFromLiked
       -- If we have no likes, then just use the pool
-      like = case likes s of [] -> loops s
+      like = case likes s of -- [] -> loops s
                              (like:likes) -> like
-      allLiked = case likes s of [] -> loops s
+      allLiked = case likes s of -- [] -> loops s
                                  likes -> nubOrd (concat likes)
   mostRecent <- liftRand $ randFromListPureN like numFromMostRecent
   liked <- liftRand $ randFromListPureN allLiked numFromLiked
   rando <- liftRand $ randFromListPureN (loops s) numRandom
-  return $ mostRecent ++ liked ++ rando
+  return $ eesp (count, numFromMostRecent, numFromLiked, numRandom) $ nubOrd $ mostRecent ++ liked ++ rando
 
 -- 4-8 loops:
 --   1/2 from set of all liked loops
@@ -221,11 +222,11 @@ randomGroup2 s = flip runRand s $ do
   let numFromLiked = count `div` 2
       numRandom = count - numFromLiked
       -- If we have no likes, then just use the pool
-      allLiked = case likes s of [] -> loops s
+      allLiked = case likes s of -- [] -> loops s
                                  likes -> nubOrd (concat likes)
   liked <- liftRand $ randFromListPureN allLiked numFromLiked
   rando <- liftRand $ randFromListPureN (loops s) numRandom
-  return $ liked ++ rando
+  return $ eesp (count, numFromLiked, numRandom) $ nubOrd $ liked ++ rando
 
 -- pushCurrentGroup :: State -> State
 -- pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
