@@ -204,9 +204,9 @@ incrementallyDifferentGroup2 s = flip runRand s $ do
       numFromLiked = (count - numFromMostRecent) `div` 2
       numRandom = count - numFromMostRecent - numFromLiked
       -- If we have no likes, then just use the pool
-      like = case likes s of -- [] -> loops s
+      like = case likes s of [] -> loops s
                              (like:likes) -> like
-      allLiked = case likes s of -- [] -> loops s
+      allLiked = case likes s of [] -> loops s
                                  likes -> nubOrd (concat likes)
   mostRecent <- liftRand $ randFromListPureN like numFromMostRecent
   liked <- liftRand $ randFromListPureN allLiked numFromLiked
@@ -222,7 +222,7 @@ randomGroup2 s = flip runRand s $ do
   let numFromLiked = count `div` 2
       numRandom = count - numFromLiked
       -- If we have no likes, then just use the pool
-      allLiked = case likes s of -- [] -> loops s
+      allLiked = case likes s of [] -> loops s
                                  likes -> nubOrd (concat likes)
   liked <- liftRand $ randFromListPureN allLiked numFromLiked
   rando <- liftRand $ randFromListPureN (loops s) numRandom
