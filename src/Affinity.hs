@@ -204,6 +204,7 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
   setState s
 keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'T', m) | shiftM m = tallSong s >>= setSong s
+keyboardHandler s (Char 'L', m) | shiftM m = likesSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
 keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
 keyboardHandler s (Char 'a', m) | noM m = hiChew s' >>= setSong s'
@@ -478,6 +479,11 @@ cycleLikesSong s = do
 tallSong :: State -> IO Zound
 tallSong s = do
   renderLoopGrid s (buildTallLoopGrid s)
+
+-- Just the likes, in chronological order
+likesSong :: State -> IO Zound
+likesSong s = do
+  renderLoopGrid s (likes s)
 
 buildTallLoopGrid :: State -> [[Loop]]
 buildTallLoopGrid s = concat (map movement stacks)
