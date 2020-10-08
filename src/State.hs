@@ -1,5 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
-
 module State
   ( State(..)
   , LikeStrategy(..)
@@ -19,6 +17,7 @@ module State
   , loadLoopZounds
   ) where
 
+import Data.Containers.ListUtils (nubOrd)
 import Control.Monad (replicateM)
 import Control.Monad.Random.Lazy
 import Data.IORef
@@ -198,20 +197,35 @@ randomGroup s = flip runRand s $ do
 --   1/4 from set of all liked loops
 --   1/4 from pool
 incrementallyDifferentGroup2 :: State -> ([Loop], State)
-incrementallyDifferentGroup2 = undefined
--- incrementallyDifferentGroup2 s =
---   -- this is dumb, I should use ST, or
---   -- https://hackage.haskell.org/package/MonadRandom-0.5.2/docs/Control-Monad-Random-Lazy.html#v:evalRand
---   let count :: Int
---       s' :: State
---       (count, s') = randomR (4, 8) s
---       numFromMostRecent = count `div` 2
---       numFromLiked = (count - numFromMostRecent) `div` 2
---       numRandom = count - numFromMostRecent - numFromLiked
---       group :: [Loop]
+incrementallyDifferentGroup2 s = flip runRand s $ do
+  count <- liftRand $ randomR (4, 8)
+  let numFromMostRecent = count `div` 2
+      numFromLiked = (count - numFromMostRecent) `div` 2
+      numRandom = count - numFromMostRecent - numFromLiked
+      -- If we have no likes, then just use the pool
+      like = case likes s of [] -> loops s
+                             (like:likes) -> like
+      allLiked = case likes s of [] -> loops s
+                                 likes -> nubOrd (concat likes)
+  mostRecent <- liftRand $ randFromListPureN like numFromMostRecent
+  liked <- liftRand $ randFromListPureN allLiked numFromLiked
+  rando <- liftRand $ randFromListPureN (loops s) numRandom
+  return $ mostRecent ++ liked ++ rando
 
+-- 4-8 loops:
+--   1/2 from set of all liked loops
+--   1/2 from pool
 randomGroup2 :: State -> ([Loop], State)
-randomGroup2 = undefined
+randomGroup2 s = flip runRand s $ do
+  count <- liftRand $ randomR (4, 8)
+  let numFromLiked = count `div` 2
+      numRandom = count - numFromLiked
+      -- If we have no likes, then just use the pool
+      allLiked = case likes s of [] -> loops s
+                                 likes -> nubOrd (concat likes)
+  liked <- liftRand $ randFromListPureN allLiked numFromLiked
+  rando <- liftRand $ randFromListPureN (loops s) numRandom
+  return $ liked ++ rando
 
 -- pushCurrentGroup :: State -> State
 -- pushCurrentGroup s = s { stack = map p2l $ allPairs (currentGroup s) }
