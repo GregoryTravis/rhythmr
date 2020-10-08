@@ -182,8 +182,8 @@ incrementallyDifferentGroup :: State -> ([Loop], State)
 incrementallyDifferentGroup s
   | length (currentGroup s) == 0 = ([], s)
   | otherwise = flip runRand s $ do
-      loopToReplace <- liftRand $ flip randFromListPure [0..length (currentGroup s)-1]
-      newLoop <- liftRand $ flip randFromListPure (loops s)
+      loopToReplace <- liftRand $ randFromListPure [0..length (currentGroup s)-1]
+      newLoop <- liftRand $ randFromListPure (loops s)
       return $ replaceInList (currentGroup s) loopToReplace newLoop
 
 randomGroup :: State -> ([Loop], State)

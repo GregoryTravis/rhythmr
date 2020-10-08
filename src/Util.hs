@@ -232,16 +232,16 @@ randFromList xs = do
   massert ("randFromList", i, length xs) (i >=0 && i < length xs)
   return $ xs !! i
 
-randFromListPure :: RandomGen g => g -> [a] -> (a, g)
-randFromListPure g as =
+randFromListPure :: RandomGen g => [a] -> g -> (a, g)
+randFromListPure as g =
   let (i, g') = randomR (0, length as - 1) g
    in (as !! i, g')
 
-randFromListPureN :: RandomGen g => g -> [a] -> Int -> ([a], g)
-randFromListPureN g as 0 = ([], g)
-randFromListPureN g as n =
-  let (a', g') = randFromListPure g as
-      (as', g'') = randFromListPureN g' as (n-1)
+randFromListPureN :: RandomGen g => [a] -> Int -> g -> ([a], g)
+randFromListPureN as 0 g = ([], g)
+randFromListPureN as n g =
+  let (a', g') = randFromListPure as g
+      (as', g'') = randFromListPureN as (n-1) g'
    in (a':as', g'')
 
 -- Nest elements in groups of n; ok if it doesn't divide evenly
