@@ -1,3 +1,5 @@
+{-# LANGUAGE BlockArguments #-}
+
 module State
   ( State(..)
   , LikeStrategy(..)
@@ -177,11 +179,12 @@ doLikeStrategy (Just strategy) s =
 doLikeStrategy Nothing s = doLikeStrategy (Just Incremental2Strategy) s
 
 incrementallyDifferentGroup :: State -> ([Loop], State)
-incrementallyDifferentGroup s | length (currentGroup s) == 0 = ([], s)
-                              | otherwise =
-  let (loopToReplace, s') = randFromListPure s [0..length (currentGroup s)-1]
-      (newLoop, s'') = randFromListPure s' (loops s)
-   in (replaceInList (currentGroup s) loopToReplace newLoop, s'')
+incrementallyDifferentGroup s
+  | length (currentGroup s) == 0 = ([], s)
+  | otherwise = flip runRand s $ do
+      loopToReplace <- liftRand $ flip randFromListPure [0..length (currentGroup s)-1]
+      newLoop <- liftRand $ flip randFromListPure (loops s)
+      return $ replaceInList (currentGroup s) loopToReplace newLoop
 
 randomGroup :: State -> ([Loop], State)
 randomGroup s =
