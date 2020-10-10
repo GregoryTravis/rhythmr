@@ -268,3 +268,32 @@ loadLoopZound s loop = (soundLoader s) (fn loop)
 loadLoopZounds ::State -> [Loop] -> IO [Zound] 
 loadLoopZounds s loops = mapM (loadLoopZound s) loops
 
+-- Affinities 2.0
+--
+-- A metagraph is a graph whose
+--   nodes are sets of loops
+--   edges are pairs of nodes that overlap (non-empty intersection)
+-- A k-metagraph is a metagraph where all overlaps are >= k
+-- 
+-- Given a k-mg we can divide it into connected components.
+-- Within each component, each node overlaps at least one other node by at
+-- least k.
+--
+-- We can extract a maximially long chain of nodes from a connected component.
+-- This amounts to a sequence of likes where each one overlaps the ones before
+-- and after it by at least k.
+--
+-- Higher k means higher musical coherence between measures.
+--
+-- A k-song is made by extracting a maximal chain from each connected component
+-- of the k-mg and sequencing them in some order.
+--
+-- For any set of likes, we can determine the length of the k-song that can be
+-- built from the k-mg on those likes.
+--
+-- We can do one or any of these:
+-- - Given a desired song length, find the highest k that can produce a song of
+--   that length. Alert the user when they have enough likes to make a song of
+--   this length.
+-- - Show the length of the k-song for each k, and let the user judge offerings
+--   until they have a long enough song for their desired k.
