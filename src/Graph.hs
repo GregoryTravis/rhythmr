@@ -5,19 +5,22 @@ module Graph
 , empty
 , add
 , addMulti
-, addAll
 , nodes
 , components
 , fromComponents
-, showComponents
 , showGraphAsComponents ) where
 
 ---- Really dumb undirected graph: extremely slow!!
 
+import Data.Containers.ListUtils (nubOrd)
 import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Util
+
+-- An unordered graph expressed as a map from each node to all the nodes it
+-- shares an edge with. Each edge is represented twice, once for each of its
+-- nodes.
 
 data Graph a = Graph (M.Map a (S.Set a))
   deriving Eq
@@ -27,6 +30,8 @@ instance (Eq a, Ord a, Show a) => Show (Graph a) where
 
 empty = Graph (M.empty)
 
+-- Add an edge (x, y). Adds y to the adjacency list for x, and vice versa,
+-- because I'm a jerk.
 add :: (Ord a, Show a) => Graph a -> a -> a -> Graph a
 add g x y =
   let g' = addKeyIfMissing g x
@@ -37,32 +42,34 @@ add g x y =
    -- in eesp (show ("hoy", m, m', m'')) $ Graph m''
    in Graph m''
 
--- Add a list of pairs
+-- Add multiple edges.
 -- TODO this is a fold
 addMulti :: (Ord a, Show a) => Graph a -> [(a, a)] -> Graph a
 addMulti g ((x, y) : ps) = addMulti (add g x y) ps
 addMulti g [] = g
 
--- Add all pairs from the list, which really means add each pair consisting of
--- the head and one of the tail
-addAll :: (Ord a, Show a) => Graph a -> [a] -> Graph a
-addAll g (x:xs) = addMulti g (zip (repeat x) xs)
-addAll g [] = g
+-- Add the given elements as a connected component: given (x:ys), add (x, y)
+-- for each y in ys.
+addComponent :: (Ord a, Show a) => Graph a -> [a] -> Graph a
+addComponent g (x:xs) = addMulti g (zip (repeat x) xs)
+addComponent g [] = g
 
 edges :: (Eq a, Ord a) => Graph a -> [(a, a)]
-edges g = nub $ map sortEdge $ directedEdges g
+edges g = nubOrd $ map sortEdge $ directedEdges g
 
 sortEdge :: Ord a => (a, a) -> (a, a)
 sortEdge (a, b) | a > b = (b, a)
 sortEdge (a, b) | otherwise = (a, b)
 
--- Includes duplicates
+-- Return each edge twice, in each ordering
 directedEdges :: Ord a => Graph a -> [(a, a)]
 directedEdges g@(Graph m) = concat (Prelude.map (nodeEdges g) (M.keys m))
 
+-- Return all edges (x, y) for the given x
 nodeEdges :: Ord a => Graph a -> a -> [(a, a)]
 nodeEdges (Graph m) x = map (x,) $ S.toList (m M.! x)
 
+-- Return connected components of the graph
 -- This is extremely inefficient; it constructs a size-n component n times
 components :: (Eq a, Ord a, Show a) => Graph a -> [S.Set a]
 components g = nub $ Prelude.map (closure g) (S.toList (nodes g))
@@ -73,10 +80,11 @@ showComponents sets = intercalate " " $ map show (map S.toList sets)
 showGraphAsComponents :: (Eq a, Ord a, Show a) => Graph a -> String
 showGraphAsComponents = showComponents . components
 
--- TODO misnomer; the supplied components don't have to be disjoint, so (components . fromComponents) /= id
+-- Construct a graph from the given connected components.
+-- They don't have to be disjoint, so (components . fromComponents) /= id
 fromComponents :: (Show a, Ord a) => [[a]] -> Graph a
 fromComponents [] = Graph M.empty
-fromComponents (c:cs) = addAll (fromComponents cs) c
+fromComponents (c:cs) = addComponent (fromComponents cs) c
 
 nodes :: Ord a => Graph a -> S.Set a
 nodes (Graph m) = flatten (M.elems m)
