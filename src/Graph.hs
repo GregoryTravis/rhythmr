@@ -10,7 +10,7 @@ module Graph
 , fromComponents
 , showGraphAsComponents
 , longestPathComponent
-, thresholedWalks
+, thresholdedWalks
 , graphTest ) where
 
 ---- Really dumb undirected graph: extremely slow!!
@@ -187,8 +187,8 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 
 -- For each k >= 1, build the k-metagraph and return (k, walk). Stop when the
 -- walks become empty.
-thresholedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
-thresholedWalks xses = {-eesp debug $-} takeWhile (\(_, walk) -> not (null walk)) walks
+thresholdedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
+thresholdedWalks xses = {-eesp debug $-} takeWhile (\(_, walk) -> not (null walk)) walks
   where walks = map walk [0..]
         walk k = (k, allLongestPathComponents (buildMetaGraph xses k))
         debug = map d [0..4]
