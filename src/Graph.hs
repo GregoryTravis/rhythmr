@@ -8,7 +8,8 @@ module Graph
 , nodes
 , components
 , fromComponents
-, showGraphAsComponents ) where
+, showGraphAsComponents
+, graphTest ) where
 
 ---- Really dumb undirected graph: extremely slow!!
 
@@ -66,9 +67,13 @@ sortEdge (a, b) | otherwise = (a, b)
 directedEdges :: Ord a => Graph a -> [(a, a)]
 directedEdges g@(Graph m) = concat (Prelude.map (nodeEdges g) (M.keys m))
 
+-- Return all nodes connected by an edge to the given node
+connectedTo :: Ord a => Graph a -> a -> [a]
+connectedTo (Graph m) x = S.toList (m M.! x)
+
 -- Return all edges (x, y) for the given x
 nodeEdges :: Ord a => Graph a -> a -> [(a, a)]
-nodeEdges (Graph m) x = map (x,) $ S.toList (m M.! x)
+nodeEdges g x = map (x,) $ (connectedTo g x)
 
 -- Return connected components of the graph
 -- This is extremely inefficient; it constructs a size-n component n times
@@ -111,6 +116,15 @@ addKeyIfMissing (Graph m) x | otherwise = Graph $ M.insert x S.empty m
 graphMember :: Ord a => a -> Graph a -> Bool
 graphMember x (Graph m) = M.member x m
 
+-- Starting at the given element, walk the connectivity tree emanating from it,
+-- avoiding cycles.
+walkAndCount :: (Show a, Ord a) => Graph a -> a -> [(a, Int)]
+walkAndCount g x = walk S.empty 0 g x
+  where walk :: (Show a, Ord a) => S.Set a -> Int -> Graph a -> a -> [(a, Int)]
+        walk seen n g x = (x, n) : (concat (map (walk seen' (n+1) g) nexts))
+          where nexts = S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
+                seen' = S.insert x seen
+
 -- Separate module?
 type MetaGraph a = Graph [a]
 
@@ -119,10 +133,11 @@ type MetaGraph a = Graph [a]
 buildMetaGraph :: (Eq a, Show a, Ord a) => [[a]] -> Int -> MetaGraph a
 buildMetaGraph xses k = addMulti empty (findOverlapping k xses)
 
--- Return pairs of lists that overlap
+-- Return pairs of lists that overlap (excluding self-overlapping)
 findOverlapping :: (Eq a, Show a, Ord a) => Int -> [[a]] -> [([a], [a])]
-findOverlapping k xses = filter (uncurry $ overlapBy k) pairs
+findOverlapping k xses = filter (uncurry ok) pairs
   where pairs = [(xs, ys) | xs <- xses, ys <- xses]
+        ok xs ys = overlapBy k xs ys && (xs /= ys)
 
 -- -- Return pairs of lists that overlap by at least k
 -- findOverlapping :: (Eq a, Show a, Ord a) => [[a]] -> Int -> [([a], [a])]
@@ -131,3 +146,22 @@ findOverlapping k xses = filter (uncurry $ overlapBy k) pairs
 -- Nonempty intersection?
 overlapBy :: Eq a => Int -> [a] -> [a] -> Bool
 overlapBy k xs ys = length (intersect xs ys) >= k
+
+graphTest :: IO ()
+graphTest = do
+  let likes =
+        [ [0, 1, 2]
+        , [1, 3, 4]
+        , [3, 2, 5]
+        , [5, 1, 3]
+        , [10, 11, 12]
+        , [10, 13, 14] ]
+      mg = buildMetaGraph likes 1
+      walked = walkAndCount mg [0, 1, 2]
+  msp $ length walked
+  msp $ length $ nubOrd walked
+  msp $ nubOrd walked
+  --msp mg
+  -- let m = case mg of (Graph m) -> m
+  -- msp (length (M.keys m))
+  -- mapM_ (\k -> msp (k, (S.size (m M.! k)))) (M.keys m)

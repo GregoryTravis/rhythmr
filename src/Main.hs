@@ -13,6 +13,7 @@ import Blossom
 import Analysis
 import BandLimitedInterpolator
 import Bars
+import Graph
 import Hypercube
 import Looper (withPortaudio)
 import Project
@@ -86,8 +87,8 @@ doCredits :: IO ()
 doCredits = putStrLn credits
 
 main :: IO ()
---main = stowMain
-main = withPortaudio $ do
+main = graphTest
+_main = withPortaudio $ do
   noBuffering
   --getGCFlags >>= msp
   --putStrLn $ "numCapabilities: " ++ show numCapabilities
