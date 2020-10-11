@@ -14,7 +14,7 @@ module Graph
 ---- Really dumb undirected graph: extremely slow!!
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (intercalate, intersect, nub)
+import Data.List (intercalate, intersect, maximum, nub)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Util
@@ -125,6 +125,34 @@ walkAndCount g x = walk S.empty 0 g x
           where nexts = S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
                 seen' = S.insert x seen
 
+-- Starting at the given element, walk the connectivity tree emanating from it,
+-- avoiding cycles. Returns all paths.
+pathsFrom :: (Show a, Ord a) => Graph a -> a -> [[a]]
+pathsFrom g x = walk S.empty g x
+  where walk :: (Show a, Ord a) => S.Set a -> Graph a -> a -> [[a]]
+        walk seen g x = map (x:) ([] : (concat (map (walk seen' g) nexts)))
+          where nexts = esp $ S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
+                seen' = S.insert x seen
+
+-- Return a longest path from a. If there are multiple paths of that length,
+-- the first one found is returned.
+longestPathFrom :: (Show a, Ord a) => Graph a -> a -> [a]
+longestPathFrom g x =
+  let paths = pathsFrom g x
+      maxLength = maximum (map length (check paths))
+      check paths = assertM "longestPathFrom" (not (null paths)) paths
+      longestPaths = filter ((== maxLength) . length) paths
+   in head longestPaths
+
+-- Find the longest path in a connected component.  If there are multiple paths
+-- of that length, the first one found is returned.
+longestPathComponent :: (Show a, Ord a) => Graph a -> a -> [a]
+longestPathComponent g x =
+  let firstPath = longestPathFrom g x
+      secondStartingPoint = last firstPath
+      secondPath = longestPathFrom g secondStartingPoint
+   in secondPath
+
 -- Separate module?
 type MetaGraph a = Graph [a]
 
@@ -157,10 +185,12 @@ graphTest = do
         , [10, 11, 12]
         , [10, 13, 14] ]
       mg = buildMetaGraph likes 1
-      walked = walkAndCount mg [0, 1, 2]
+      walked = pathsFrom mg [0, 1, 2]
   msp $ length walked
   msp $ length $ nubOrd walked
-  msp $ nubOrd walked
+  msp $ map length walked
+  msp $ longestPathComponent mg [0, 1, 2]
+  --msp $ nubOrd walked
   --msp mg
   -- let m = case mg of (Graph m) -> m
   -- msp (length (M.keys m))
