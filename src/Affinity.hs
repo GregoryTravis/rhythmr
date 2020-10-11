@@ -490,13 +490,12 @@ likesSong s = do
 -- Maximal paths through connected components
 thresholdSong :: State -> IO Zound
 thresholdSong s = do
-  let walks = threshholedWalks (likes s)
+  let walks = thresholedWalks (likes s)
       best = last (check walks)
       check walks = assertM "thresholdSong" (not (null walks)) walks
   z <- renderLoopGrid s (snd best)
   msp ("k-threshold lengths", map (\(k, walk) -> (k, length walk)) walks)
   return z
---threshholedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
 
 buildTallLoopGrid :: State -> [[Loop]]
 buildTallLoopGrid s = concat (map movement stacks)
