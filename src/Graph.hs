@@ -9,6 +9,8 @@ module Graph
 , components
 , fromComponents
 , showGraphAsComponents
+, longestPathComponent
+, threshholedWalks
 , graphTest ) where
 
 ---- Really dumb undirected graph: extremely slow!!
@@ -131,7 +133,7 @@ pathsFrom :: (Show a, Ord a) => Graph a -> a -> [[a]]
 pathsFrom g x = walk S.empty g x
   where walk :: (Show a, Ord a) => S.Set a -> Graph a -> a -> [[a]]
         walk seen g x = map (x:) ([] : (concat (map (walk seen' g) nexts)))
-          where nexts = esp $ S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
+          where nexts = S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
                 seen' = S.insert x seen
 
 -- Return a longest path from a. If there are multiple paths of that length,
@@ -152,6 +154,14 @@ longestPathComponent g x =
       secondStartingPoint = last firstPath
       secondPath = longestPathFrom g secondStartingPoint
    in secondPath
+
+-- Find a longest path through each component, and concatenate them.
+allLongestPathComponents :: (Show a, Ord a) => Graph a -> [a]
+allLongestPathComponents g =
+  let cs = map S.toList (components g)
+      startingPoints = map head cs
+      longestPaths = map (longestPathComponent g) startingPoints
+   in concat longestPaths
 
 -- Separate module?
 type MetaGraph a = Graph [a]
@@ -174,6 +184,19 @@ findOverlapping k xses = filter (uncurry ok) pairs
 -- Nonempty intersection?
 overlapBy :: Eq a => Int -> [a] -> [a] -> Bool
 overlapBy k xs ys = length (intersect xs ys) >= k
+
+-- For each k >= 1, build the k-metagraph and return (k, walk). Stop when the
+-- walks become empty.
+threshholedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
+threshholedWalks xses = {-eesp debug $-} takeWhile (\(_, walk) -> not (null walk)) walks
+  where walks = map walk [0..]
+        walk k = (k, allLongestPathComponents (buildMetaGraph xses k))
+        debug = map d [0..4]
+          where d k =
+                  let mg = buildMetaGraph xses k
+                      cs = components mg
+                      adjs = case mg of Graph m -> map length (M.elems m)
+                   in ("debug", k, adjs, map length cs)
 
 graphTest :: IO ()
 graphTest = do

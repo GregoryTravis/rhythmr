@@ -32,6 +32,7 @@ import Chew
 import Constants
 import FX
 import Gui
+import Graph
 import Hypercube
 import Loop
 import Looper
@@ -204,6 +205,7 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
   setState s
 keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'T', m) | shiftM m = tallSong s >>= setSong s
+keyboardHandler s (Char 'H', m) | shiftM m = thresholdSong s >>= setSong s
 keyboardHandler s (Char 'L', m) | shiftM m = likesSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
 keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
@@ -484,6 +486,17 @@ tallSong s = do
 likesSong :: State -> IO Zound
 likesSong s = do
   renderLoopGrid s (likes s)
+
+-- Maximal paths through connected components
+thresholdSong :: State -> IO Zound
+thresholdSong s = do
+  let walks = threshholedWalks (likes s)
+      best = last (check walks)
+      check walks = assertM "thresholdSong" (not (null walks)) walks
+  z <- renderLoopGrid s (snd best)
+  msp ("k-threshold lengths", map (\(k, walk) -> (k, length walk)) walks)
+  return z
+--threshholedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
 
 buildTallLoopGrid :: State -> [[Loop]]
 buildTallLoopGrid s = concat (map movement stacks)

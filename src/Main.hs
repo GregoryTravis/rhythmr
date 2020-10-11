@@ -87,8 +87,8 @@ doCredits :: IO ()
 doCredits = putStrLn credits
 
 main :: IO ()
-main = graphTest
-_main = withPortaudio $ do
+_main = graphTest
+main = withPortaudio $ do
   noBuffering
   --getGCFlags >>= msp
   --putStrLn $ "numCapabilities: " ++ show numCapabilities
