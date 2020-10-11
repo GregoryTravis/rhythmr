@@ -13,14 +13,15 @@ module Graph
 ---- Really dumb undirected graph: extremely slow!!
 
 import Data.Containers.ListUtils (nubOrd)
-import Data.List (intercalate, nub)
+import Data.List (intercalate, intersect, nub)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Util
 
 -- An unordered graph expressed as a map from each node to all the nodes it
 -- shares an edge with. Each edge is represented twice, once for each of its
--- nodes.
+-- nodes. This representation does not permit nodes without any edges attached
+-- to them.
 
 data Graph a = Graph (M.Map a (S.Set a))
   deriving Eq
@@ -109,3 +110,24 @@ addKeyIfMissing (Graph m) x | otherwise = Graph $ M.insert x S.empty m
 
 graphMember :: Ord a => a -> Graph a -> Bool
 graphMember x (Graph m) = M.member x m
+
+-- Separate module?
+type MetaGraph a = Graph [a]
+
+-- Construct a k-metagraph.
+-- Such a graph has an edge (x, y) if the intersection of x and y is of size k or greater.
+buildMetaGraph :: (Eq a, Show a, Ord a) => [[a]] -> Int -> MetaGraph a
+buildMetaGraph xses k = addMulti empty (findOverlapping k xses)
+
+-- Return pairs of lists that overlap
+findOverlapping :: (Eq a, Show a, Ord a) => Int -> [[a]] -> [([a], [a])]
+findOverlapping k xses = filter (uncurry $ overlapBy k) pairs
+  where pairs = [(xs, ys) | xs <- xses, ys <- xses]
+
+-- -- Return pairs of lists that overlap by at least k
+-- findOverlapping :: (Eq a, Show a, Ord a) => [[a]] -> Int -> [([a], [a])]
+-- findOverlapping xses k = filter (> k . length) (findOverlapping xses)
+
+-- Nonempty intersection?
+overlapBy :: Eq a => Int -> [a] -> [a] -> Bool
+overlapBy k xs ys = length (intersect xs ys) >= k
