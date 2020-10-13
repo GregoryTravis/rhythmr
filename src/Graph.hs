@@ -161,9 +161,9 @@ longestPathComponent g x =
    in secondPath
 
 -- Find a longest path through each component, and concatenate them.
+-- If the argument is an empty graph, then an empty list is returned.
 allLongestPathComponents :: (Show a, Ord a) => Graph a -> [a]
-allLongestPathComponents g | nullGraph g = error "allLongestPathComponents: empty"
-                           | otherwise =
+allLongestPathComponents g =
   let cs = map S.toList (components g)
       startingPoints = map head cs
       longestPaths = map (longestPathComponent g) startingPoints
@@ -194,11 +194,10 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 -- For each k >= 1, build the k-metagraph and return (k, walk). Stop when the
 -- walks become empty.
 thresholdedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
-thresholdedWalks xses = unsafeTime "twtop" $ eesp debug $ unsafeTime "twtop2" $ eeesp "evaled top" $ evaled
+thresholdedWalks xses = nonEmpty
   where walks = map walk [0..]
-        walk k = (k, unsafeTime "allLongestPathComponents" $ allLongestPathComponents (unsafeTime ("buildMetaGraph" ++ " " ++ (show k)) $ eeesp ("buildMetaGraph" ++ " " ++ (show k)) $ unsafeTime "sigh" $ buildMetaGraph xses k))
+        walk k = eesp ("buildMetaGraph", k, nullGraph (buildMetaGraph xses k)) (k, allLongestPathComponents (buildMetaGraph xses k))
         nonEmpty = takeWhile (\(_, walk) -> not (null walk)) walks
-        evaled = unsafeTime "thresholdedWalks" (eeesp "force" (unsafeTime "thresholdedWalks2" nonEmpty))
         --evaled = unsafeTime "thresholdedWalks" nonEmpty
         -- debug = map d [0..4]
         --   where d k =
@@ -208,8 +207,8 @@ thresholdedWalks xses = unsafeTime "twtop" $ eesp debug $ unsafeTime "twtop2" $ 
         --            in ("debug", k, adjs, map length cs)
         -- debug = map (\(k, walk) -> (k, length walk)) $ take 20 walks
         --debug = map graphInfo (map (buildMetaGraph xses) [0..14])
-        debug = allLongestPathComponents (Graph.empty :: Graph Int)
-        graphInfo (Graph m) = ("gi", map length (M.elems m))
+        -- debug = allLongestPathComponents (Graph.empty :: Graph Int)
+        -- graphInfo (Graph m) = ("gi", map length (M.elems m))
 
 graphTest :: IO ()
 graphTest = do
