@@ -8,6 +8,7 @@ module Util
 , esp
 , eesp
 , fesp
+, sfesp
 , faresp
 , faaresp
 , faaresp2
@@ -24,6 +25,7 @@ module Util
 , fromLeftReal
 , mappily
 , mcompose
+, wallTime
 , time
 , cpuTime
 , unsafeTime
@@ -96,6 +98,11 @@ eesp s a = unsafePerformIO $ do
 fesp :: Show b => (a -> b) -> a -> a
 fesp f a = unsafePerformIO $ do
   putStrLn $ evalString $ show $ f a
+  return a
+
+sfesp :: (Show b, Show c) => c -> (a -> b) -> a -> a
+sfesp c f a = unsafePerformIO $ do
+  putStrLn $ evalString $ show (c, f a)
   return a
 
 -- function, arg, and result
@@ -172,13 +179,19 @@ mcompose f g x = case g x of Just y -> f y
                              Nothing -> Nothing
 
 -- Taken from https://wiki.haskell.org/Timing_computations
-time :: String -> IO t -> IO t
-time s a = do
+wallTime :: String -> IO t -> IO t
+wallTime s a = do
     start <- getSystemTime
     v <- a
     end <- getSystemTime
     let diff = (systemToUTCTime end) `diffUTCTime` (systemToUTCTime start)
     printf "%s %s\n" s (show diff)
+    return v
+
+time :: String -> IO t -> IO t
+time s a = do
+    (v, dt) <- cpuTime a
+    printf "%s %s\n" s (show dt)
     return v
 
 -- Return duration in seconds

@@ -39,6 +39,11 @@ empty = Graph (M.empty)
 nullGraph :: Graph a -> Bool
 nullGraph (Graph m) = M.null m
 
+graphInfo :: (Show a, Ord a) => Graph a -> (Int, Int, Double, Int)
+graphInfo g = (length $ nodes g, length $ edges g, density, length $ components g)
+  where density = (fromIntegral $ length $ edges g) / (fromIntegral $ sq $ length $ nodes g)
+        sq x = x * x
+
 -- Add an edge (x, y). Adds y to the adjacency list for x, and vice versa,
 -- because I'm a jerk.
 add :: (Ord a, Show a) => Graph a -> a -> a -> Graph a
@@ -188,7 +193,7 @@ findOverlapping :: (Eq a, Show a, Ord a) => [[a]] -> [([a], [a])]
 findOverlapping xses =
   let e2l = elementToListsMap xses
       allPairs xs = [(x, y) | x <- xs, y <- xs]
-   in nubOrd $ concat $ map allPairs (M.elems e2l)
+   in sfesp "uniq" length $ nubOrd $ sfesp "all" length $ concat $ map allPairs (M.elems e2l)
 
 -- Build a map from each element to the lists that contain it
 elementToListsMap :: (Eq a, Ord a) => [[a]] -> M.Map a [[a]]
@@ -205,7 +210,8 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 thresholdedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
 thresholdedWalks xses = nonEmpty
   where walks = map walk [0..]
-        walk k = (k, allLongestPathComponents (buildMetaGraph xses k))
+        walk k = (k, allLongestPathComponents (mg k))
+        mg k = buildMetaGraph xses k
         nonEmpty = takeWhile (\(_, walk) -> not (null walk)) walks
         --evaled = unsafeTime "thresholdedWalks" nonEmpty
         -- debug = map d [0..4]
