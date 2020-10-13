@@ -61,6 +61,7 @@ module Util
 , listDirectoryWithPath
 , (!!!)
 , removeElem
+, mapFromListAccum
 ) where
 
 import Control.Exception
@@ -379,3 +380,10 @@ removeElem xs i | i < 0 || i >= length xs = error (show ("removeElem", i))
                 | otherwise = go xs i
   where go (x:xs) 0 = (x, xs)
         go (x:xs) i = case go xs (i-1) of (x', xs') -> (x', x:xs')
+
+mapFromListAccum :: Ord a => [(a, b)] -> M.Map a [b]
+mapFromListAccum [] = M.empty
+mapFromListAccum ((x, y) : ps) = M.alter alt x (mapFromListAccum ps)
+  where alt (Just oy) = Just (y : oy)
+        alt Nothing = Just [y]
+--alter :: Ord k => (Maybe a -> Maybe a) -> k -> Map k a -> Map k a

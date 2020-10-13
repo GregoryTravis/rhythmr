@@ -175,17 +175,26 @@ type MetaGraph a = Graph [a]
 -- Construct a k-metagraph.
 -- Such a graph has an edge (x, y) if the intersection of x and y is of size k or greater.
 buildMetaGraph :: (Eq a, Show a, Ord a) => [[a]] -> Int -> MetaGraph a
-buildMetaGraph xses k = addMulti empty (findOverlapping k xses)
+buildMetaGraph xses k = addMulti empty (findOverlappingBy k xses)
 
--- Return pairs of lists that overlap (excluding self-overlapping)
-findOverlapping :: (Eq a, Show a, Ord a) => Int -> [[a]] -> [([a], [a])]
-findOverlapping k xses = filter (uncurry ok) pairs
-  where pairs = [(xs, ys) | xs <- xses, ys <- xses]
-        ok xs ys = overlapBy k xs ys && (xs /= ys)
+-- Return pairs of lists that overlap by the specified number of elements
+-- (excluding self-overlapping)
+findOverlappingBy :: (Eq a, Show a, Ord a) => Int -> [[a]] -> [([a], [a])]
+findOverlappingBy k xses = filter (uncurry ok) (findOverlapping xses)
+  where ok xs ys = overlapBy k xs ys && (xs /= ys)
 
--- -- Return pairs of lists that overlap by at least k
--- findOverlapping :: (Eq a, Show a, Ord a) => [[a]] -> Int -> [([a], [a])]
--- findOverlapping xses k = filter (> k . length) (findOverlapping xses)
+-- Return pairs of lists that overlap by at least one element.
+findOverlapping :: (Eq a, Show a, Ord a) => [[a]] -> [([a], [a])]
+findOverlapping xses =
+  let e2l = elementToListsMap xses
+      allPairs xs = [(x, y) | x <- xs, y <- xs]
+   in nubOrd $ concat $ map allPairs (M.elems e2l)
+
+-- Build a map from each element to the lists that contain it
+elementToListsMap :: (Eq a, Ord a) => [[a]] -> M.Map a [[a]]
+elementToListsMap xses = mapFromListAccum $ concat (map kvs xses)
+  where kvs :: [a] -> [(a, [a])]
+        kvs xs = map (,xs) xs
 
 -- Nonempty intersection?
 overlapBy :: Eq a => Int -> [a] -> [a] -> Bool
@@ -196,7 +205,7 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 thresholdedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
 thresholdedWalks xses = nonEmpty
   where walks = map walk [0..]
-        walk k = eesp ("buildMetaGraph", k, nullGraph (buildMetaGraph xses k)) (k, allLongestPathComponents (buildMetaGraph xses k))
+        walk k = (k, allLongestPathComponents (buildMetaGraph xses k))
         nonEmpty = takeWhile (\(_, walk) -> not (null walk)) walks
         --evaled = unsafeTime "thresholdedWalks" nonEmpty
         -- debug = map d [0..4]
