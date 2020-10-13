@@ -3,6 +3,7 @@
 module Graph
 ( Graph
 , empty
+, nullGraph
 , add
 , addMulti
 , nodes
@@ -32,7 +33,11 @@ data Graph a = Graph (M.Map a (S.Set a))
 instance (Eq a, Ord a, Show a) => Show (Graph a) where
   show g = show $ edges g
 
+empty :: Graph a
 empty = Graph (M.empty)
+
+nullGraph :: Graph a -> Bool
+nullGraph (Graph m) = M.null m
 
 -- Add an edge (x, y). Adds y to the adjacency list for x, and vice versa,
 -- because I'm a jerk.
@@ -157,7 +162,8 @@ longestPathComponent g x =
 
 -- Find a longest path through each component, and concatenate them.
 allLongestPathComponents :: (Show a, Ord a) => Graph a -> [a]
-allLongestPathComponents g =
+allLongestPathComponents g | nullGraph g = error "allLongestPathComponents: empty"
+                           | otherwise =
   let cs = map S.toList (components g)
       startingPoints = map head cs
       longestPaths = map (longestPathComponent g) startingPoints
@@ -188,15 +194,22 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 -- For each k >= 1, build the k-metagraph and return (k, walk). Stop when the
 -- walks become empty.
 thresholdedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
-thresholdedWalks xses = {-eesp debug $-} takeWhile (\(_, walk) -> not (null walk)) walks
+thresholdedWalks xses = unsafeTime "twtop" $ eesp debug $ unsafeTime "twtop2" $ eeesp "evaled top" $ evaled
   where walks = map walk [0..]
-        walk k = (k, allLongestPathComponents (buildMetaGraph xses k))
-        debug = map d [0..4]
-          where d k =
-                  let mg = buildMetaGraph xses k
-                      cs = components mg
-                      adjs = case mg of Graph m -> map length (M.elems m)
-                   in ("debug", k, adjs, map length cs)
+        walk k = (k, unsafeTime "allLongestPathComponents" $ allLongestPathComponents (unsafeTime ("buildMetaGraph" ++ " " ++ (show k)) $ eeesp ("buildMetaGraph" ++ " " ++ (show k)) $ unsafeTime "sigh" $ buildMetaGraph xses k))
+        nonEmpty = takeWhile (\(_, walk) -> not (null walk)) walks
+        evaled = unsafeTime "thresholdedWalks" (eeesp "force" (unsafeTime "thresholdedWalks2" nonEmpty))
+        --evaled = unsafeTime "thresholdedWalks" nonEmpty
+        -- debug = map d [0..4]
+        --   where d k =
+        --           let mg = buildMetaGraph xses k
+        --               cs = components mg
+        --               adjs = case mg of Graph m -> map length (M.elems m)
+        --            in ("debug", k, adjs, map length cs)
+        -- debug = map (\(k, walk) -> (k, length walk)) $ take 20 walks
+        --debug = map graphInfo (map (buildMetaGraph xses) [0..14])
+        debug = allLongestPathComponents (Graph.empty :: Graph Int)
+        graphInfo (Graph m) = ("gi", map length (M.elems m))
 
 graphTest :: IO ()
 graphTest = do

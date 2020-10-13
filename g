@@ -18,8 +18,8 @@
 
 (stack build rhythmr && stack exec rhythmr -- "$@") 2>&1 | tee out
 
-# profargs="--library-profiling --executable-profiling --profile"
-# (stack build $profargs rhythmr && stack exec rhythmr $profargs -- "$@" +RTS -xc -RTS) 2>&1 | tee out
+# profargs='--library-profiling --executable-profiling --profile'
+# (stack build --force-dirty $profargs --ghc-options="-fprof-auto -O0" rhythmr && stack exec rhythmr $profargs -- "$@" +RTS -pa -xc -RTS) 2>&1 | tee out
 
 stty sane
 

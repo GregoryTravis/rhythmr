@@ -21,7 +21,7 @@
 resolver: lts-14.18
 
 # Uncomment to find dead code
-# rebuild-ghc-options: true
+rebuild-ghc-options: true
 # ghc-options:
 #   rhythmr: "-fforce-recomp -fwarn-unused-binds -fwarn-unused-imports"
 

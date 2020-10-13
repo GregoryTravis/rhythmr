@@ -260,7 +260,7 @@ newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
       loopsToKeep = concat likes -- ++ S.toList dislikes)
   newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
-  msp ("newPool", poolSize, length loopsToKeep, newLoops)
+  --msp ("newPool", poolSize, length loopsToKeep, newLoops)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
 -- Complete a list by adding enough elements to reach the given total. Since
@@ -493,6 +493,7 @@ thresholdSong s = do
   let walks = thresholdedWalks (likes s)
       best = last (check walks)
       check walks = assertM "thresholdSong" (not (null walks)) walks
+  time "msp walks" $ putStrLn $ show walks
   z <- renderLoopGrid s (snd best)
   msp ("k-threshold lengths", map (\(k, walk) -> (k, length walk)) walks)
   return z
