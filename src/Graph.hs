@@ -133,14 +133,14 @@ addKeyIfMissing (Graph m) x | otherwise = Graph $ M.insert x S.empty m
 graphMember :: Ord a => a -> Graph a -> Bool
 graphMember x (Graph m) = M.member x m
 
--- Starting at the given element, walk the connectivity tree emanating from it,
--- avoiding cycles.
-walkAndCount :: (Show a, Ord a) => Graph a -> a -> [(a, Int)]
-walkAndCount g x = walk S.empty 0 g x
-  where walk :: (Show a, Ord a) => S.Set a -> Int -> Graph a -> a -> [(a, Int)]
-        walk seen n g x = (x, n) : (concat (map (walk seen' (n+1) g) nexts))
-          where nexts = S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
-                seen' = S.insert x seen
+-- -- Starting at the given element, walk the connectivity tree emanating from it,
+-- -- avoiding cycles.
+-- walkAndCount :: (Show a, Ord a) => Graph a -> a -> [(a, Int)]
+-- walkAndCount g x = walk S.empty 0 g x
+--   where walk :: (Show a, Ord a) => S.Set a -> Int -> Graph a -> a -> [(a, Int)]
+--         walk seen n g x = (x, n) : (concat (map (walk seen' (n+1) g) nexts))
+--           where nexts = S.toList ((S.fromList (connectedTo g x)) `S.difference` seen)
+--                 seen' = S.insert x seen
 
 -- Starting at the given element, walk the connectivity tree emanating from it,
 -- avoiding cycles. Returns all paths.
@@ -153,9 +153,9 @@ pathsFrom g x = walk S.empty g x
 
 -- Return a longest path from a. If there are multiple paths of that length,
 -- the first one found is returned.
-longestPathFrom :: (Show a, Ord a) => Graph a -> a -> [a]
+longestPathFrom :: (NFData a, Show a, Ord a) => Graph a -> a -> [a]
 longestPathFrom g x =
-  let paths = pathsFrom g x
+  let paths = tv "pathsFrom " $ pathsFrom g x
       maxLength = maximum (map length (check paths))
       check paths = assertM "longestPathFrom" (not (null paths)) paths
       longestPaths = filter ((== maxLength) . length) paths
@@ -163,7 +163,7 @@ longestPathFrom g x =
 
 -- Find the longest path in a connected component.  If there are multiple paths
 -- of that length, the first one found is returned.
-longestPathComponent :: (Show a, Ord a) => Graph a -> a -> [a]
+longestPathComponent :: (NFData a, Show a, Ord a) => Graph a -> a -> [a]
 longestPathComponent g x =
   let firstPath = longestPathFrom g x
       secondStartingPoint = last firstPath
@@ -172,9 +172,9 @@ longestPathComponent g x =
 
 -- Find a longest path through each component, and concatenate them.
 -- If the argument is an empty graph, then an empty list is returned.
-allLongestPathComponents :: (Show a, Ord a) => Graph a -> [a]
+allLongestPathComponents :: (NFData a, Show a, Ord a) => Graph a -> [a]
 allLongestPathComponents g =
-  let cs = map S.toList (components g)
+  let cs = map S.toList (tv "components" $ components g)
       startingPoints = map head cs
       longestPaths = map (longestPathComponent g) startingPoints
    in concat longestPaths
@@ -233,7 +233,7 @@ thresholdedWalks xses = nonEmpty
 graphTest :: IO ()
 graphTest = do
   let likes =
-        [ [0, 1, 2]
+        [ [0, 1, 2::Int] -- Int here for NFData while debugging performance
         , [1, 3, 4]
         , [3, 2, 5]
         , [5, 1, 3]
