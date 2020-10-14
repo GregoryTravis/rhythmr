@@ -6,6 +6,7 @@ module Affinity
 ( affinityMain
 , State(..) ) where
 
+import Control.DeepSeq
 import Control.Concurrent
 import Control.Monad (replicateM, zipWithM_)
 import Data.Binary
@@ -486,6 +487,8 @@ tallSong s = do
 likesSong :: State -> IO Zound
 likesSong s = do
   renderLoopGrid s (likes s)
+
+instance NFData Loop
 
 -- Maximal paths through connected components
 thresholdSong :: State -> IO Zound

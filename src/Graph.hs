@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
 
 module Graph
@@ -16,6 +17,8 @@ module Graph
 
 ---- Really dumb undirected graph: extremely slow!!
 
+import Control.DeepSeq
+import GHC.Generics (Generic, Generic1)
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (intercalate, intersect, maximum, nub)
 import qualified Data.Map.Strict as M
@@ -28,7 +31,9 @@ import Util
 -- to them.
 
 data Graph a = Graph (M.Map a (S.Set a))
-  deriving Eq
+  deriving (Eq, Generic)
+
+instance NFData a => NFData (Graph a)
 
 instance (Eq a, Ord a, Show a) => Show (Graph a) where
   show g = show $ edges g
@@ -207,12 +212,12 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 
 -- For each k >= 1, build the k-metagraph and return (k, walk). Stop when the
 -- walks become empty.
-thresholdedWalks :: (Show a, Ord a) => [[a]] -> [(Int, [[a]])]
+thresholdedWalks :: (NFData a, Show a, Ord a) => [[a]] -> [(Int, [[a]])]
 thresholdedWalks xses = nonEmpty
   where walks = map walk [0..]
-        walk k = (k, allLongestPathComponents (mg k))
-        mg k = buildMetaGraph xses k
-        nonEmpty = takeWhile (\(_, walk) -> not (null walk)) walks
+        walk k = (k, tv "allLongestPathComponents" $ allLongestPathComponents (mg k))
+        mg k = tv "buildMetaGraph" $ buildMetaGraph xses k
+        nonEmpty = tv "nonEmpty" $ takeWhile (\x -> tv "x" $ ((\(_, walk) -> not (null walk)) x)) walks
         --evaled = unsafeTime "thresholdedWalks" nonEmpty
         -- debug = map d [0..4]
         --   where d k =
