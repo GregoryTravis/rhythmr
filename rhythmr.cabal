@@ -47,6 +47,7 @@ executable rhythmr
                        bytestring,
                        containers,
                        cryptohash-md5,
+                       deepseq,
                        directory,
                        dir-traverse,
                        filepath,

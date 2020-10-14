@@ -27,6 +27,7 @@ module Util
 , mcompose
 , wallTime
 , time
+, tv
 , cpuTime
 , unsafeTime
 , noBuffering
@@ -66,6 +67,7 @@ module Util
 , mapFromListAccum
 ) where
 
+import Control.DeepSeq
 import Control.Exception
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (group, groupBy, maximumBy, minimumBy, sort, isSuffixOf)
@@ -193,6 +195,15 @@ time s a = do
     (v, dt) <- cpuTime a
     printf "%s %s\n" s (show dt)
     return v
+
+tv :: NFData a => String -> a -> a
+tv s x = unsafePerformIO $ do
+                 start <- getCPUTime
+                 end <- x `deepseq` getCPUTime
+                 let duration = (fromIntegral (end - start)) / 1_000_000_000_000.0
+                 putStrLn $ "time " ++ s ++ " " ++ (show duration)
+                 --evaluate x
+                 return x
 
 -- Return duration in seconds
 cpuTime :: IO a -> IO (a, Double)
