@@ -5,6 +5,7 @@ module Graph
 ( Graph
 , empty
 , nullGraph
+, connectedTo
 , add
 , addMulti
 , nodes
@@ -13,6 +14,10 @@ module Graph
 , showGraphAsComponents
 , longestPathComponent
 , thresholdedWalks
+, MetaGraph
+, buildMetaGraph
+, graphInfo
+, graphStruct
 , graphTest ) where
 
 ---- Really dumb undirected graph: extremely slow!!
@@ -48,6 +53,14 @@ graphInfo :: (Show a, Ord a) => Graph a -> (Int, Int, Double, Int)
 graphInfo g = (length $ nodes g, length $ edges g, density, length $ components g)
   where density = (fromIntegral $ length $ edges g) / (fromIntegral $ sq $ length $ nodes g)
         sq x = x * x
+
+graphStruct :: Ord a => Graph a -> [(Int, [Int])]
+graphStruct g =
+  let ns = S.toList (nodes g)
+      elemToInt = M.fromList (zip ns [0..])
+      lup x = elemToInt M.! x
+      showNode n = (lup n, map lup (connectedTo g n))
+   in map showNode ns
 
 -- Add an edge (x, y). Adds y to the adjacency list for x, and vice versa,
 -- because I'm a jerk.
@@ -190,7 +203,8 @@ buildMetaGraph xses k = addMulti empty (findOverlappingBy k xses)
 -- Return pairs of lists that overlap by the specified number of elements
 -- (excluding self-overlapping)
 findOverlappingBy :: (Eq a, Show a, Ord a) => Int -> [[a]] -> [([a], [a])]
-findOverlappingBy k xses = filter (uncurry ok) (findOverlapping xses)
+findOverlappingBy k xses | k >= 1 = filter (uncurry ok) (findOverlapping xses)
+                         | otherwise = error ("findOverlapping: k must be >= 1, is " ++ (show k))
   where ok xs ys = overlapBy k xs ys && (xs /= ys)
 
 -- Return pairs of lists that overlap by at least one element.

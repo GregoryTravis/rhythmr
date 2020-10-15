@@ -4,11 +4,13 @@
 
 module Affinity
 ( affinityMain
+, randomWalk
 , State(..) ) where
 
 import Control.DeepSeq
 import Control.Concurrent
 import Control.Monad (replicateM, zipWithM_)
+import Control.Monad.Random.Lazy
 import Data.Binary
 import Data.Containers.ListUtils (nubOrd)
 import Data.IORef
@@ -208,6 +210,7 @@ keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'T', m) | shiftM m = tallSong s >>= setSong s
 keyboardHandler s (Char 'H', m) | shiftM m = thresholdSong s >>= setSong s
 keyboardHandler s (Char 'L', m) | shiftM m = likesSong s >>= setSong s
+keyboardHandler s (Char 'G', m) | shiftM m = metagraphSong s >>= setSong s
 keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
 keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
 keyboardHandler s (Char 'a', m) | noM m = hiChew s' >>= setSong s'
@@ -488,6 +491,37 @@ tallSong s = do
 likesSong :: State -> IO Zound
 likesSong s = do
   renderLoopGrid s (likes s)
+
+-- For each component, pick one node and randomly walk the edge graph, for a
+-- number of steps equal to some constant times the size of the component.
+metagraphSong :: State -> IO Zound
+metagraphSong s = do
+  let mgs = takeWhile hasSome $ map (buildMetaGraph (likes s)) [1..]
+      hasSome mg = length (components mg) > 0
+  msp (map graphInfo mgs)
+  --msp (length (likes s))
+  let g = mkStdGen 348584
+      mg = head mgs
+      walk comp = randomWalk g (connectedTo mg) (head comp) (length comp)
+      walks = map walk (map S.toList $ components mg)
+  msp $ likes s
+  msp walks
+  msp $ graphInfo mg
+  msp $ graphStruct mg
+  renderLoopGrid s $ concat walks
+
+--randomWalk :: Random g => Rand Graph [Loop] -> Loop -
+randomWalk :: RandomGen g => g -> (a -> [a]) -> a -> Int -> [a]
+randomWalk g nexts start count =
+  let (xs, _) =
+        flip runRand g $ do
+          let loop x i | i == 0 = return []
+                       | otherwise = do
+                           x' <- liftRand $ randFromListPure (nexts x)
+                           xs' <- loop x' (i-1)
+                           return $ x' : xs'
+           in loop start count
+   in xs
 
 instance NFData Loop
 
