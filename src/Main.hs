@@ -33,6 +33,7 @@ helpText = unlines
   , "rhythmr barsFile project-dir collection filename [filename, filename, ...]"
   , "rhythmr aff project-dir collection weight [collection weight, ...]"
   , "rhythmr demo project-dir collection weight [collection weight, ...]"
+  , "rhythmr blossom project-dir srcCollection destCollection count"
   , "rhythmr credits" ]
 
 doHelp :: IO ()

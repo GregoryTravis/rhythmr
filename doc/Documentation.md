@@ -9,7 +9,7 @@ As you do this, good-sounding combinations of the loops appear in the upper righ
 
 When you start up, a pool of loops is selected, shown in the upper left. This is often only a subset of the loops contained in the project. When you get bored with these, hit "E" ("new pool") to load a new set. (The ones you've already liked will stay.)
 
-"Cycle affinities" (the "c" key) generates another song using the same groups of loops, but in different combinations. Sometimes it sounds very similar, sometimes very different.
+"Cycle affinities" (the "c" key) causes the next song to shift the loop groups, so that re-generating a song will produce a different song. Repeatedly pressing c will repeatedly shift the groups.
 
 ## User interface
 
@@ -34,6 +34,7 @@ Details at the bottom.
 * **W** - write current song to disk
 * **S** - generate song
 * **J** - generate drum-n-bass-style song
+* **A** - generate even more messed up drum-n-bass-style song
 * **0-9** - volume
 
 Deprecated commands:

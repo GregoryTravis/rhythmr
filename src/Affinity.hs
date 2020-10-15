@@ -239,8 +239,9 @@ keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 --   file <- getHistoryFile
 --   retCommand $ Load file
 --keyboardHandler s 'C' = let s' = (combineAffinities s) in setState s'
-keyboardHandler s (Char 'c', m) | noM m = cycleLikesSong s' >>= setSong s'
-  where s' = s { affinityCycle = affinityCycle s + 1 }
+-- keyboardHandler s (Char 'c', m) | noM m = cycleLikesSong s' >>= setSong s'
+keyboardHandler s (Char 'c', m) | noM m = setState s'
+   where s' = s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s (Char c, m) | noM m && c >= '0' && c <= '9' = setVolume' c s
 keyboardHandler s (Char c, _) | otherwise = do
   msp $ ("?? " ++ (show c))
@@ -261,7 +262,7 @@ newPool s@(State { likes, dislikes }) = do
   let loopsToKeep :: [Loop]
       loopsToKeep = concat likes -- ++ S.toList dislikes)
   newLoops <- loadRandomLoops s (poolSize - length loopsToKeep)
-  --msp ("newPool", poolSize, length loopsToKeep, newLoops)
+  -- msp ("newPool", poolSize, length loopsToKeep, newLoops)
   return $ s { loops = nub (loopsToKeep ++ newLoops), currentGroup = [], stack = [] }
 
 -- Complete a list by adding enough elements to reach the given total. Since
