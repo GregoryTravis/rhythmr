@@ -501,14 +501,19 @@ metagraphSong s = do
   msp (map graphInfo mgs)
   --msp (length (likes s))
   let g = mkStdGen 348584
-      mg = head mgs
+      mg = mgs !! 0
       walk comp = randomWalk g (connectedTo mg) (head comp) (length comp)
       walks = map walk (map S.toList $ components mg)
-  msp $ likes s
-  msp walks
+      seq = concat walks
+      pairwiseOverlaps = zipWith pairwiseOverlap seq (tail seq)
+      pairwiseOverlap x y = length $ intersect x y
+  --msp seq
+  msp $ "overlaps " ++ (show pairwiseOverlaps)
+  --msp $ likes s
+  --msp walks
   msp $ graphInfo mg
-  msp $ graphStruct mg
-  renderLoopGrid s $ concat walks
+  --msp $ graphStruct mg
+  renderLoopGrid s seq
 
 --randomWalk :: Random g => Rand Graph [Loop] -> Loop -
 randomWalk :: RandomGen g => g -> (a -> [a]) -> a -> Int -> [a]
@@ -552,6 +557,7 @@ setSong :: State -> Zound -> IO (GuiCommand State)
 setSong s mix = do
   noSound (looper s)
   z <- strictRender mix
+  msp $ "setting song, duration " ++ (show (durationSeconds z)) ++ "s"
   let s' = s { currentSong = Just (mix, z), currentGroup = [] }
   setZoundFromTheTop (looper s') z
   setState s'

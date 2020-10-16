@@ -51,8 +51,8 @@ nullGraph (Graph m) = M.null m
 
 graphInfo :: (Show a, Ord a) => Graph a -> (Int, Int, Double, Int)
 graphInfo g = (length $ nodes g, length $ edges g, density, length $ components g)
-  where density = (fromIntegral $ length $ edges g) / (fromIntegral $ sq $ length $ nodes g)
-        sq x = x * x
+  where density = (fromIntegral $ length $ edges g) / (fromIntegral $ numPairs $ length $ nodes g)
+        numPairs x = x * (x-1)
 
 graphStruct :: Ord a => Graph a -> [(Int, [Int])]
 graphStruct g =
