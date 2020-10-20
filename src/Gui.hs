@@ -65,7 +65,7 @@ guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz re
         --msp $ "?? " ++ (show e)
         return gs
       stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) (updateViz dt (cur h) v) lastH
-   in playIO displayMode bgColor 100 initWorld worldToPicture eventHandler stepIteration
+   in playIO displayMode bgColor 20 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (440, 125)
         bgColor = white
 
