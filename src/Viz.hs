@@ -40,6 +40,9 @@ import State
 import Util
 import Zounds hiding (Translate, Scale)
 
+disableViz :: Bool
+disableViz = False
+
 instance Ord Color where
   compare c c' = compare (rgbaOfColor c) (rgbaOfColor c')
 
@@ -240,7 +243,8 @@ unR2 (V2 x y) = (x, y)
 
 -- TODO: This matrix ioref in the state is a crime against nature
 renderViz :: Float -> State -> Viz -> IO Picture
-renderViz t s (Viz pics fiz) = do
+renderViz t s (Viz pics fiz) | disableViz = return Blank
+                             | otherwise = do
   mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
       (hc, mat') = renderHypercube s mat t

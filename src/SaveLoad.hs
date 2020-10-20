@@ -32,19 +32,25 @@ type Loader s t = t -> IO s
 loadT :: (Binary t, Read t) => String -> Loader s t -> IO (History s)
 loadT filename loader = do
   fileContentsString <- readFile filename
-  runEm $ loader <$> read fileContentsString
+  h <- runEm $ loader <$> read fileContentsString
+  msp $ ("load history size (text", length $ toList h)
+  return h
 
 loadB :: (Binary t, Read t) => String -> Loader s t -> IO (History s)
 loadB filename loader = do
   reps <- decodeFile filename
-  runEm $ loader <$> reps
+  h <- runEm $ loader <$> reps
+  msp $ ("load history size (text)", length $ toList h)
+  return h
 
 saveT :: (Binary t, Show t) => String -> Saver s t -> History s -> IO ()
 saveT filename saver history = do
+  msp $ ("save history size (binary)", length $ toList history)
   let fileContentsString = show (saver <$> history)
   writeFile filename fileContentsString
 
 saveB :: (Binary t, Show t) => String -> Saver s t -> History s -> IO ()
 saveB filename saver history = do
+  msp $ ("save history size (binary)", length $ toList history)
   let reps = saver <$> history
   encodeFile filename reps

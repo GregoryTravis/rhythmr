@@ -22,6 +22,9 @@ import Foreign.Ptr
 import Zounds
 import Util
 
+disableLooper :: Bool
+disableLooper = False
+
 foreign import ccall "init_audio" init_audio :: IO ()
 foreign import ccall "write_audio" write_audio :: Ptr Float -> Int -> IO ()
 foreign import ccall "term_audio" term_audio :: IO ()
@@ -84,7 +87,8 @@ noSound (Looper sv iv _ _ _) = do
              return ()
 
 loop :: Looper -> IO ()
-loop looper = loop' looper 0
+loop looper | disableLooper = return ()
+            | otherwise = loop' looper 0
 loop' :: Looper -> Int -> IO ()
 loop' l@(Looper sv iv _ vv restartV) currentIndex' = do
   --msp currentIndex
