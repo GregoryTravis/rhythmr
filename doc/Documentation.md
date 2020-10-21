@@ -32,7 +32,7 @@ Details at the bottom.
 * **i** - new group, incrementally
 * **E** - new pool
 * **W** - write current song to disk
-* **S** - generate song
+* **S, T, H, L, G, J, A** - generate song from a template (see below)
 * **J** - generate drum-n-bass-style song
 * **A** - generate even more messed up drum-n-bass-style song
 * **0-9** - volume
@@ -41,6 +41,45 @@ Deprecated commands:
 * **s** - new group, subsets
 * **d** - new group, divide-and-conquer
 * **A** - make the first affinity the current group
+
+## Song templates
+
+There are six song templates, identified by the keyboard shortcut and inscrutable name:
+
+#### S (cycleLikesSong)
+
+Chops up your likes and brings parts of them in and out. Tries multiple
+different orderings of the loops in a like.
+
+#### T (tallSong)
+
+Like S, but only uses likes of size 4 or greater. Does not try multiple
+orderings.
+
+#### H (thresholdSong)
+
+Only uses your likes, verbatim, does not create its own variations and
+reductions of them. Sequences them so that adjacent ones are as similar as
+possible. **Warning** this one is slow, so if this key just hangs the program,
+try again with fewer likes.
+
+#### L (likesSong)
+
+Just your likes, in the order you liked them.
+
+#### G (metagraphSong)
+
+Like H, but not slow! More random combinations of similar sounds, without
+guaranteeing maximal similarity. Good enough.
+
+#### J (chew)
+
+Sorta drum+bass. Takes one of the loops and chops bits out and moves them to
+the end, producing some very intentional-sounding variation.
+
+#### A (hiChew)
+
+Like J, but more extreme.
 
 ## Running at the command-line
 
