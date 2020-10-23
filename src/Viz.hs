@@ -245,12 +245,12 @@ unR2 (V2 x y) = (x, y)
 renderViz :: Float -> State -> Viz -> IO Picture
 renderViz t s (Viz pics fiz) | disableViz = return Blank
                              | otherwise = do
-  mat <- readIORef (currentHypercubeMat s)
+  --mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
-      (hc, mat') = renderHypercube s mat t
+      --(hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
       labels = renderLabels
-  writeIORef (currentHypercubeMat s) mat'
+  --writeIORef (currentHypercubeMat s) mat'
   progress <- getProgress (looper s)
   -- (tx, cursor) <- sequenceCursor s
   let seqPics = map (Translate (-progress) 0) $ map renderPic $ map (mapPic (aValToId t)) $ renderCurrentSong progress s
@@ -263,7 +263,7 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       margin = 32 + 16
       logo' = Translate w h logo
       logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
-  return $ Pictures $ [hc] ++ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
+  return $ Pictures $ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked

@@ -80,19 +80,21 @@ initRand :: StdGen
 initRand = mkStdGen 0
 
 makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
-  let mat = identity :: Mat
-  matRef <- newIORef mat
-  --msp ("YEP", projectDir)
-  return $ State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
-                   stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
-                   currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
+makeLoader projectDir soundLoader looper h = fmap (stateRepToState projectDir soundLoader looper) h
+
+stateRepToState :: String -> (String -> IO Zound) -> Looper -> (StateRep -> State)
+stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) =
+  State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
+          stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
+          rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
 
 -- saver :: [State] -> [StateRep]
 -- saver = map toRep
 
-saver :: State -> StateRep
-saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
+saver :: Saver State StateRep
+saver = fmap stateToStateRep
+stateToStateRep :: State -> StateRep
+stateToStateRep (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
@@ -122,14 +124,11 @@ loadRandomLoops s n = do
   return $ map Loop filenames
 
 initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
-initState projectDir soundLoader looper collections = do
-  --msp ("YEP2", projectDir)
-  let mat = identity :: Mat
-  matRef <- newIORef mat
+initState projectDir soundLoader looper collections =
   newPool $ State { projectDir, soundLoader, looper, loops = [], likes = [], dislikes = S.empty,
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
-                    currentSong = Nothing, affinityCycle = 0, currentHypercubeMat = matRef, rand = initRand, strategy = Nothing, useFiz = False }
+                    currentSong = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False }
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)

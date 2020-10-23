@@ -1,4 +1,5 @@
 --{-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module SaveLoad
 ( Loader
@@ -26,31 +27,34 @@ save = if binary then saveB else saveT
 -- s is state, t is the storable representation
 -- Loader result is in IO since you might have to load stuff
 -- Loader takes the current state in case it has a unique resource you need to re-use
-type Saver s t = s -> t
-type Loader s t = t -> IO s
+type Saver s t = History s -> History t
+type Loader s t = History t -> History s
 
-loadT :: (Binary t, Read t) => String -> Loader s t -> IO (History s)
+loadT :: forall s t. (Binary t, Read t) => FilePath -> Loader s t -> IO (History s)
 loadT filename loader = do
-  fileContentsString <- readFile filename
-  h <- runEm $ loader <$> read fileContentsString
-  msp $ ("load history size (text", length $ toList h)
+  s <- readFile filename
+  let r :: Read t => History t
+      r = read s
+      h :: History s
+      h = loader r
+  msp $ ("load history size (text)", length $ toList h)
   return h
 
 loadB :: (Binary t, Read t) => String -> Loader s t -> IO (History s)
 loadB filename loader = do
-  reps <- decodeFile filename
-  h <- runEm $ loader <$> reps
-  msp $ ("load history size (text)", length $ toList h)
+  r <- decodeFile filename
+  let h = loader r
+  msp $ ("load history size (binary)", length $ toList h)
   return h
 
 saveT :: (Binary t, Show t) => String -> Saver s t -> History s -> IO ()
 saveT filename saver history = do
-  msp $ ("save history size (binary)", length $ toList history)
-  let fileContentsString = show (saver <$> history)
-  writeFile filename fileContentsString
+  msp $ ("save history size (text)", length $ toList history)
+  let s = show (saver history)
+  writeFile filename s
 
 saveB :: (Binary t, Show t) => String -> Saver s t -> History s -> IO ()
 saveB filename saver history = do
   msp $ ("save history size (binary)", length $ toList history)
-  let reps = saver <$> history
-  encodeFile filename reps
+  let r = saver history
+  encodeFile filename r

@@ -49,7 +49,6 @@ data State =
         , stack :: [[Loop]]
         , currentSong :: Maybe (Zound, Zound)  -- First is mix, second is rendered
         , affinityCycle :: Int
-        , currentHypercubeMat :: IORef Mat
         , rand :: StdGen
         , strategy :: Maybe String
         , useFiz :: Bool }
