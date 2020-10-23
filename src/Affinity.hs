@@ -89,7 +89,10 @@ initRand = mkStdGen 0
 
 makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader (History State) CompressedStateRep
 makeLoader projectDir soundLoader looper =
-  fmap (stateRepToState projectDir soundLoader looper) . compressedStateRepToHistory
+  lengthShower . fmap (stateRepToState projectDir soundLoader looper) . compressedStateRepToHistory
+
+lengthShower :: History a -> History a
+lengthShower h = eesp ("history length", length (H.toList h)) h
 
 stateRepToState :: String -> (String -> IO Zound) -> Looper -> (StateRep -> State)
 stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) =
@@ -98,7 +101,7 @@ stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, r
           rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
 
 saver :: Saver (History State) CompressedStateRep
-saver = historyToCompressedStateRep . fmap stateToStateRepL
+saver = historyToCompressedStateRep . fmap stateToStateRepL . lengthShower
 stateToStateRepL :: State -> StateRep
 stateToStateRepL (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 
