@@ -88,13 +88,17 @@ stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, r
           stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
           rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
 
--- saver :: [State] -> [StateRep]
--- saver = map toRep
-
 saver :: Saver State StateRep
 saver = fmap stateToStateRep
 stateToStateRep :: State -> StateRep
 stateToStateRep (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
+
+-- Compression replaces each loop with a unique integer.
+data CompressedStateRep = CompressedStateRep { stateRepInt :: StateRepT Int,
+                                               compressedLoops :: [Loop] }
+
+-- compressStateRep :: StateRepT Loop -> CompressedStateRep
+-- deCompressStateRep :: CompressedStateRep -> StateRepT Loop
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
