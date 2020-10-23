@@ -52,7 +52,11 @@ import Viz
 import Zounds
 import qualified Zounds as Z
 
+poolSize :: Int
 poolSize = 256
+
+maxUndo :: Int
+maxUndo = 100
 
 addClick :: Maybe String
 addClick = Nothing
@@ -101,7 +105,7 @@ stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, r
           rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
 
 saver :: Saver (History State) CompressedStateRep
-saver = historyToCompressedStateRep . fmap stateToStateRepL . lengthShower
+saver = historyToCompressedStateRep . fmap stateToStateRepL . lengthShower . H.crop maxUndo
 stateToStateRepL :: State -> StateRep
 stateToStateRepL (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 

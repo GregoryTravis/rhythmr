@@ -15,7 +15,8 @@ module Zipper
 , zwhere
 , toList
 , fromList
-, runEm ) where
+, runEm
+, crop ) where
 
 import Data.Binary
 import GHC.Generics (Generic)
@@ -104,3 +105,10 @@ fromList (x:xs) = Zipper [] x xs
 runEm :: Zipper (IO a) -> IO (Zipper a)
 runEm (Zipper top cur bot) = do
   Zipper <$> runList top <*> cur <*> runList bot
+
+-- Crop all but N most recent.
+-- Don't move cursor, so only crop from b.
+crop :: Int -> Zipper a -> Zipper a
+crop n (Zipper t c b) = Zipper t c b'
+  where b' = take keep b
+        keep = max 0 (n - length t - 1)

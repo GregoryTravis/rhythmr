@@ -12,7 +12,8 @@ module History
 , redo
 , cur
 , runEm
-, hWhere ) where
+, hWhere
+, crop ) where
 
 import Data.Binary
 import GHC.Generics (Generic)
@@ -68,3 +69,7 @@ runEm (History z) = History <$> Z.runEm z
 
 hWhere :: History s -> (Int, Int)
 hWhere (History z) = Z.zwhere z
+
+crop :: Int -> History a -> History a
+--crop n h = fmap (Z.crop n) h -- Y not ok?
+crop n (History z) = History (Z.crop n z)
