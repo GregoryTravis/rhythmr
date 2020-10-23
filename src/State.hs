@@ -41,7 +41,7 @@ data State =
         , collections :: [(Double, String)]
         , loops :: [Loop]
         , likes :: [[Loop]]
-        , dislikes :: S.Set [Loop]
+        , dislikes :: [[Loop]]
         , currentGroup :: [Loop]
         , looper :: Looper
         , soundLoader :: String -> IO Zound
@@ -88,7 +88,7 @@ removeDislikes :: State -> [S.Set Loop] -> [S.Set Loop]
 removeDislikes s groups = filter (not . S.null) (map removeEm groups)
   where removeEm :: S.Set Loop -> S.Set Loop
         removeEm group = foldr (flip removeOneIfContained) group dslikes
-        dslikes = map S.fromList $ S.toList $ dislikes s
+        dslikes = map S.fromList $ dislikes s
 
 loopToNums :: State -> S.Set Loop -> [Int]
 loopToNums s loops' = map fromJust $ map (flip elemIndex (loops s)) $ S.toList loops'
@@ -137,7 +137,7 @@ like s strategy | length (currentGroup s) < 2 = doLikeStrategy (esp strategy) s
 
 dislike :: State -> Maybe DislikeStrategy -> State
 -- Don't store a dislike unless it's 2 or 1
-dislike s strategy | len >= 1 && len <= 2 = doDislikeStrategy (esp strategy) $ s { dislikes = S.insert (currentGroup s) (dislikes s) }
+dislike s strategy | len >= 1 && len <= 2 = doDislikeStrategy (esp strategy) $ s { dislikes = currentGroup s : dislikes s }
   where len = length $ currentGroup s
 dislike s strategy | otherwise = doDislikeStrategy (esp strategy) s
 

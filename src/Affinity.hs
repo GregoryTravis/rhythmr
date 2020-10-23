@@ -60,21 +60,22 @@ data StateRepT a =
   StateRepT { repCollections :: [(Double, String)]
             , repLoops :: [a]
             , repLikes :: [[a]]
-            , repDislikes :: S.Set [a]
+            , repDislikes :: [[a]]
             , repCurrentGroup :: [a] }
   deriving (Read, Show, Generic)
 type StateRep = StateRepT Loop
 
--- instance Functor (StateRepT a) where
---   fmap f s@(StateRepT { repLoops, repLikes, repDislikes, repCurrentGroup }) = s (StateRepT { repLoops', repLikes', repDislikes', repCurrentGroup' })
---     where repLoops' = fmap f repLoops
---           repLikes' = fmap (fmap f) repLikes
---           repDislikes' = S.fromList $ fmap (fmap f) (S.toList repDislikes)
---           repCurrentGroup' = fmap f repCurrentGroup
+instance Functor StateRepT where
+  fmap f s@(StateRepT { repLoops, repLikes, repDislikes, repCurrentGroup }) =
+      s { repLoops = repLoops', repLikes = repLikes', repDislikes = repDislikes', repCurrentGroup = repCurrentGroup' }
+    where repLoops' = fmap f repLoops
+          repLikes' = fmap (fmap f) repLikes
+          repDislikes' = fmap (fmap f) repDislikes
+          repCurrentGroup' = fmap f repCurrentGroup
 
 instance Binary a => Binary (StateRepT a)
 
-emptyStateRep = StateRepT { repLoops = [], repLikes = [], repDislikes = S.empty, repCollections = [], repCurrentGroup = [] }
+emptyStateRep = StateRepT { repLoops = [], repLikes = [], repDislikes = [], repCollections = [], repCurrentGroup = [] }
 
 initRand :: StdGen
 initRand = mkStdGen 0
@@ -129,7 +130,7 @@ loadRandomLoops s n = do
 
 initState :: String -> (String -> IO Zound) -> Looper -> [(Double, String)] -> IO State
 initState projectDir soundLoader looper collections =
-  newPool $ State { projectDir, soundLoader, looper, loops = [], likes = [], dislikes = S.empty,
+  newPool $ State { projectDir, soundLoader, looper, loops = [], likes = [], dislikes = [],
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
                     currentSong = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False }
@@ -651,7 +652,7 @@ displayer s = intercalate "\n" lines
         gridS = grid s
         currentS = "Current: " ++ showLoops (currentGroup s)
         likesS = "Likes: " ++ showList (map showLoops (likes s))
-        dislikesS = "Dislikes: " ++ showList (map showLoops (S.toList (dislikes s)))
+        dislikesS = "Dislikes: " ++ showList (map showLoops (dislikes s))
         stackS = "Stack: " ++ showList (map showLoops (stack s))
         affS = "Affinities:\n" ++ intercalate "\n" (map show ((map . map) inxOf (bigToSmall $ affinities s)))
         logS = bar ++ "\n" ++ (intercalate "\n" (renderEdLog s)) ++ "\n" ++ bar
