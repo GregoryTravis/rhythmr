@@ -56,23 +56,31 @@ addClick = Nothing
 --addClick = Just "looper/1-7.wav"
 
 -- Suitable for persisting
-data StateRep = 
-  StateRep { repCollections :: [(Double, String)]
-           , repLoops :: [Loop]
-           , repLikes :: [[Loop]]
-           , repDislikes :: S.Set [Loop]
-           , repCurrentGroup :: [Loop] }
+data StateRepT a = 
+  StateRepT { repCollections :: [(Double, String)]
+            , repLoops :: [a]
+            , repLikes :: [[a]]
+            , repDislikes :: S.Set [a]
+            , repCurrentGroup :: [a] }
   deriving (Read, Show, Generic)
+type StateRep = StateRepT Loop
 
-instance Binary StateRep
+-- instance Functor (StateRepT a) where
+--   fmap f s@(StateRepT { repLoops, repLikes, repDislikes, repCurrentGroup }) = s (StateRepT { repLoops', repLikes', repDislikes', repCurrentGroup' })
+--     where repLoops' = fmap f repLoops
+--           repLikes' = fmap (fmap f) repLikes
+--           repDislikes' = S.fromList $ fmap (fmap f) (S.toList repDislikes)
+--           repCurrentGroup' = fmap f repCurrentGroup
 
-emptyStateRep = StateRep { repLoops = [], repLikes = [], repDislikes = S.empty, repCollections = [], repCurrentGroup = [] }
+instance Binary a => Binary (StateRepT a)
+
+emptyStateRep = StateRepT { repLoops = [], repLikes = [], repDislikes = S.empty, repCollections = [], repCurrentGroup = [] }
 
 initRand :: StdGen
 initRand = mkStdGen 0
 
 makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader projectDir soundLoader looper (StateRep { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
+makeLoader projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) = do
   let mat = identity :: Mat
   matRef <- newIORef mat
   --msp ("YEP", projectDir)
@@ -84,7 +92,7 @@ makeLoader projectDir soundLoader looper (StateRep { repLoops, repLikes, repDisl
 -- saver = map toRep
 
 saver :: State -> StateRep
-saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRep { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
+saver (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
 
 -- loadLoops :: (String -> IO Zound) -> IO [Zound]
 -- loadLoops soundReader = do
