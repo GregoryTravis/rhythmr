@@ -4,13 +4,17 @@ module Numberer
 , add
 , addMultiple
 , toList
-, fromList ) where
+, fromList
+, mapper
+, reverseMapper ) where
 
+import Data.Containers.ListUtils (nubOrd)
 import Data.List (sort, sortOn)
 import qualified Data.Map.Strict as M
 
 import Util
 
+-- Invariant: the map is 1-1
 data Numberer a = Numberer Int (M.Map a Int)
 
 empty :: Numberer a
@@ -38,4 +42,11 @@ toList num@(Numberer n m) = checkNumberer num xs
 --sortOn :: Ord b => (a -> b) -> [a] -> [a]
 
 fromList :: Ord a => [a] -> Numberer a
-fromList = addMultiple empty
+fromList xs = assertM "duplicates" ok (addMultiple empty xs)
+  where ok = length xs == length (nubOrd xs)
+
+mapper :: Ord a => Numberer a -> (a -> Int)
+mapper (Numberer _ m) = (m M.!)
+
+reverseMapper :: Ord a => Numberer a -> (Int -> a)
+reverseMapper (Numberer _ m) = (invertMap m M.!)

@@ -36,10 +36,13 @@ import Constants
 import FX
 import Gui
 import Graph
+import History (History)
+import qualified History as H
 import Hypercube
 import Loop
 import Looper
 import Memoize (memoizeIO, emptyMemoDir)
+import qualified Numberer as N
 import Project
 import Rc
 import SaveLoad
@@ -73,6 +76,10 @@ instance Functor StateRepT where
           repDislikes' = fmap (fmap f) repDislikes
           repCurrentGroup' = fmap f repCurrentGroup
 
+allX :: StateRepT a -> [a]
+allX (StateRepT { repLoops, repLikes, repDislikes, repCurrentGroup }) =
+  repLoops ++ concat repLikes ++ concat repDislikes ++ repCurrentGroup
+
 instance Binary a => Binary (StateRepT a)
 
 emptyStateRep = StateRepT { repLoops = [], repLikes = [], repDislikes = [], repCollections = [], repCurrentGroup = [] }
@@ -80,8 +87,9 @@ emptyStateRep = StateRepT { repLoops = [], repLikes = [], repDislikes = [], repC
 initRand :: StdGen
 initRand = mkStdGen 0
 
-makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader State StateRep
-makeLoader projectDir soundLoader looper h = fmap (stateRepToState projectDir soundLoader looper) h
+makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader (History State) CompressedStateRep
+makeLoader projectDir soundLoader looper =
+  fmap (stateRepToState projectDir soundLoader looper) . compressedStateRepToHistory
 
 stateRepToState :: String -> (String -> IO Zound) -> Looper -> (StateRep -> State)
 stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) =
@@ -89,14 +97,30 @@ stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, r
           stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
           rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
 
-saver :: Saver State StateRep
-saver = fmap stateToStateRep
-stateToStateRep :: State -> StateRep
-stateToStateRep (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
+saver :: Saver (History State) CompressedStateRep
+saver = historyToCompressedStateRep . fmap stateToStateRepL
+stateToStateRepL :: State -> StateRep
+stateToStateRepL (State { loops, likes, dislikes, collections, currentGroup }) = (StateRepT { repLoops = loops, repLikes = likes, repDislikes = dislikes, repCollections = collections, repCurrentGroup = currentGroup })
+
+historyToCompressedStateRep :: History StateRep -> CompressedStateRep
+historyToCompressedStateRep h =
+  let loops = nubOrd $ concat $ map allX (H.toList h)
+      mapper = N.mapper $ N.fromList loops
+      mapped = fmap (fmap mapper) h
+   in CompressedStateRep mapped loops
+
+compressedStateRepToHistory :: CompressedStateRep -> History StateRep
+compressedStateRepToHistory (CompressedStateRep srih loops) =
+  let numberer = N.fromList loops
+      unmapper = N.reverseMapper $ N.fromList loops
+      unmapped = fmap (fmap unmapper) srih
+   in unmapped
 
 -- Compression replaces each loop with a unique integer.
-data CompressedStateRep = CompressedStateRep { stateRepInt :: StateRepT Int,
-                                               compressedLoops :: [Loop] }
+data CompressedStateRep = CompressedStateRep (History (StateRepT Int)) [Loop]
+  deriving (Show, Read, Generic)
+
+instance Binary CompressedStateRep
 
 -- compressStateRep :: StateRepT Loop -> CompressedStateRep
 -- deCompressStateRep :: CompressedStateRep -> StateRepT Loop

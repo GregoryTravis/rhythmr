@@ -65,6 +65,7 @@ module Util
 , (!!!)
 , removeElem
 , mapFromListAccum
+, invertMap
 ) where
 
 import Control.DeepSeq
@@ -72,6 +73,7 @@ import Control.Exception
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (group, groupBy, maximumBy, minimumBy, sort, isSuffixOf)
 import qualified Data.Map.Strict as M
+import Data.Tuple (swap)
 import Data.Text (unpack)
 import Data.Text.Lazy (toStrict)
 import Data.Time.Clock (diffUTCTime)
@@ -411,3 +413,6 @@ mapFromListAccum ((x, y) : ps) = M.alter alt x (mapFromListAccum ps)
   where alt (Just oy) = Just (y : oy)
         alt Nothing = Just [y]
 --alter :: Ord k => (Maybe a -> Maybe a) -> k -> Map k a -> Map k a
+
+invertMap :: (Ord a, Ord b) => M.Map a b -> M.Map b a
+invertMap = M.fromList . map swap . M.toList

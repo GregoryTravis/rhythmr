@@ -39,7 +39,7 @@ data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, las
 data GuiCommand s = NewState s | Save FilePath | Load FilePath | Undo | Redo | UndoFully | RedoFully | Quit | QuitWithoutSaving | SaveAndQuit FilePath | GuiCommands [GuiCommand s] | DoNothing
   deriving Show
 
-guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver s t -> Loader s t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> v) -> (Float -> s -> v -> IO Picture) ->
+guiMain :: (Eq s, Show s, Read t, Show t, Binary t) => s -> Maybe FilePath -> v -> Saver (History s) t -> Loader (History s) t -> (s -> v -> s -> Float -> v) -> (Float -> s -> v -> v) -> (Float -> s -> v -> IO Picture) ->
                                              (s -> (Key, Modifiers) -> IO (GuiCommand s)) -> (s -> s -> IO ()) -> IO () -> IO ()
 guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz renderViz keyboardHandler respondToStateChange onExit = do
   initHistory <- loadOrDefault loader defaultState filenameMaybe
@@ -69,7 +69,7 @@ guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz re
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (440, 125)
         bgColor = white
 
-loadOrDefault :: (Binary t, Read t) => Loader s t -> s -> Maybe FilePath -> IO (History s)
+loadOrDefault :: (Binary t, Read t) => Loader (History s) t -> s -> Maybe FilePath -> IO (History s)
 loadOrDefault loader s (Just filename) = do
   b <- doesFileExist filename
   --msp ("gosh", filename, b)
@@ -83,7 +83,7 @@ loadOrDefault _ s Nothing = return $ start s
 --   (1) that's too much state for a program with a 93M heap
 --   (2) the heap is not growing
 --   (3) it's GC'ing like mad
-loadHistoryAndSurviveSomehow :: (Show s, Read t, Show t, Binary t) => FilePath -> Loader s t -> IO (History s)
+loadHistoryAndSurviveSomehow :: (Show s, Read t, Show t, Binary t) => FilePath -> Loader (History s) t -> IO (History s)
 loadHistoryAndSurviveSomehow filename loader = do
   -- Normal: pins
   -- load filename loader
@@ -141,7 +141,7 @@ displayUndoState h = do
   putStrLn $ show $ hWhere h
   return h
 
-execute :: (Eq s, Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> History s -> Saver s t -> Loader s t -> IO () -> IO (History s)
+execute :: (Eq s, Show s, Read t, Show t, Binary t) => GuiCommand s -> History s -> History s -> Saver (History s) t -> Loader (History s) t -> IO () -> IO (History s)
 execute command h lastH saver loader onExit =
   case command of NewState s -> return $ update h s
                   Save filename -> do save filename saver h
