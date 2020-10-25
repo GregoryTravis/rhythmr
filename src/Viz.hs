@@ -36,6 +36,7 @@ import Hypercube
 import Loop
 import Looper
 import Memoize
+import Resources
 import State
 import Util
 import Zounds hiding (Translate, Scale)
@@ -51,10 +52,18 @@ instance Ord Color where
 duration = 1
 -- duration = 0.5
 
+loadPng :: FilePath -> Picture
+loadPng path = fromJustE ("loadPng " ++ path) $ unsafePerformIO $ do
+  fullPath <- getResource path
+  putStrLn $ "Loading " ++ fullPath
+  J.loadJuicyPNG fullPath
+
 logo :: Picture
-logo = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/64.png"
+--logo = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/64.png"
+logo = loadPng "i/64.png"
 logoName :: Picture
-logoName = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/logo-name.png"
+--logoName = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/logo-name.png"
+logoName = loadPng "i/logo-name.png"
 
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n

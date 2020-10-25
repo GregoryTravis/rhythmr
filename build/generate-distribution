@@ -21,6 +21,7 @@ mkdir Rhythmr
 
 cp -r build/app-template/$app_template ./Rhythmr/$app
 cp $exe Rhythmr/$app/Contents/MacOS/rhythmr
+cp -r i Rhythmr/$app/Contents/Resources
 
 # Use dynamic libraries
 mkdir Rhythmr/$app/Contents/Frameworks

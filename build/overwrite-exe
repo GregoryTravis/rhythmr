@@ -1,0 +1,1 @@
+cp $(stack path --local-install-root)/bin/rhythmr Rhythmr/Rhythmr.app/Contents/MacOS/rhythmr

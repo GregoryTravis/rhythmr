@@ -1,11 +1,10 @@
-{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Main where
 
 import GHC.Conc
 import GHC.RTS.Flags
-import System.Environment (getArgs)
+import System.Environment (getArgs, getExecutablePath)
 import System.Exit (exitSuccess)
 
 import Affinity
@@ -17,6 +16,7 @@ import Graph
 import Hypercube
 import Looper (withPortaudio)
 import Project
+import Resources
 import Stow
 import Util
 import Zounds
@@ -87,10 +87,16 @@ credits = unlines
 doCredits :: IO ()
 doCredits = putStrLn credits
 
+-- pah :: IO ()
+-- pah = showResourcePath
+
 main :: IO ()
 _main = graphTest
 main = withPortaudio $ do
   noBuffering
+  ep <- getExecutablePath
+  putStrLn $ "exe " ++ ep
+  showResourcePath
   --getGCFlags >>= msp
   --putStrLn $ "numCapabilities: " ++ show numCapabilities
   --np <- getNumProcessors
