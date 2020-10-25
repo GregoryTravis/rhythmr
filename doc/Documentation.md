@@ -1,7 +1,12 @@
 Documentation
 ======
 
-## Overview 
+## TL;DR
+
+* Swipe left and right on each set of loops (use arrow keys)
+* Generate a song with one of: S, T, H, L, G, J, A
+
+## Overview
 
 When using Rhythmr, you are presented with a set of loops, playing in unison. If you like what you hear, hit the right arrow, and you'll get another one to listen to. If you don't like it, hit the left arrow.
 
