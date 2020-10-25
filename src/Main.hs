@@ -87,11 +87,7 @@ credits = unlines
 doCredits :: IO ()
 doCredits = putStrLn credits
 
--- pah :: IO ()
--- pah = showResourcePath
-
 main :: IO ()
-_main = graphTest
 main = withPortaudio $ do
   noBuffering
   ep <- getExecutablePath

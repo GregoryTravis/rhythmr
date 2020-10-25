@@ -59,10 +59,8 @@ loadPng path = fromJustE ("loadPng " ++ path) $ unsafePerformIO $ do
   J.loadJuicyPNG fullPath
 
 logo :: Picture
---logo = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/64.png"
 logo = loadPng "i/64.png"
 logoName :: Picture
---logoName = fromJust $ unsafePerformIO $ J.loadJuicyPNG "i/logo-name.png"
 logoName = loadPng "i/logo-name.png"
 
 gridSizeFor :: Int -> Int
