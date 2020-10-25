@@ -16,6 +16,10 @@ When you start up, a pool of loops is selected, shown in the upper left. This is
 
 "Cycle affinities" (the "c" key) causes the next song to shift the loop groups, so that re-generating a song will produce a different song. Repeatedly pressing c will repeatedly shift the groups.
 
+## Backwards Compatibility
+
+Rhythmr is in constant flux, so don't expect your save files to work in subsequent versions.
+
 ## User interface
 
 Rhythmr only uses the keyboard -- no mouse or menus.
