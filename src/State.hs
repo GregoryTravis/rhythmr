@@ -15,6 +15,7 @@ module State
   , renderEdLog
   , loadLoopZound
   , loadLoopZounds
+  , hasLikes
   ) where
 
 import Data.Containers.ListUtils (nubOrd)
@@ -266,6 +267,9 @@ loadLoopZound s loop = (soundLoader s) (fn loop)
   where fn (Loop filename) = projectDir s ++ "/loops/" ++ filename
 loadLoopZounds ::State -> [Loop] -> IO [Zound] 
 loadLoopZounds s loops = mapM (loadLoopZound s) loops
+
+hasLikes :: State -> Bool
+hasLikes = not . null . likes
 
 -- Affinities 2.0
 --

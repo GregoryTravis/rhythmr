@@ -249,15 +249,15 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
   -- writeCurrentSongSeparateTracks' s
   -- writeClick
   setState s
-keyboardHandler s (Char 'S', m) | shiftM m = cycleLikesSong s >>= setSong s
-keyboardHandler s (Char 'T', m) | shiftM m = tallSong s >>= setSong s
-keyboardHandler s (Char 'H', m) | shiftM m = thresholdSong s >>= setSong s
-keyboardHandler s (Char 'L', m) | shiftM m = likesSong s >>= setSong s
-keyboardHandler s (Char 'G', m) | shiftM m = metagraphSong s >>= setSong s
-keyboardHandler s (Char 'J', m) | shiftM m = chew s >>= setSong s
-keyboardHandler s (Char 'A', m) | shiftM m = hiChew s >>= setSong s
-keyboardHandler s (Char 'a', m) | noM m = hiChew s' >>= setSong s'
-  where s' = s { affinityCycle = affinityCycle s + 1 }
+keyboardHandler s (Char 'S', m) | shiftM m && hasLikes s = cycleLikesSong s >>= setSong s
+keyboardHandler s (Char 'T', m) | shiftM m && hasLikes s = tallSong s >>= setSong s
+keyboardHandler s (Char 'H', m) | shiftM m && hasLikes s = thresholdSong s >>= setSong s
+keyboardHandler s (Char 'L', m) | shiftM m && hasLikes s = likesSong s >>= setSong s
+keyboardHandler s (Char 'G', m) | shiftM m && hasLikes s = metagraphSong s >>= setSong s
+keyboardHandler s (Char 'J', m) | shiftM m && hasLikes s = chew s >>= setSong s
+keyboardHandler s (Char 'A', m) | shiftM m && hasLikes s = hiChew s >>= setSong s
+-- keyboardHandler s (Char 'a', m) | noM m = hiChew s' >>= setSong s'
+--   where s' = s { affinityCycle = affinityCycle s + 1 }
 keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ SaveAndQuit projectFile

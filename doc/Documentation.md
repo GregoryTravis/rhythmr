@@ -53,7 +53,7 @@ Deprecated commands:
 
 ## Song templates
 
-There are six song templates, identified by the keyboard shortcut and inscrutable name:
+There are seven song templates, identified by the keyboard shortcut and inscrutable name:
 
 #### S (cycleLikesSong)
 
@@ -88,7 +88,7 @@ the end, producing some very intentional-sounding variation.
 
 #### A (hiChew)
 
-Like J, but more extreme.
+Like J, but more zany.
 
 ## Running at the command-line
 
