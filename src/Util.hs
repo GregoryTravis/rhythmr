@@ -240,8 +240,10 @@ replace a b [] = []
 -- Sample from lists, weighting the chance of using each list by its weight
 weightedRandFromLists :: [(Double, [a])] -> IO a
 weightedRandFromLists weightedLists = do
-  list <- weightedRandFromList weightedLists
+  list <- weightedRandFromList nonemptyWeightedLists
   randFromList list
+  where nonemptyWeightedLists = filter nonempty weightedLists
+        nonempty = not . null . snd
 
 -- Pick an element from a weighted list, respecting the weights
 weightedRandFromList :: [(Double, a)] -> IO a
