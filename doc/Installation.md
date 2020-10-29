@@ -1,7 +1,7 @@
 Installation
 ======
 
-## Installing Rhythmr
+## Installing Rhythmr on OS X
 
 **Note: since this is not from the app store, you won't be able to simply download and run it; see below.**
 
@@ -18,6 +18,10 @@ Installation
    1. Say yes when it asks you if you really want to open it
    1. (Next time you can open Rhythmr normally)
 1. Double click the app or one of the projects
+
+## Installing Rhythmr on something else
+
+<i> Maybe one day. </i>
 
 ## Next Steps
 
