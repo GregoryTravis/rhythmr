@@ -374,10 +374,10 @@ writeClick = do
 ramps :: [a] -> [[a]]
 ramps = concat . tail . inits . tail . inits
 
-dub :: [a] -> [a]
-dub xs = xs ++ xs
+-- dub :: [a] -> [a]
+-- dub xs = xs ++ xs
 -- Used for the FARM peformance
--- dub = id
+dub = id
 
 oneTwoThree [one, two] = dub [[one], [one, two]]
 oneTwoThree [one, two, three] = dub [[one], [one, two]] ++ dub [[one, three], [one, two, three]]
