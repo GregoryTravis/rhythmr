@@ -122,7 +122,23 @@ void init_audio(void)
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
 
+    int numApis = Pa_GetHostApiCount();
+    printf("apis %d\n", numApis);
+    for (int i = 0; i < numApis; ++i) {
+      const PaHostApiInfo *hostInfo = Pa_GetHostApiInfo(i);
+      printf("api %d %s\n", i, hostInfo->name);
+    }
+    int numDevices = Pa_GetDeviceCount();
+    printf("devices %d\n", numDevices);
+    for (int i = 0; i < numDevices; ++i) {
+      const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
+      printf("device %d %s in %d out %d\n", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+    }
+    printf("Default devices in %d out %d\n",
+      Pa_GetDefaultInputDevice(), Pa_GetDefaultOutputDevice());
+
     outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
+    printf("Using %d\n", outputParameters.device);
     if (outputParameters.device == paNoDevice) {
       fprintf(stderr,"Error: No default output device.\n");
       goto error;
