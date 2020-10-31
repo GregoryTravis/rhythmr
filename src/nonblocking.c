@@ -132,10 +132,13 @@ void init_audio(void)
     printf("devices %d\n", numDevices);
     for (int i = 0; i < numDevices; ++i) {
       const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
-      printf("device %d %s\n", i, deviceInfo->name);
+      printf("device %d %s in %d out %d\n", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
     }
+    printf("Default devices in %d out %d\n",
+      Pa_GetDefaultInputDevice(), Pa_GetDefaultOutputDevice());
 
     outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
+    printf("Using %d\n", outputParameters.device);
     if (outputParameters.device == paNoDevice) {
       fprintf(stderr,"Error: No default output device.\n");
       goto error;

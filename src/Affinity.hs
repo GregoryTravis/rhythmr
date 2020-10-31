@@ -142,6 +142,8 @@ demoModeKeys =
   , (Char '\DC2', shiftCtrlM)
   , (SpecialKey KeyEsc, noM)
   , (Char 'S', shiftM)
+  , (Char 'J', shiftM)
+  , (Char 'A', shiftM)
   , (Char 'c', noM)
   , (Char 'A', noM)
   , (Char 'a', noM)

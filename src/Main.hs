@@ -83,13 +83,7 @@ doCredits :: IO ()
 doCredits = putStrLn credits
 
 main :: IO ()
-main = do
-  -- z <- readZound "aloop.wav"
-  -- withLooper $ \looper ->
-  --   setZound looper z
-  withPortaudio $ do
-    msp "with"
-_main = withPortaudio $ do
+main = withPortaudio $ do
   noBuffering
   --getGCFlags >>= msp
   --putStrLn $ "numCapabilities: " ++ show numCapabilities
