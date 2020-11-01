@@ -292,7 +292,7 @@ mixColors' colors =
    in case mixedV of V4 r g b a -> makeColor r g b a
 
 renderLabels :: [Picture]
-renderLabels = [ at (-335) (350) "Loops"
+renderLabels = [ at (-335) (350) "Pool"
                , at 30 (350) "Affinities"
                , at (-60) (-75) "Current stack" ]
   where at x y s = Translate x y $ Scale 0.15 0.15 $ Text s
