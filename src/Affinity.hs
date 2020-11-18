@@ -544,19 +544,27 @@ metagraphSong s = do
   msp (map graphInfo mgs)
   --msp (length (likes s))
   let g = mkStdGen 348584
-      mg = mgs !! 0
-      walk comp = randomWalk g (connectedTo mg) (head comp) (length comp)
-      walks = map walk (map S.toList $ components mg)
+      mg = mgs !! 1
+      k = 1.0
+      walk comp = randomWalk g (connectedTo mg) (head comp) (floor (fromIntegral (length comp) * k))
+      walks = map walkTransform $ map walk (map S.toList $ components mg)
       seq = concat walks
       pairwiseOverlaps = zipWith pairwiseOverlap seq (tail seq)
       pairwiseOverlap x y = length $ intersect x y
+      --walkTransform = id
+      walkTransform = dupPairs
   --msp seq
   msp $ "overlaps " ++ (show pairwiseOverlaps)
   --msp $ likes s
-  --msp walks
+  msp ("walks", map length walks)
   msp $ graphInfo mg
   --msp $ graphStruct mg
   renderLoopGrid s seq
+
+dupPairs :: [[Loop]] -> [[Loop]]
+dupPairs (a:b:rest) = a:b:a:b:dupPairs rest
+dupPairs [a] = [a, a]
+dupPairs [] = []
 
 --randomWalk :: Random g => Rand Graph [Loop] -> Loop -
 randomWalk :: RandomGen g => g -> (a -> [a]) -> a -> Int -> [a]
