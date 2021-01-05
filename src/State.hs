@@ -1,3 +1,6 @@
+{-# LANGUAGE
+  RecordWildCards #-}
+
 module State
   ( State(..)
   , LikeStrategy(..)
@@ -16,13 +19,14 @@ module State
   , loadLoopZound
   , loadLoopZounds
   , hasLikes
+  , bestLoops
   ) where
 
 import Data.Containers.ListUtils (nubOrd)
 import Control.Monad (replicateM)
 import Control.Monad.Random.Lazy
 import Data.IORef
-import Data.List (elemIndex, intercalate)
+import Data.List (elemIndex, intercalate, sortOn)
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Graph
@@ -270,6 +274,15 @@ loadLoopZounds s loops = mapM (loadLoopZound s) loops
 
 hasLikes :: State -> Bool
 hasLikes = not . null . likes
+
+-- Sort all loops of likes by how many times they show up
+bestLoops :: State -> [Loop]
+bestLoops (State {..}) =
+  let allLoops = concat likes
+      frequencied = frequency allLoops
+      sorted = sortOn snd frequencied
+      justLoops = map fst sorted
+   in justLoops
 
 -- Affinities 2.0
 --

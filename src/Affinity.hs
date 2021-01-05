@@ -279,7 +279,7 @@ keyboardHandler s (Char '\DC2', m) | shiftCtrlM m = retCommand RedoFully
 keyboardHandler s (Char '\DC3', m) | ctrlM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ Save projectFile
-keyboardHandler s (Char '\DC1', m) | ctrlM m= retCommand Quit
+keyboardHandler s (Char '\DC1', m) | ctrlM m = retCommand Quit
 keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 -- keyboardHandler s 'L' = do
 --   file <- getHistoryFile
@@ -288,6 +288,8 @@ keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 -- keyboardHandler s (Char 'c', m) | noM m = cycleLikesSong s' >>= setSong s'
 keyboardHandler s (Char 'c', m) | noM m = setState s'
    where s' = s { affinityCycle = affinityCycle s + 1 }
+keyboardHandler s (Char '\FF', m) | ctrlM m = do exportBestLoops s
+                                                 return DoNothing
 keyboardHandler s (Char c, m) | noM m && c >= '0' && c <= '9' = setVolume' c s
 keyboardHandler s (Char c, _) | otherwise = do
   msp $ ("?? " ++ (show c))
@@ -541,18 +543,19 @@ metagraphSong :: State -> IO Zound
 metagraphSong s = do
   let mgs = takeWhile hasSome $ map (buildMetaGraph (likes s)) [1..]
       hasSome mg = length (components mg) > 0
-  msp (map graphInfo mgs)
+  msp ("mgs", (map graphInfo mgs))
   --msp (length (likes s))
   let g = mkStdGen 348584
-      mg = mgs !! 1
+      mg = fesp (("mg",) . graphInfo) $ mgs !! 1
       k = 1.0
-      walk comp = randomWalk g (connectedTo mg) (head comp) (floor (fromIntegral (length comp) * k))
-      walks = map walkTransform $ map walk (map S.toList $ components mg)
+      cycler = Util.rotate (affinityCycle s)
+      walk comp = eeesp ("walk", comp) $ randomWalk g (connectedTo mg) (head (cycler comp)) (floor (fromIntegral (length comp) * k))
+      walks = map walkTransform $ map walk $ cycler $ (map S.toList $ components mg)
       seq = concat walks
       pairwiseOverlaps = zipWith pairwiseOverlap seq (tail seq)
       pairwiseOverlap x y = length $ intersect x y
-      --walkTransform = id
-      walkTransform = dupPairs
+      walkTransform = id
+      --walkTransform = dupPairs
   --msp seq
   msp $ "overlaps " ++ (show pairwiseOverlaps)
   --msp $ likes s
@@ -713,6 +716,14 @@ displayer s = intercalate "\n" lines
 -- wrappedKeyboardHandler kh s c = do
 --   result <- kh s c
 --   case result of SetState s' -> do respondToStateChange
+
+exportBestLoops :: State -> IO ()
+exportBestLoops s = do
+  let loops = take 24 $ bestLoops s
+  zs <- loadLoopZounds s loops
+  zs' <- mapM render zs
+  let filenames = map (\i -> "best" ++ show i ++ ".wav") [0..]
+  zipWithM_ writeZound filenames zs'
 
 cleanupMemoMaybe :: IO ()
 cleanupMemoMaybe = do

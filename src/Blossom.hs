@@ -29,7 +29,8 @@ blossomFile destDir zoundFile fx spr = do
   z <- readZound zoundFile
   z' <- applyFX fx z
   z'' <- render $ sprinkle (length spr) spr z
-  writeZounds ("loop-" ++ getSourceTrackName (Loop zoundFile)) destDir [z'']
+  [name] <- writeZounds ("loop-" ++ getSourceTrackName (Loop zoundFile)) destDir [z'']
+  msp ("blossomFile", "in", zoundFile, "out", name, "fx", fx)
   return ()
 
 sprinkles :: [[Int]]

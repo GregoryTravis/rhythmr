@@ -68,12 +68,14 @@ module Util
 , mapFromListAccum
 , invertMap
 , fromJustE
+, frequency
 ) where
 
 import Control.DeepSeq
 import Control.Exception
 import Data.Containers.ListUtils (nubOrd)
 import Data.List (group, groupBy, maximumBy, minimumBy, sort, isSuffixOf)
+import Data.Map.Strict (fromListWith, toList)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust)
 import Data.Text (unpack)
@@ -425,3 +427,6 @@ invertMap = M.fromList . map swap . M.toList
 fromJustE :: String -> Maybe a -> a
 fromJustE label (Just a) = a
 fromJustE label Nothing = error $ "froJustE " ++ label
+
+frequency :: (Ord a) => [a] -> [(a, Int)]
+frequency xs = toList (fromListWith (+) [(x, 1) | x <- xs])

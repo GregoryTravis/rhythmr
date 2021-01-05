@@ -145,6 +145,8 @@ transferSources :: [Zound] -> Zound -> Zound
 transferSources zs z@(Segment {}) = z { source }
   where source = Just $ combineSourcesFrom zs
 
+-- Segment's offset is where the first sample in the Samples should be (not an
+-- offset into the Samples)
 data ZoundT a = Segment { samples :: Samples, offset :: Frame, source :: Maybe a }
            | Translate Frame Zound
            | Scale Frame Zound
@@ -162,7 +164,7 @@ type Zound = ZoundT Source
 
 instance Show (ZoundT Source) where
   show z = show' z ++ " " ++ (niceShowBounds (getBounds z))
-    where show' (Segment { source }) = "[" ++ (show source) ++ "]"
+    where show' (Segment { source }) = "[Seg " ++ (show source) ++ "]"
           show' (Translate dt z) = "(Translate " ++ (show dt) ++ " " ++ (show z) ++ ")"
           show' (Scale len z) = "(Scale " ++ (show len) ++ " " ++ (show z) ++ ")"
           show' (ExternalFx _ z) = "(ExternalFx " ++ (show z) ++ ")"
@@ -306,12 +308,33 @@ mixOnto mix v offset = do
   --massert "mixOnto: length mismatch" (MSV.length mix) (SV.length v)
   mapM mixSample indices
   return ()
-  where indices = take (SV.length v) [0..]
+  where len = SV.length v
+        indices = take len [0..]
         offsetSamples = offset * 2
         mixSample i = do
           mixSample <- MSV.read mix (i + offsetSamples)
           let vSample = SV.index v i
-          MSV.write mix (i + offsetSamples) (mixSample + vSample)
+              faded = vSample * fadeEndsScaler len i
+          MSV.write mix (i + offsetSamples) (mixSample + faded)
+
+-- Return scaling factor for any point in a sample. In the middle, it's 1. At
+-- the very beginning, it ramps up, and at the end, it ramps down.
+-- 'fadeLength' specifies the duration of the fade.
+-- Does not do bounds checking.
+fadeEndsScaler :: Int -> Int -> Double
+fadeEndsScaler len i
+  | i < fadeLength = interp 0 (fadeLength-1) 0 1 i
+  | i >= len - fadeLength = interp (len - fadeLength) (len - 1) 1 0 i
+  | otherwise = 1
+  where fadeLength = 220  -- 2.5ms
+        -- Interpolate a value between x and y, based on where a is between i and j.
+        -- Does not do bounds checking.
+        interp :: Int -> Int -> Double -> Double -> Int -> Double
+        interp i j x y a = ((1 - k) * x) + (k * y)
+          where k = (aa - ii) / (jj - ii)
+                aa = fromIntegral a
+                ii = fromIntegral i
+                jj = fromIntegral j
 
 processZound :: Zound -> Processor -> IO Zound
 processZound z processor = runViaFilesCmd "wav" writeZound readZound (processor z) z
@@ -325,6 +348,9 @@ soxer soxArgs _ s d = ["sox", "-G", s, d] ++ soxArgs
 render :: Zound -> IO Zound
 --render = trivialRender
 render = fastRender
+-- fastRender' z = do
+--   msp ("fastRender'", z)
+--   fastRender z
 
 -- I still don't understand how to force thunks
 strictRender :: Zound -> IO Zound
@@ -423,10 +449,11 @@ readZoundZeroCrossings s = do
   return $ clipToZeroCrossings z
 
 fadeEnds :: Zound -> Zound
-fadeEnds z = InternalFx f z
-  where f i s | i < fadeLength = s * (interp 0 (fadeLength-1) 0 1 i)
-              | i >= len - fadeLength = s * (interp (len - fadeLength) (len - 1) 1 0 i)
-              | otherwise = s
+fadeEnds z = eesp ("fadeEnds", z) $ InternalFx f z
+  where f i' s | i < fadeLength = s * (interp 0 (fadeLength-1) 0 1 i)
+               | i >= len - fadeLength = s * (interp (len - fadeLength) (len - 1) 1 0 i)
+               | otherwise = s
+          where i = i' + offset z
         len = SV.length (samples z)
         fadeLength = 220  -- 2.5ms
         interp :: Int -> Int -> Double -> Double -> Int -> Double
@@ -470,10 +497,11 @@ snip start end (Segment { samples, offset, source }) =
       endIndex = end' * 2
       ok = startIndex < endIndex && 0 <= startIndex && endIndex <= length
       samples' = SV.take (endIndex - startIndex) (SV.drop startIndex samples)
-   in Segment { samples = samples', offset = offset', source }
+      debug = ("snip", offset, start, end)
+   in eesp debug $ Segment { samples = samples', offset = offset', source }
 
 snipBounds :: Bounds -> Zound -> Zound
-snipBounds (Bounds s e) z = snip s e z
+snipBounds (Bounds s e) z = {-fadeEnds $-} snip s e z
 
 -- Translate the start to 0
 toOrigin :: Zound -> Zound
