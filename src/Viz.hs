@@ -39,6 +39,7 @@ import Memoize
 import Resources
 import State
 import Util
+import Waveform
 import Zounds hiding (Translate, Scale)
 
 disableViz :: Bool
@@ -270,7 +271,8 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       margin = 32 + 16
       logo' = Translate w h logo
       logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
-  return $ Pictures $ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
+  bitmap <- loopToWaveform 2 2 (loops s !! 0)
+  return $ Pictures $ [bitmap] ++ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked
