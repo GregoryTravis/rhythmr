@@ -41,6 +41,7 @@ module Util
 , randFromListPure
 , randFromListPureN
 , clump
+--, clumpTo
 , allPairs
 , pairUp
 , whatThread
@@ -278,10 +279,17 @@ randFromListPureN as n g =
       (as', g'') = randFromListPureN as (n-1) g'
    in (a':as', g'')
 
--- Nest elements in groups of n; ok if it doesn't divide evenly
+-- Nest elements in groups of n; all will have the same length except the last
+-- one may be smaller.
 clump :: Int -> [a] -> [[a]]
 clump n [] = []
 clump n xs = (take n xs) : (clump n (drop n xs))
+
+-- -- Nest elements as n groups; all will have the same length except the last one
+-- -- may be smaller.
+-- clumpTo :: Int -> [a] -> [[a]]
+-- clumpTo n xs = clump groupLen xs
+--   where groupLen = (length xs + n - 1) `div` n
 
 -- Order-independent
 allPairs (x:xs) = (zip (repeat x) xs) ++ allPairs xs

@@ -279,7 +279,6 @@ fastRender z@(Silence _) = trivialRender z
 -- TODO slow, should crop the array or something
 fastRender z@(Bounded _ _) = fadeEnds <$> trivialRender z
 
-
 -- Split into left and right and resample separately
 resample :: Int -> Zound -> IO Zound
 resample numFrames z = do
