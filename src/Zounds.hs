@@ -27,6 +27,7 @@ module Zounds
 , writeZound
 , numFrames
 , samplesAsFloats
+, sampleAtFrame
 , toZero
 , snip
 , snipBounds
@@ -232,6 +233,9 @@ sample (Bounded _ z) i = sample z i
 sample (InternalFx f z) i = f i (sample z i)
 sample (MonoSynth f _) i = f (i `div` 2)
 sample (Silence _) _ = 0
+
+sampleAtFrame :: Zound -> Int -> Double
+sampleAtFrame z i = sample z (i * 2)
 
 -- getVector :: Bounds -> Samples  -- TODO write default definition
 -- getVector = undefined

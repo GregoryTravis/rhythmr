@@ -271,7 +271,7 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       margin = 32 + 16
       logo' = Translate w h logo
       logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
-  bitmap <- loopToWaveform 2 2 (loops s !! 0)
+  bitmap <- loopToWaveform s 100 100 (loops s !! 0)
   return $ Pictures $ [bitmap] ++ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
