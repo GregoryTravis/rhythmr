@@ -51,7 +51,7 @@ instance Ord Color where
 
 -- demo mode
 --duration = 1.5
-duration = 3
+duration = 1
 -- duration = 0.5
 
 loadPng :: FilePath -> Picture
@@ -146,11 +146,11 @@ clip lo hi x | otherwise = x
 -- Some potential for inconsistency here, Pic and its Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
   deriving (Eq, Show, Ord)
-data Pic c = LoopP Tag (c (V2 Float)) Picture
+data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool, current, and affinities
            | SeqP Tag (c (V2 Float)) (c Float) Color -- The longer rects in the playing sequence
            | LoopPlaceP Tag (c (V2 Float)) Color -- The faded rectangle in the pool area (doesn't move)
            | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
-           | CurP Tag (c (V2 Float)) Color
+           | CurP Tag (c (V2 Float)) Color -- These are just like LoopP, but we need two because sometimes loops are in both affinities and current
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
 
