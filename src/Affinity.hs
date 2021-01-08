@@ -756,6 +756,6 @@ affinityMain demoMode projectDir seed collections = do
                     let loader = makeLoader projectDir soundLoader looper
                     s <- initState projectDir soundLoader looper collections
                     projectFile <- getProjectFile projectDir
-                    guiMain s (Just projectFile) initViz saver loader stateToViz updateFiz renderViz kh respondToStateChange cleanupMemoMaybe
+                    guiMain s (Just projectFile) (initViz projectDir) saver loader stateToViz updateFiz renderViz kh respondToStateChange cleanupMemoMaybe
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

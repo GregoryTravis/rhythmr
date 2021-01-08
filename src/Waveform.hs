@@ -11,7 +11,6 @@ import Graphics.Gloss.Data.Picture
 
 import Analysis
 import Loop
-import State
 import Util
 import Zounds
 
@@ -20,9 +19,9 @@ fg = [40, 40, 200, 200]
 bg :: [Word8]
 bg = [128, 0, 128, 64]
 
-loopToWaveform :: State -> Int -> Int -> Loop -> IO Picture
-loopToWaveform s w h (Loop filename) = do
-  let path = projectDir s ++ "/loops/" ++ filename
+loopToWaveform :: FilePath -> Int -> Int -> Loop -> IO Picture
+loopToWaveform projectDir w h (Loop filename) = do
+  let path = projectDir ++ "/loops/" ++ filename
   msp path
   z <- readZound path
   return $ zoundToWaveform w h (normalize z)

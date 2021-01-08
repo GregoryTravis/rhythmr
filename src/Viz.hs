@@ -178,7 +178,7 @@ mapSquish f (MarkP tag pos) = [f pos]
 mapSquish f (CurP tag pos _) = [f pos]
 
 gcReport :: Viz -> [Int]
-gcReport (Viz pics _) = concat $ map (mapSquish aValSize) pics
+gcReport (Viz pics _ _) = concat $ map (mapSquish aValSize) pics
 
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
@@ -232,16 +232,17 @@ colorInterpolator' t s e color color' = makeColor r'' g'' b'' a''
 -- pef :: Show (c _) => Pic c
 -- pef = undefined
 
-data Viz = Viz [Pic AVal] (Fiz Loop)
-  deriving Show
-initViz :: Viz
-initViz = Viz [] emptyFiz
+data Viz = Viz [Pic AVal] (Fiz Loop) (Int -> Int -> Loop -> IO Picture)
+  --deriving Show
+initViz :: FilePath -> Viz
+initViz projectDir = Viz [] emptyFiz waveRenderer
+  where waveRenderer = unsafePerformIO $ memoizePure3 (loopToWaveform projectDir)
 
 -- Match old and new Pics via id; new ones are just initialized via const
 updateViz :: Float -> Viz -> [Pic AVal] -> Viz
-updateViz t (Viz oldPics fiz) newPics =
+updateViz t (Viz oldPics fiz waveRenderer) newPics =
   let oldAndNew = filter hasNew $ pairUp oldPics newPics getTag getTag
-   in Viz (map merge oldAndNew) fiz
+   in Viz (map merge oldAndNew) fiz waveRenderer
   where hasNew (_, Nothing) = False
         hasNew _ = True
         merge (Just oldPic, Just newPic) = updatePic t (t+duration) oldPic newPic
@@ -251,7 +252,7 @@ unR2 (V2 x y) = (x, y)
 
 -- TODO: This matrix ioref in the state is a crime against nature
 renderViz :: Float -> State -> Viz -> IO Picture
-renderViz t s (Viz pics fiz) | disableViz = return Blank
+renderViz t s (Viz pics fiz waveRenderer) | disableViz = return Blank
                              | otherwise = do
   --mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
@@ -271,7 +272,7 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       margin = 32 + 16
       logo' = Translate w h logo
       logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
-  bitmap <- loopToWaveform s 400 100 (loops s !! 0)
+  bitmap <- waveRenderer 400 100 (loops s !! 0)
   return $ Pictures $ [bitmap] ++ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
@@ -718,7 +719,7 @@ stateToViz :: State -> Viz -> State -> Float -> Viz
 stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
 
 updateFiz :: Float -> State -> Viz -> Viz
-updateFiz dt s (Viz pics fiz) = Viz pics fiz'
+updateFiz dt s (Viz pics fiz wr) = Viz pics fiz' wr
   where fiz' = update dt (loops s) (likes s) fiz
 
 gridPosition :: Loop -> State -> V2 Float
