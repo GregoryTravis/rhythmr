@@ -1,5 +1,6 @@
 module Waveform
 ( loopToWaveform
+, loopToWaveformUnsafe
 ) where
 
 import Data.ByteString (ByteString, pack)
@@ -8,6 +9,7 @@ import Data.Word
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Picture
+import System.IO.Unsafe (unsafePerformIO)
 
 import Analysis
 import Loop
@@ -18,6 +20,11 @@ fg :: [Word8]
 fg = [40, 40, 200, 200]
 bg :: [Word8]
 bg = [128, 0, 128, 64]
+
+-- I am deeply ashamed; but all the files are already there and don't move or
+-- change, so it should work.
+loopToWaveformUnsafe :: FilePath -> Int -> Int -> Loop -> Picture
+loopToWaveformUnsafe projectDir w h loop = unsafePerformIO $ loopToWaveform projectDir w h loop 
 
 loopToWaveform :: FilePath -> Int -> Int -> Loop -> IO Picture
 loopToWaveform projectDir w h (Loop filename) = do

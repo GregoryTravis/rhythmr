@@ -145,7 +145,7 @@ clip lo hi x | otherwise = x
 -- Some potential for inconsistency here, Pic and its Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
   deriving (Eq, Show, Ord)
-data Pic c = LoopP Tag (c (V2 Float)) Color
+data Pic c = LoopP Tag (c (V2 Float)) Picture
            | SeqP Tag (c (V2 Float)) (c Float) Color
            | LoopPlaceP Tag (c (V2 Float)) Color
            | MarkP Tag (c (V2 Float))
@@ -158,14 +158,14 @@ data Id a = Id a
 
 mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
 mapPic f (SeqP tag pos width color) = SeqP tag (f pos) (f width) color
-mapPic f (LoopP tag pos color) = LoopP tag (f pos) color
+mapPic f (LoopP tag pos picture) = LoopP tag (f pos) picture
 mapPic f (LoopPlaceP tag pos color) = LoopPlaceP tag (f pos) color
 mapPic f (MarkP tag pos) = MarkP tag (f pos)
 mapPic f (CurP tag pos color) = CurP tag (f pos) color
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
 zipWithPic f (SeqP tag pos width color) (SeqP tag' pos' width' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f width width') color
-zipWithPic f (LoopP tag pos color) (LoopP tag' pos' color') | tag == tag' && color == color' = LoopP tag (f pos pos') color
+zipWithPic f (LoopP tag pos picture) (LoopP tag' pos' picture') | tag == tag' = LoopP tag (f pos pos') picture
 zipWithPic f (LoopPlaceP tag pos color) (LoopPlaceP tag' pos' color') | tag == tag' && color == color' = LoopPlaceP tag (f pos pos') color
 zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
 zipWithPic f (CurP tag pos color) (CurP tag' pos' color') | tag == tag' && color == color' = CurP tag (f pos pos') color
@@ -178,7 +178,7 @@ mapSquish f (MarkP tag pos) = [f pos]
 mapSquish f (CurP tag pos _) = [f pos]
 
 gcReport :: Viz -> [Int]
-gcReport (Viz pics _ _) = concat $ map (mapSquish aValSize) pics
+gcReport (Viz pics _) = concat $ map (mapSquish aValSize) pics
 
 getTag :: Pic a -> Tag
 getTag (LoopP tag _ _) = tag
@@ -188,8 +188,8 @@ getTag (MarkP tag _) = tag
 getTag (CurP tag _ _) = tag
 
 picInterpolator :: Pic c -> Pic Interpolator
-picInterpolator (LoopP tag _ color) =
-  LoopP tag v2FloatInterpolator color
+picInterpolator (LoopP tag _ picture) =
+  LoopP tag v2FloatInterpolator picture
 picInterpolator (SeqP tag _ _ color) =
   SeqP tag v2FloatInterpolator floatInterpolator color
 picInterpolator (LoopPlaceP tag _ color) =
@@ -232,17 +232,16 @@ colorInterpolator' t s e color color' = makeColor r'' g'' b'' a''
 -- pef :: Show (c _) => Pic c
 -- pef = undefined
 
-data Viz = Viz [Pic AVal] (Fiz Loop) (Int -> Int -> Loop -> IO Picture)
+data Viz = Viz [Pic AVal] (Fiz Loop)
   --deriving Show
-initViz :: FilePath -> Viz
-initViz projectDir = Viz [] emptyFiz waveRenderer
-  where waveRenderer = unsafePerformIO $ memoizePure3 (loopToWaveform projectDir)
+initViz :: Viz
+initViz = Viz [] emptyFiz
 
 -- Match old and new Pics via id; new ones are just initialized via const
 updateViz :: Float -> Viz -> [Pic AVal] -> Viz
-updateViz t (Viz oldPics fiz waveRenderer) newPics =
+updateViz t (Viz oldPics fiz) newPics =
   let oldAndNew = filter hasNew $ pairUp oldPics newPics getTag getTag
-   in Viz (map merge oldAndNew) fiz waveRenderer
+   in Viz (map merge oldAndNew) fiz
   where hasNew (_, Nothing) = False
         hasNew _ = True
         merge (Just oldPic, Just newPic) = updatePic t (t+duration) oldPic newPic
@@ -252,7 +251,7 @@ unR2 (V2 x y) = (x, y)
 
 -- TODO: This matrix ioref in the state is a crime against nature
 renderViz :: Float -> State -> Viz -> IO Picture
-renderViz t s (Viz pics fiz waveRenderer) | disableViz = return Blank
+renderViz t s (Viz pics fiz) | disableViz = return Blank
                              | otherwise = do
   --mat <- readIORef (currentHypercubeMat s)
   let anims = map renderPic (map (mapPic (aValToId t)) pics)
@@ -272,8 +271,7 @@ renderViz t s (Viz pics fiz waveRenderer) | disableViz = return Blank
       margin = 32 + 16
       logo' = Translate w h logo
       logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
-  bitmap <- waveRenderer 400 100 (loops s !! 0)
-  return $ Pictures $ [bitmap] ++ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
+  return $ Pictures $ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
 renderFiz s fiz = map toPic unliked ++ (fizEdges s fiz) ++ map toPic liked
@@ -518,7 +516,7 @@ downTri :: Picture
 downTri = Scale (-1) (-1) upTri
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP (LoopT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
+renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ picture
 renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
@@ -533,8 +531,8 @@ loopPlacePics s@(State { loops }) = map toPic loops
           where pos = (gridPosition loop s)
 
 affinitiesToPics :: State -> [Pic AVal]
-affinitiesToPics s@(State { loops }) = map toPic loops ++ marks
-  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (loopColor loop)
+affinitiesToPics s@(State { loops, waveRenderer }) = map toPic loops ++ marks
+  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (waveRenderer loop)
           where pos = fromJust $ applyMaybes [(aps M.!?), (curs M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
                 curs = currentPositions s
@@ -719,7 +717,7 @@ stateToViz :: State -> Viz -> State -> Float -> Viz
 stateToViz oldS v s t = reportViz $ updateViz t v (stateToPics t oldS s)
 
 updateFiz :: Float -> State -> Viz -> Viz
-updateFiz dt s (Viz pics fiz wr) = Viz pics fiz' wr
+updateFiz dt s (Viz pics fiz) = Viz pics fiz'
   where fiz' = update dt (loops s) (likes s) fiz
 
 gridPosition :: Loop -> State -> V2 Float

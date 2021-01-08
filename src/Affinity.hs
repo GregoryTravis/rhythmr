@@ -27,6 +27,7 @@ import Linear
 import Linear.Matrix (identity)
 import System.Environment (getEnv)
 import System.Directory (listDirectory, getCurrentDirectory)
+import System.IO.Unsafe (unsafePerformIO)
 import System.Random
 
 import Animate
@@ -41,7 +42,7 @@ import qualified History as H
 import Hypercube
 import Loop
 import Looper
-import Memoize (memoizeIO, emptyMemoDir)
+import Memoize (memoizeIO, emptyMemoDir, memoizePure)
 import qualified Numberer as N
 import Project
 import Rc
@@ -49,6 +50,7 @@ import SaveLoad
 import State
 import Util
 import Viz
+import Waveform
 import Zounds
 import qualified Zounds as Z
 
@@ -57,6 +59,9 @@ poolSize = 256
 
 maxUndo :: Int
 maxUndo = 100
+
+baseBitmapWidth = 100
+baseBitmapHeight = 100
 
 addClick :: Maybe String
 addClick = Nothing
@@ -102,7 +107,8 @@ stateRepToState :: String -> (String -> IO Zound) -> Looper -> (StateRep -> Stat
 stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) =
   State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
           stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
-          rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False }
+          rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False, waveRenderer }
+  where waveRenderer = unsafePerformIO $ memoizePure (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
 
 saver :: Saver (History State) CompressedStateRep
 saver = historyToCompressedStateRep . fmap stateToStateRepL . lengthShower . H.crop maxUndo
@@ -164,7 +170,8 @@ initState projectDir soundLoader looper collections =
   newPool $ State { projectDir, soundLoader, looper, loops = [], likes = [], dislikes = [],
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
-                    currentSong = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False }
+                    currentSong = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False, waveRenderer }
+  where waveRenderer = unsafePerformIO $ memoizePure (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)
@@ -756,6 +763,6 @@ affinityMain demoMode projectDir seed collections = do
                     let loader = makeLoader projectDir soundLoader looper
                     s <- initState projectDir soundLoader looper collections
                     projectFile <- getProjectFile projectDir
-                    guiMain s (Just projectFile) (initViz projectDir) saver loader stateToViz updateFiz renderViz kh respondToStateChange cleanupMemoMaybe
+                    guiMain s (Just projectFile) initViz saver loader stateToViz updateFiz renderViz kh respondToStateChange cleanupMemoMaybe
                     --gfxMain s keyboardHandler respondToStateChange updateGfx
                     --runEditor (editor s keyboardHandler displayer respondToStateChange loader saver)

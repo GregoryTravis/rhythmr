@@ -4,7 +4,6 @@ module Memoize
 , returnsString
 , memoizeIO
 , memoizePure
-, memoizePure3
 , emptyMemoDir ) where
 
 import Data.IORef
@@ -73,10 +72,10 @@ memoizePure f = do
                                                 return b
   return memoizedF
 
-memoizePure3 :: (Ord a, Ord b, Ord c) => (a -> b -> c -> d) -> IO (a -> b -> c -> d)
-memoizePure3 f = do
-  mf <- memoizePure (\(a, b, c) -> f a b c)
-  return $ \a b c -> mf (a, b, c)
+-- memoizePure3 :: (Ord a, Ord b, Ord c) => (a -> b -> c -> d) -> IO (a -> b -> c -> d)
+-- memoizePure3 f = do
+--   mf <- memoizePure (\(a, b, c) -> f a b c)
+--   return $ \a b c -> mf (a, b, c)
 
 memoizeIO :: Ord a => (a -> IO b) -> IO (a -> IO b)
 memoizeIO f = do

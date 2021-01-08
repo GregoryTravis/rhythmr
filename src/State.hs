@@ -30,6 +30,7 @@ import Data.List (elemIndex, intercalate, sortOn)
 import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Graph
+import Graphics.Gloss.Data.Picture
 import System.Random
 
 import Hypercube
@@ -56,7 +57,8 @@ data State =
         , affinityCycle :: Int
         , rand :: StdGen
         , strategy :: Maybe String
-        , useFiz :: Bool }
+        , useFiz :: Bool
+        , waveRenderer :: Loop -> Picture }
 
 -- This is not used; it is required so that KHResults can be compared
 instance Eq State where
