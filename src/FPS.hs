@@ -1,8 +1,11 @@
-module FPS (fps) where
+module FPS
+( fps
+, fpsAction2 ) where
 
 import Control.Concurrent.MVar
 import Data.Time.Clock (NominalDiffTime, diffUTCTime)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime, SystemTime)
+import System.IO.Unsafe (unsafePerformIO)
 
 import Util
 
@@ -17,8 +20,8 @@ nominalDiffTimeToSeconds s =
 
 
 fpsBufferSize = 30
-fps :: (x -> y -> IO a) -> IO (x -> y -> IO a)
-fps action = do
+fpsAction2 :: (x -> y -> IO a) -> IO (x -> y -> IO a)
+fpsAction2 action = do
   now <- getSystemTime
   mvar <- newMVar (take fpsBufferSize $ repeat now)
   let wrapped x y = do
@@ -33,3 +36,9 @@ fps action = do
         msp $ "FPS " ++ show fps
         action x y
   return wrapped
+
+fps :: IO ()
+fps = unsafePerformIO $ do
+  fps' <- fpsAction2 (\_ _ -> return ())
+  return $ do
+    fps' () ()

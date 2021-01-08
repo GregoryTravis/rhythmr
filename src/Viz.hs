@@ -30,6 +30,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Animate
 import Constants
 import Fiz
+import FPS
 import Gui
 import qualified Hash as H
 import Hypercube
@@ -50,7 +51,7 @@ instance Ord Color where
 
 -- demo mode
 --duration = 1.5
-duration = 1
+duration = 3
 -- duration = 0.5
 
 loadPng :: FilePath -> Picture
@@ -146,9 +147,9 @@ clip lo hi x | otherwise = x
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
   deriving (Eq, Show, Ord)
 data Pic c = LoopP Tag (c (V2 Float)) Picture
-           | SeqP Tag (c (V2 Float)) (c Float) Color
-           | LoopPlaceP Tag (c (V2 Float)) Color
-           | MarkP Tag (c (V2 Float))
+           | SeqP Tag (c (V2 Float)) (c Float) Color -- The longer rects in the playing sequence
+           | LoopPlaceP Tag (c (V2 Float)) Color -- The faded rectangle in the pool area (doesn't move)
+           | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
            | CurP Tag (c (V2 Float)) Color
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
@@ -271,6 +272,7 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       margin = 32 + 16
       logo' = Translate w h logo
       logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
+  --fps
   return $ Pictures $ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 
 renderFiz :: State -> Fiz Loop -> [Picture]
