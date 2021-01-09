@@ -103,7 +103,7 @@ lengthShower h = eesp ("history length", length (H.toList h)) h
 stateRepToState :: String -> (String -> IO Zound) -> Looper -> (StateRep -> State)
 stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, repDislikes, repCollections, repCurrentGroup }) =
   State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
-          stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
+          stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, currentGrid = Nothing, affinityCycle = 0,
           rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False, waveRenderer }
   where waveRenderer = unsafePerformIO $ memoizePure2 (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
 
@@ -167,7 +167,7 @@ initState projectDir soundLoader looper collections =
   newPool $ State { projectDir, soundLoader, looper, loops = [], likes = [], dislikes = [],
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
-                    currentSong = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False, waveRenderer }
+                    currentSong = Nothing, currentGrid = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False, waveRenderer }
   where waveRenderer = unsafePerformIO $ memoizePure2 (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
 
 -- setState s = return (Just s, DoNothing)
@@ -527,23 +527,29 @@ renderLoopGrid s loopGrid = do
 -- number :: [a] -> [(Int, a)]
 -- number = zip [0..]
 
-cycleLikesSong :: State -> IO Zound
+cycleLikesSong :: State -> IO (Zound, Maybe [[Loop]])
 cycleLikesSong s = do
-  renderLoopGrid s (buildLoopGrid s)
+  let grid = buildLoopGrid s
+  z <- renderLoopGrid s grid
+  return (z, Just grid)
 
---renderLoopGrid :: State -> [[Loop]] -> IO Zound
-tallSong :: State -> IO Zound
+--renderLoopGrid :: State -> [[Loop]] -> IO (Zound, Maybe [[Loop]])
+tallSong :: State -> IO (Zound, Maybe [[Loop]])
 tallSong s = do
-  renderLoopGrid s (buildTallLoopGrid s)
+  let grid = buildTallLoopGrid s
+  z <- renderLoopGrid s grid
+  return (z, Just grid)
 
 -- Just the likes, in chronological order
-likesSong :: State -> IO Zound
+likesSong :: State -> IO (Zound, Maybe [[Loop]])
 likesSong s = do
-  renderLoopGrid s (likes s)
+  let grid = likes s
+  z <- renderLoopGrid s grid
+  return (z, Just grid)
 
 -- For each component, pick one node and randomly walk the edge graph, for a
 -- number of steps equal to some constant times the size of the component.
-metagraphSong :: State -> IO Zound
+metagraphSong :: State -> IO (Zound, Maybe [[Loop]])
 metagraphSong s = do
   let mgs = takeWhile hasSome $ map (buildMetaGraph (likes s)) [1..]
       hasSome mg = length (components mg) > 0
@@ -566,7 +572,8 @@ metagraphSong s = do
   msp ("walks", map length walks)
   msp $ graphInfo mg
   --msp $ graphStruct mg
-  renderLoopGrid s seq
+  z <- renderLoopGrid s seq
+  return (z, Just seq)
 
 dupPairs :: [[Loop]] -> [[Loop]]
 dupPairs (a:b:rest) = a:b:a:b:dupPairs rest
@@ -589,15 +596,16 @@ randomWalk g nexts start count =
 instance NFData Loop
 
 -- Maximal paths through connected components
-thresholdSong :: State -> IO Zound
+thresholdSong :: State -> IO (Zound, Maybe [[Loop]])
 thresholdSong s = do
   let walks = thresholdedWalks (likes s)
       best = last (check walks)
       check walks = assertM "thresholdSong" (not (null walks)) walks
   time "msp walks" $ putStrLn $ show walks
-  z <- renderLoopGrid s (snd best)
+  let grid = snd best
+  z <- renderLoopGrid s grid
   msp ("k-threshold lengths", map (\(k, walk) -> (k, length walk)) walks)
-  return z
+  return (z, Just grid)
 
 buildTallLoopGrid :: State -> [[Loop]]
 buildTallLoopGrid s = concat (map movement stacks)
@@ -611,12 +619,12 @@ buildTallLoopGrid s = concat (map movement stacks)
                 b12 = b ++ a1 ++ a2
                 halve xs = splitAt (length xs `div` 2) xs
 
-setSong :: State -> Zound -> IO (GuiCommand State)
-setSong s mix = do
+setSong :: State -> (Zound, Maybe [[Loop]]) -> IO (GuiCommand State)
+setSong s (mix, gridM) = do
   noSound (looper s)
   z <- strictRender mix
   msp $ "setting song, duration " ++ (show (durationSeconds z)) ++ "s"
-  let s' = s { currentSong = Just (mix, z), currentGroup = [] }
+  let s' = s { currentSong = Just (mix, z), currentGrid = gridM, currentGroup = [] }
   setZoundFromTheTop (looper s') z
   setState s'
 

@@ -193,7 +193,7 @@ shuntMadness :: [Int] -> [[Int]]
 shuntMadness xs = odds $ runThrough randShunt xs
   where randShunt = randParam2same (0, length xs-1) shunt
 
-dnb :: State -> IO Zound
+dnb :: State -> IO (Zound, Maybe [[Loop]])
 dnb s = do
   -- z <- readZound "hey.wav" >>= yah
   -- z2 <- readZound "hay.wav" >>= yah
@@ -211,7 +211,7 @@ dnb s = do
       shunteds = map (\s -> sprinkle 16 s z) shunts
       grid = map (:[z2, z3]) shunteds
       score = renderZGrid grid
-  return score
+  return (score, Nothing)
   where yah z = render (Scale loopLengthFrames z)
         twoOrThree (x:y:z:_) = [x, y, z]
         twoOrThree [x, y] = [x, y, y]
@@ -270,7 +270,7 @@ hiChewers =
 rollThrough :: Int -> [a] -> [[a]]
 rollThrough n xs = map (takeLast n) (prefixes xs)
 
-hiChew :: State -> IO Zound
+hiChew :: State -> IO (Zound, Maybe [[Loop]])
 hiChew s = do
   -- z <- readZound "one.wav" >>= yah
   -- z' <- readZound "two.wav" >>= yah
@@ -289,9 +289,10 @@ hiChew s = do
       grid = rollThrough 4 $ take 20 $ chewed
       -- chewed = map (\f -> [f z z']) hiChewers
       score = renderZGrid grid
-  return score
+  return (score, Nothing)
   where yah z = render (Scale loopLengthFrames z)
 
+chew :: State -> IO (Zound, Maybe [[Loop]])
 chew = dnb
 _chew s = do
   clik <- readZound "wavs/clik.wav"

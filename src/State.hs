@@ -55,6 +55,7 @@ data State =
         , editorLog :: [String]
         , stack :: [[Loop]]
         , currentSong :: Maybe (Zound, Zound)  -- First is mix, second is rendered
+        , currentGrid :: Maybe [[Loop]]
         , affinityCycle :: Int
         , rand :: StdGen
         , strategy :: Maybe String
@@ -125,7 +126,7 @@ differenceIfContained a b = if b `S.isSubsetOf` a then a `S.difference` b else a
 
 -- Set the current group and clear the current song
 setCurrentGroup :: State -> [Loop] -> State
-setCurrentGroup s group = s { currentGroup = group, currentSong = Nothing }
+setCurrentGroup s group = s { currentGroup = group, currentSong = Nothing, currentGrid = Nothing }
 
 data LikeStrategy = IncrementalStrategy | RandomStrategy | Incremental2Strategy | Random2Strategy
   deriving Show

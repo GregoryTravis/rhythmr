@@ -595,8 +595,34 @@ playHeadMaybe _ = [playHead]
         ht = (-(fromIntegral windowHeight / 8)) + 25
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
-renderCurrentSong progress (State { currentSong = Nothing }) = []
-renderCurrentSong progress (State { currentSong = Just (z, renderedZ), waveRenderer }) =
+renderCurrentSong progress (State { currentGrid = Nothing }) = []
+renderCurrentSong progress (State { currentGrid = Just loopses, waveRenderer }) =
+  let toPic :: Int -> Int -> Loop -> Pic AVal
+      toPic sx sy loop = constPic (SeqP (SeqT loop 0 0.0) (Id $ positionTranslation $ scrollTranslation pos) (Id segmentWidth) picture)
+        -- where x = fromIntegral sx * (segmentWidth + seqMargin)
+        --       y = fromIntegral sy * (segmentHeight + seqMargin)
+        where pos = toScreen sx sy
+              picture = waveRenderer loop (loopColor' loop)
+      segmentWidth = stretch * rectWidth
+      segmentHeight = rectHeight
+      stretch = 10
+      seqMargin = 5
+      stackToPics sx loops = [toPic sx sy loop | (sy, loop) <- zip [0..] loops]
+      stackToPicses loopses = [stackToPics sx loops | (sx, loops) <- zip [0..] loopses]
+      -- Logical coords (x = measure, y = position in vertical stack) to screen coords
+      toScreen :: Int -> Int -> V2 Float
+      toScreen sx sy = V2 x y
+        where x = fromIntegral sx * (segmentWidth + seqMargin)
+              y = fromIntegral sy * (segmentHeight + seqMargin)
+      totalWidth = case toScreen (length loopses) 0 of V2 x y -> x
+      scrollPosition = progress * totalWidth
+      scrollTranslation (V2 x y) = V2 (x - scrollPosition) y
+      positionTranslation (V2 x y) = V2 (x + (segmentWidth / 2)) (y - (fromIntegral windowHeight / 4) - 20)
+   in concat $ stackToPicses loopses
+
+_renderCurrentSong :: Float -> State -> [Pic AVal]
+_renderCurrentSong progress (State { currentSong = Nothing }) = []
+_renderCurrentSong progress (State { currentSong = Just (z, renderedZ), waveRenderer }) =
   let songBounds = getBounds z
       toPic :: Int -> Zound -> Bounds -> Pic AVal
       toPic row z b = constPic (SeqP (SeqT (Loop (filenameOf z)) 0 0.0) (Id $ segmentPos row b) (Id $ segmentWidth b) picture)
