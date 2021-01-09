@@ -53,7 +53,7 @@ generatePixels w h z = toLazyByteString $ mconcat rows
         rmses :: [Float]
         rmses = rmsTo w z
         waveWidths :: [Int]
-        waveWidths = [clip 2 (h-1) $ floor $ s * ((fromIntegral h) / 2) | s <- rmses]
+        waveWidths = [clip 2 (h-1) $ floor $ 4 * s * ((fromIntegral h) / 2) | s <- rmses]
         --generateCol :: Float -> L.ByteString
         --generateCol s = {-eeesp ("lens", length top, length middle, length bottom) $-} top `mconcat` middle `mconcat` bottom
         --  where middle = L.replicate ht fg
