@@ -29,7 +29,9 @@ type Col = L.ByteString
 -- fg :: Col
 -- fg = L.pack [40, 40, 200, 200]
 bg :: Col
-bg = L.pack [128, 0, 128, 64]
+bg = L.pack [148, 30, 148, 164]
+--bg = L.pack [0x36, 0x39, 0x3f, 0xff]
+--bg = L.pack [0x36, 0x39, 0x3f, 0xff]
 
 -- I am deeply ashamed; but all the files are already there and don't move or
 -- change, so it should work.

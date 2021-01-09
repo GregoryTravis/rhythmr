@@ -18,6 +18,7 @@ import Data.Time.Clock (NominalDiffTime, diffUTCTime)
 import Data.Time.Clock.System (getSystemTime, systemToUTCTime, SystemTime)
 --import GHC.Float (float2Float)
 import Graphics.Gloss
+import Graphics.Gloss.Data.Color (makeColorI)
 import Graphics.Gloss.Interface.IO.Game
 import Linear
 import System.Directory (doesFileExist)
@@ -67,7 +68,9 @@ guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz re
       stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) (updateViz dt (cur h) v) lastH
    in playIO displayMode bgColor 20 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (440, 125)
-        bgColor = white
+        --bgColor = makeColorI 0x2f 0x31 0x36 0xff
+        bgColor = makeColorI 0x1f 0x21 0x26 0xff
+        --bgColor = white
 
 loadOrDefault :: (Binary t, Read t) => Loader (History s) t -> s -> Maybe FilePath -> IO (History s)
 loadOrDefault loader s (Just filename) = do

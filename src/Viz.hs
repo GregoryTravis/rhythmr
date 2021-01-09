@@ -58,6 +58,9 @@ instance Ord Color where
 duration = 1
 -- duration = 0.5
 
+fgColor :: Picture -> Picture
+fgColor = Color white
+
 loadPng :: FilePath -> Picture
 loadPng path = fromJustE ("loadPng " ++ path) $ unsafePerformIO $ do
   fullPath <- getResource path
@@ -324,14 +327,14 @@ renderLabels :: [Picture]
 renderLabels = [ at (-335) (350) "Loops"
                , at 30 (350) "Affinities"
                , at (-60) (-60) "Current stack" ]
-  where at x y s = Translate x y $ Scale 0.15 0.15 $ Text s
+  where at x y s = Translate x y $ Scale 0.15 0.15 $ fgColor $ Text s
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
   let V2 tx ty = fmap fromIntegral $ (fmap (`div` 2) $ V2 (-windowWidth) (-windowHeight)) + margin
       margin = V2 30 (45)
       s = 0.25
-   in Translate tx ty $ Scale s s $ Text strategy
+   in Translate tx ty $ Scale s s $ fgColor $ Text strategy
 
 renderHypercube :: State -> Mat -> Float -> (Picture, Mat)
 renderHypercube s mat t =
@@ -591,7 +594,7 @@ currentsToPics s@(State { loops, waveRenderer }) = map toPic loops
 playHeadMaybe :: State -> [Picture]
 playHeadMaybe (State { currentSong = Nothing }) = []
 playHeadMaybe _ = [playHead]
-  where playHead = Translate 0 ht $ downTri
+  where playHead = Translate 0 ht $ fgColor downTri
         ht = (-(fromIntegral windowHeight / 8)) + 25
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
