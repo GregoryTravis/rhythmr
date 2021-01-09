@@ -60,9 +60,6 @@ poolSize = 256
 maxUndo :: Int
 maxUndo = 100
 
-baseBitmapWidth = 100
-baseBitmapHeight = 100
-
 addClick :: Maybe String
 addClick = Nothing
 --addClick = Just "looper/1-7.wav"

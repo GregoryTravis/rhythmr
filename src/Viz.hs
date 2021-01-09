@@ -10,6 +10,8 @@ module Viz
   , initViz
   , renderViz
   , updateFiz
+  , baseBitmapWidth
+  , baseBitmapHeight
   ) where
 
 import Data.IORef
@@ -467,6 +469,11 @@ rectDim = V2 rectWidth rectHeight
 rectThickness :: Float
 rectThickness = 1
 
+baseBitmapWidth :: Int
+baseBitmapWidth = 100
+baseBitmapHeight :: Int
+baseBitmapHeight = 100
+
 markMargin = 10
 markThickness = 3
 markDim = rectDim + (V2 markMargin markMargin)
@@ -490,6 +497,12 @@ vRect width color borderColor = Pictures [bg, border]
 
 vRectBorder :: Float -> Color -> Picture
 vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 width rectHeight)
+
+-- Scale the standard bitmap size to the rect size
+bitmapToRect :: Picture -> Picture
+bitmapToRect = Scale sx sy
+  where sx = rectWidth / fromIntegral baseBitmapWidth
+        sy = rectHeight / fromIntegral baseBitmapHeight
 
 --rectBorder :: Color -> Picture
 ----rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
@@ -528,11 +541,11 @@ downTri :: Picture
 downTri = Scale (-1) (-1) upTri
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ picture
+renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToRect picture
 renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
-renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ picture
+renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToRect picture
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ renderCurrentSong t s
