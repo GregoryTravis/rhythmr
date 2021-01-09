@@ -324,10 +324,10 @@ mixColors' colors =
    in case mixedV of V4 r g b a -> makeColor r g b a
 
 renderLabels :: [Picture]
-renderLabels = [ at (-335) (350) "Loops"
-               , at 30 (350) "Affinities"
-               , at (-60) (-60) "Current stack" ]
-  where at x y s = Translate x y $ Scale 0.15 0.15 $ fgColor $ Text s
+renderLabels = [ at (-375) (430) "Loops"
+               , at 230 (430) "Affinities"
+               , at (-60) (-20) "Current stack" ]
+  where at x y s = Translate x y $ Scale 0.20 0.20 $ fgColor $ Text s
 
 renderStrategy (State { strategy = Nothing }) = Blank
 renderStrategy (State { strategy = Just strategy }) =
@@ -492,7 +492,7 @@ markThickness = 3
 markDim = rectDim + (V2 markMargin markMargin)
 
 markRect :: Picture
-markRect = Color black $ thickBorder markThickness (V2 0 0) markDim
+markRect = Color white $ thickBorder markThickness (V2 0 0) markDim
 -- markRect = Color black $ rectangleWire w h
 --   where V2 w h = rectDim + 2 * m
 --         V2 tx ty = (-m)
@@ -553,7 +553,7 @@ thickBorder thickness a b = Pictures lines
         blah (V2 x _) (V2 _ y) = V2 x y
 
 upTri :: Picture
-upTri = Color black $ Scale scale scale $ Polygon pts
+upTri = Color white $ Scale scale scale $ Polygon pts
   where pts = [(0.0, 0.5), (0.5, (-0.5)), ((-0.5), (-0.5))]
         scale = 10
 
@@ -594,8 +594,8 @@ currentsToPics s@(State { loops, waveRenderer }) = map toPic loops
 playHeadMaybe :: State -> [Picture]
 playHeadMaybe (State { currentSong = Nothing }) = []
 playHeadMaybe _ = [playHead]
-  where playHead = Translate 0 ht $ fgColor downTri
-        ht = (-(fromIntegral windowHeight / 8)) + 25
+  where playHead = Translate 0 ht downTri
+        ht = (-(fromIntegral windowHeight / 8)) + 25 + 40
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong progress (State { currentGrid = Nothing }) = []
@@ -608,7 +608,7 @@ renderCurrentSong progress (State { currentGrid = Just loopses, waveRenderer }) 
               picture = waveRenderer loop (loopColor' loop)
       segmentWidth = stretch * rectWidth
       segmentHeight = rectHeight
-      stretch = 10
+      stretch = 4
       seqMargin = 5
       stackToPics sx loops = [toPic sx sy loop | (sy, loop) <- zip [0..] loops]
       stackToPicses loopses = [stackToPics sx loops | (sx, loops) <- zip [0..] loopses]
@@ -620,7 +620,7 @@ renderCurrentSong progress (State { currentGrid = Just loopses, waveRenderer }) 
       totalWidth = case toScreen (length loopses) 0 of V2 x y -> x
       scrollPosition = progress * totalWidth
       scrollTranslation (V2 x y) = V2 (x - scrollPosition) y
-      positionTranslation (V2 x y) = V2 (x + (segmentWidth / 2)) (y - (fromIntegral windowHeight / 4) - 20)
+      positionTranslation (V2 x y) = V2 (x + (segmentWidth / 2)) (y - (fromIntegral windowHeight / 4) - 50)
    in concat $ stackToPicses loopses
 
 _renderCurrentSong :: Float -> State -> [Pic AVal]
