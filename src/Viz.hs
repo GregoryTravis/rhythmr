@@ -474,9 +474,9 @@ alphaLoopColor = unsafePerformIO (memoizePure alphaLoopColor')
 borderColor = withAlpha 0.2 $ black
 
 rectWidth :: Float
-rectWidth = 25
+rectWidth = 75
 rectHeight :: Float
-rectHeight = 20
+rectHeight = 25
 rectDim :: V2 Float
 rectDim = V2 rectWidth rectHeight
 rectThickness :: Float
