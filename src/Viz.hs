@@ -498,9 +498,11 @@ vRect width color borderColor = Pictures [bg, border]
 vRectBorder :: Float -> Color -> Picture
 vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 width rectHeight)
 
--- Scale the standard bitmap size to the rect size
+-- Scale the standard bitmap size to the rect size. We also first rotate it,
+-- because the bitmaps are generated rotated.
+-- TODO: transpose this, rather than rotating; otherwise it's upside-down or backwards or something.
 bitmapToRect :: Picture -> Picture
-bitmapToRect = Scale 1 1 -- sx sy
+bitmapToRect = Scale sx sy . Rotate 90
   where sx = rectWidth / fromIntegral baseBitmapWidth
         sy = rectHeight / fromIntegral baseBitmapHeight
 
