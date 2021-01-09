@@ -155,7 +155,7 @@ data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool, curren
            | SeqP Tag (c (V2 Float)) (c Float) Color -- The longer rects in the playing sequence
            | LoopPlaceP Tag (c (V2 Float)) Color -- The faded rectangle in the pool area (doesn't move)
            | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
-           | CurP Tag (c (V2 Float)) Color -- These are just like LoopP, but we need two because sometimes loops are in both affinities and current
+           | CurP Tag (c (V2 Float)) Picture -- These are just like LoopP, but we need two because sometimes loops are in both affinities and current
 
 -- Some potential for inconsistency here, Pic and its Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
@@ -172,14 +172,14 @@ mapPic f (SeqP tag pos width color) = SeqP tag (f pos) (f width) color
 mapPic f (LoopP tag pos picture) = LoopP tag (f pos) picture
 mapPic f (LoopPlaceP tag pos color) = LoopPlaceP tag (f pos) color
 mapPic f (MarkP tag pos) = MarkP tag (f pos)
-mapPic f (CurP tag pos color) = CurP tag (f pos) color
+mapPic f (CurP tag pos picture) = CurP tag (f pos) picture
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
 zipWithPic f (SeqP tag pos width color) (SeqP tag' pos' width' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f width width') color
 zipWithPic f (LoopP tag pos picture) (LoopP tag' pos' picture') | tag == tag' = LoopP tag (f pos pos') picture
 zipWithPic f (LoopPlaceP tag pos color) (LoopPlaceP tag' pos' color') | tag == tag' && color == color' = LoopPlaceP tag (f pos pos') color
 zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
-zipWithPic f (CurP tag pos color) (CurP tag' pos' color') | tag == tag' && color == color' = CurP tag (f pos pos') color
+zipWithPic f (CurP tag pos picture) (CurP tag' pos' picture') | tag == tag' = CurP tag (f pos pos') picture
 
 mapSquish :: (forall a . (Eq a, Show a) => c a -> b) -> Pic c -> [b]
 mapSquish f (SeqP tag pos width _) = [f pos, f width]
@@ -207,8 +207,8 @@ picInterpolator (LoopPlaceP tag _ color) =
   LoopPlaceP tag v2FloatInterpolator color
 picInterpolator (MarkP tag _) =
   MarkP tag v2FloatInterpolator
-picInterpolator (CurP tag _ color) =
-  CurP tag v2FloatInterpolator color
+picInterpolator (CurP tag _ picture) =
+  CurP tag v2FloatInterpolator picture
 
 -- Surely this exists already
 data Pair c d a = Pair (c a) (d a)
@@ -532,7 +532,7 @@ renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ picture
 renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
-renderPic (CurP (CurT loop) (Id (V2 x y)) color) = Translate x y $ rect color black
+renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ picture
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ renderCurrentSong t s
@@ -552,8 +552,8 @@ affinitiesToPics s@(State { loops, waveRenderer }) = map toPic loops ++ marks
         toMark i loop = constPic $ MarkP (MarkT i) (Id (gridPosition loop s))
 
 currentsToPics :: State -> [Pic AVal]
-currentsToPics s@(State { loops }) = map toPic loops
-  where toPic loop = constPic $ CurP (CurT loop) (Id pos) (loopColor loop)
+currentsToPics s@(State { loops, waveRenderer }) = map toPic loops
+  where toPic loop = constPic $ CurP (CurT loop) (Id pos) (waveRenderer loop)
           where pos = fromJust $ applyMaybes [(curs M.!?), (aps M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
                 curs = currentPositions s
