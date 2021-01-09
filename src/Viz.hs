@@ -143,14 +143,25 @@ clip lo hi x | x < lo = lo
 clip lo hi x | x > hi = hi
 clip lo hi x | otherwise = x
 
--- Some potential for inconsistency here, Pic and its Tag could differ
-data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
-  deriving (Eq, Show, Ord)
-data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool, current, and affinities
+-- LoopPlaceP is faded and stays in the pool area. LoopP and CurP are identical
+-- full-color rectangles, and travel together: they start in the pool, and if
+-- they are included in a like they go to the affinities area. If a loop is
+-- part of the current, then the CurP moves to the current area while the LoopP
+-- stays behind in the pool or affinities area; once it's no longer in the
+-- current, it goes back to its twin. MarkP is the black rectangle marking the
+-- current loops in the pool area, and SeqP are the (wider) loops in the
+-- playing sequence scrolling right to left.
+data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool,
+current, and affinities
            | SeqP Tag (c (V2 Float)) (c Float) Color -- The longer rects in the playing sequence
            | LoopPlaceP Tag (c (V2 Float)) Color -- The faded rectangle in the pool area (doesn't move)
            | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
            | CurP Tag (c (V2 Float)) Color -- These are just like LoopP, but we need two because sometimes loops are in both affinities and current
+
+-- Some potential for inconsistency here, Pic and its Tag could differ
+data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
+  deriving (Eq, Show, Ord)
+
 deriving instance () => Show (Pic AVal)
 deriving instance () => Show (Pic Id)
 
