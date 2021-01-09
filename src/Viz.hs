@@ -151,8 +151,7 @@ clip lo hi x | otherwise = x
 -- current, it goes back to its twin. MarkP is the black rectangle marking the
 -- current loops in the pool area, and SeqP are the (wider) loops in the
 -- playing sequence scrolling right to left.
-data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool,
-current, and affinities
+data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool, current, and affinities
            | SeqP Tag (c (V2 Float)) (c Float) Color -- The longer rects in the playing sequence
            | LoopPlaceP Tag (c (V2 Float)) Color -- The faded rectangle in the pool area (doesn't move)
            | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
