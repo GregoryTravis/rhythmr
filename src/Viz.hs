@@ -511,10 +511,15 @@ vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 w
 -- Scale the standard bitmap size to the rect size. We also first rotate it,
 -- because the bitmaps are generated rotated.
 -- TODO: transpose this, rather than rotating; otherwise it's upside-down or backwards or something.
-bitmapToRect :: Picture -> Picture
-bitmapToRect = Scale sx sy . Rotate 90
-  where sx = rectWidth / fromIntegral baseBitmapWidth
-        sy = rectHeight / fromIntegral baseBitmapHeight
+bitmapToRect :: Float -> Float -> Picture -> Picture
+bitmapToRect w h = Scale sx sy . Rotate 90
+  where sx = w / fromIntegral baseBitmapWidth
+        sy = h / fromIntegral baseBitmapHeight
+
+bitmapToLoopRect :: Picture -> Picture
+bitmapToLoopRect = bitmapToRect rectWidth rectHeight
+bitmapToCurRect :: Picture -> Picture
+bitmapToCurRect = bitmapToRect (rectWidth * 3) rectHeight
 
 --rectBorder :: Color -> Picture
 ----rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
@@ -553,11 +558,11 @@ downTri :: Picture
 downTri = Scale (-1) (-1) upTri
 
 renderPic :: Pic Id -> Picture
-renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToRect picture
+renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToLoopRect picture
 renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
-renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToRect picture
+renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToLoopRect picture
 
 stateToPics :: Float -> State -> State -> [Pic AVal]
 stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ renderCurrentSong t s
