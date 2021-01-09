@@ -47,13 +47,13 @@ zoundToWaveform w h z = bitmapOfByteString w h (BitmapFormat TopToBottom PxRGBA)
   where bs = L.toStrict $ generatePixels w h z
 
 generatePixels :: Int -> Int -> Zound -> L.ByteString
-generatePixels w h z = mconcat $ L.transpose rows
-  where rows :: [L.ByteString]
-        rows = map (generateRow fg bg (fromIntegral w)) waveWidths
+generatePixels w h z = toLazyByteString $ mconcat rows
+  where rows :: [Builder]
+        rows = map (generateRow fg bg w) waveWidths
         rmses :: [Float]
         rmses = rmsTo w z
-        waveWidths :: [Int64]
-        waveWidths = [fromIntegral $ clip 2 (h-1) $ floor $ s * ((fromIntegral h) / 2) | s <- rmses]
+        waveWidths :: [Int]
+        waveWidths = [clip 2 (h-1) $ floor $ s * ((fromIntegral h) / 2) | s <- rmses]
         --generateCol :: Float -> L.ByteString
         --generateCol s = {-eeesp ("lens", length top, length middle, length bottom) $-} top `mconcat` middle `mconcat` bottom
         --  where middle = L.replicate ht fg
@@ -66,13 +66,19 @@ generatePixels w h z = mconcat $ L.transpose rows
 
 -- Generate a row (actually a column of a waveform) like:
 --     bbbbbbbbbbffffffffffffffffffffffbbbbbbbbbb
-generateRow :: Col -> Col -> Int64 -> Int64 -> L.ByteString
-generateRow fg bg totalLen middleLen = left `mappend` middle `mappend` right
-  where left = L.take (leftLen * 4) (L.cycle bg)
-        middle = L.take (middleLen * 4) (L.cycle fg)
-        right = L.take (rightLen * 4) (L.cycle bg)
-        leftLen = (totalLen - middleLen) `div` 2
-        rightLen = totalLen - middleLen - leftLen
+generateRow :: Col -> Col -> Int -> Int -> Builder
+generateRow fg bg totalLen middleLen =
+  let fgB = lazyByteString fg
+      bgB = lazyByteString bg
+      left = strip leftLen bgB
+      middle = strip middleLen fgB
+      right = strip rightLen bgB
+      leftLen = (totalLen - middleLen) `div` 2
+      rightLen = totalLen - middleLen - leftLen
+      strip :: Int -> Builder -> Builder
+      strip n builder = mconcat (take n' (repeat builder))
+        where n' = fromIntegral n
+  in left `mappend` middle `mappend` right
 
 -- nOf :: Int -> a -> [a]
 -- nOf n x = take n (repeat x)

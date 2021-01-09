@@ -55,7 +55,7 @@ import Zounds
 import qualified Zounds as Z
 
 poolSize :: Int
-poolSize = 256
+poolSize = 64
 
 maxUndo :: Int
 maxUndo = 100

@@ -500,7 +500,7 @@ vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 w
 
 -- Scale the standard bitmap size to the rect size
 bitmapToRect :: Picture -> Picture
-bitmapToRect = Scale sx sy
+bitmapToRect = Scale 1 1 -- sx sy
   where sx = rectWidth / fromIntegral baseBitmapWidth
         sy = rectHeight / fromIntegral baseBitmapHeight
 
