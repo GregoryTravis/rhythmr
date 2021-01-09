@@ -1,6 +1,7 @@
 module Waveform
 ( loopToWaveform
 , loopToWaveformUnsafe
+, zoundToWaveform
 ) where
 
 import Prelude hiding (concat, replicate)

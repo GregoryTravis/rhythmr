@@ -156,7 +156,7 @@ clip lo hi x | otherwise = x
 -- current loops in the pool area, and SeqP are the (wider) loops in the
 -- playing sequence scrolling right to left.
 data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool, current, and affinities
-           | SeqP Tag (c (V2 Float)) (c Float) Color -- The longer rects in the playing sequence
+           | SeqP Tag (c (V2 Float)) (c Float) Picture -- The longer rects in the playing sequence
            | LoopPlaceP Tag (c (V2 Float)) Color -- The faded rectangle in the pool area (doesn't move)
            | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
            | CurP Tag (c (V2 Float)) Picture -- These are just like LoopP, but we need two because sometimes loops are in both affinities and current
@@ -172,14 +172,14 @@ data Id a = Id a
   deriving Show
 
 mapPic :: (forall a . (Eq a, Show a) => c a -> c' a) -> Pic c -> Pic c'
-mapPic f (SeqP tag pos width color) = SeqP tag (f pos) (f width) color
+mapPic f (SeqP tag pos width picture) = SeqP tag (f pos) (f width) picture
 mapPic f (LoopP tag pos picture) = LoopP tag (f pos) picture
 mapPic f (LoopPlaceP tag pos color) = LoopPlaceP tag (f pos) color
 mapPic f (MarkP tag pos) = MarkP tag (f pos)
 mapPic f (CurP tag pos picture) = CurP tag (f pos) picture
 
 zipWithPic :: (forall a . (Eq a, Show a) => c a -> d a -> e a) -> Pic c -> Pic d -> Pic e
-zipWithPic f (SeqP tag pos width color) (SeqP tag' pos' width' color') | tag == tag' && color == color' = SeqP tag (f pos pos') (f width width') color
+zipWithPic f (SeqP tag pos width picture) (SeqP tag' pos' width' picture') | tag == tag' = SeqP tag (f pos pos') (f width width') picture
 zipWithPic f (LoopP tag pos picture) (LoopP tag' pos' picture') | tag == tag' = LoopP tag (f pos pos') picture
 zipWithPic f (LoopPlaceP tag pos color) (LoopPlaceP tag' pos' color') | tag == tag' && color == color' = LoopPlaceP tag (f pos pos') color
 zipWithPic f (MarkP tag pos) (MarkP tag' pos') | tag == tag' = MarkP tag (f pos pos')
@@ -205,8 +205,8 @@ getTag (CurP tag _ _) = tag
 picInterpolator :: Pic c -> Pic Interpolator
 picInterpolator (LoopP tag _ picture) =
   LoopP tag v2FloatInterpolator picture
-picInterpolator (SeqP tag _ _ color) =
-  SeqP tag v2FloatInterpolator floatInterpolator color
+picInterpolator (SeqP tag _ _ picture) =
+  SeqP tag v2FloatInterpolator floatInterpolator picture
 picInterpolator (LoopPlaceP tag _ color) =
   LoopPlaceP tag v2FloatInterpolator color
 picInterpolator (MarkP tag _) =
@@ -518,8 +518,8 @@ bitmapToRect w h = Scale sx sy . Rotate 90
 
 bitmapToLoopRect :: Picture -> Picture
 bitmapToLoopRect = bitmapToRect rectWidth rectHeight
-bitmapToCurRect :: Picture -> Picture
-bitmapToCurRect = bitmapToRect (rectWidth * 3) rectHeight
+bitmapToWideRect :: Float -> Picture -> Picture
+bitmapToWideRect w = bitmapToRect w rectHeight
 
 --rectBorder :: Color -> Picture
 ----rectBorder color = Color black $ lineLoop $ rectanglePath 25.0 20.0
@@ -559,7 +559,7 @@ downTri = Scale (-1) (-1) upTri
 
 renderPic :: Pic Id -> Picture
 renderPic (LoopP (LoopT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToLoopRect picture
-renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) color) = Translate x y $ vRect width color black
+renderPic (SeqP (SeqT loop _ _) (Id (V2 x y)) (Id width) picture) = Translate x y $ bitmapToWideRect width picture
 renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ rect color borderColor
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
 renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToLoopRect picture
@@ -596,10 +596,13 @@ playHeadMaybe _ = [playHead]
 
 renderCurrentSong :: Float -> State -> [Pic AVal]
 renderCurrentSong progress (State { currentSong = Nothing }) = []
-renderCurrentSong progress (State { currentSong = Just (z, renderedZ) }) =
+renderCurrentSong progress (State { currentSong = Just (z, renderedZ), waveRenderer }) =
   let songBounds = getBounds z
       toPic :: Int -> Zound -> Bounds -> Pic AVal
-      toPic row z b = constPic (SeqP (SeqT (Loop (filenameOf z)) 0 0.0) (Id $ segmentPos row b) (Id $ segmentWidth b) (colorFor z))
+      toPic row z b = constPic (SeqP (SeqT (Loop (filenameOf z)) 0 0.0) (Id $ segmentPos row b) (Id $ segmentWidth b) picture)
+        where picture = zoundToWaveform 50 50 z (colorFor z)
+        -- where picture = waveRenderer loop (colorFor z)
+        --       loop = Loop $ eeesp "filenameOf" (filenameOf z)
       filenameOf :: Zound -> String
       filenameOf z = case source z of Just (Source [filename]) -> filename
       colorFor :: Zound -> Color
