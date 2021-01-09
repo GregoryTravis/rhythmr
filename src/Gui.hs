@@ -30,8 +30,9 @@ import SaveLoad
 import State
 import Util
 
-windowWidth = 800
-windowHeight = 800
+windowMargin = 50
+windowWidth = 1680 - (windowMargin * 2)
+windowHeight = 1050 - (windowMargin * 2)
 windowDim = V2 windowWidth windowHeight
 
 data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, lastSave :: History s }
@@ -67,7 +68,7 @@ guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz re
         return gs
       stepIteration dt (GuiState h t v lastH) = return $ GuiState h (t + dt) (updateViz dt (cur h) v) lastH
    in playIO displayMode bgColor 20 initWorld worldToPicture eventHandler stepIteration
-  where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (440, 125)
+  where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (windowMargin, windowMargin)
         --bgColor = makeColorI 0x2f 0x31 0x36 0xff
         bgColor = makeColorI 0x1f 0x21 0x26 0xff
         --bgColor = white
