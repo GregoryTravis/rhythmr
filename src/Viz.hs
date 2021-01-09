@@ -120,7 +120,7 @@ ringOfCirclesInUnitSquare n = circles
 affinityPositions :: State -> M.Map Loop (V2 Float)
 affinityPositions s = case affinities s of xss -> M.fromList $ concat (zipWith rah (gridTransformsForN (length xss)) xss)
   where rah :: (V2 Float -> V2 Float) -> [Loop] -> [(Loop, V2 Float)]
-        rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 400 400)) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
+        rah xform xs = zip xs $ map (\cXform -> ((scaler (V2 (fromIntegral halfWindowWidth) (fromIntegral halfWindowHeight))) . xform . cXform) (V2 0 0)) (ringOfCirclesInUnitSquare (length xs))
 
 -- Draw the current group in the middle of the screen
 currentPositions :: State -> M.Map Loop (V2 Float)
@@ -474,9 +474,9 @@ alphaLoopColor = unsafePerformIO (memoizePure alphaLoopColor')
 borderColor = withAlpha 0.2 $ black
 
 rectWidth :: Float
-rectWidth = 75
+rectWidth = 85
 rectHeight :: Float
-rectHeight = 25
+rectHeight = 30
 rectDim :: V2 Float
 rectDim = V2 rectWidth rectHeight
 rectThickness :: Float

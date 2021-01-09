@@ -5,6 +5,8 @@ module Gui
   , GuiCommand(..)
   , windowWidth
   , windowHeight
+  , halfWindowHeight
+  , halfWindowWidth
   , windowDim ) where
 
 import qualified Data.Set as S
@@ -34,6 +36,8 @@ windowMargin = 50
 windowWidth = 1680 - (windowMargin * 2)
 windowHeight = 1050 - (windowMargin * 2)
 windowDim = V2 windowWidth windowHeight
+halfWindowHeight = windowHeight `div` 2
+halfWindowWidth = windowWidth `div` 2
 
 data GuiState s v = GuiState { history :: History s, now :: Float, viz :: v, lastSave :: History s }
 
