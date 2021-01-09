@@ -15,10 +15,12 @@ module Viz
   ) where
 
 import Data.IORef
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Vector as V
+import Data.Word (Word8)
 import Data.Maybe (fromJust, fromMaybe)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color
@@ -441,6 +443,14 @@ loopColor' :: Loop -> Color
 loopColor' = hashColor . getHash
 loopColor = unsafePerformIO (memoizePure loopColor')
 
+-- loopColorBytestring :: Loop -> BL.ByteString
+-- loopColorBytestring loop =
+--   let (r, g, b, a) = rgbaOfColor $ loopColor' loop
+--       rgbaW8 = map toW8 [r, g, b, a]
+--    in BL.pack rgbaW8
+--   where toW8 :: Float -> Word8
+--         toW8 x = fromIntegral $ floor (x * 255)
+
 hashColor' :: String -> Color
 hashColor' hash =
   let ri = read ("0x" ++ (take 2 hash)) :: Int
@@ -559,7 +569,7 @@ loopPlacePics s@(State { loops }) = map toPic loops
 
 affinitiesToPics :: State -> [Pic AVal]
 affinitiesToPics s@(State { loops, waveRenderer }) = map toPic loops ++ marks
-  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (waveRenderer loop)
+  where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (waveRenderer loop (loopColor' loop))
           where pos = fromJust $ applyMaybes [(aps M.!?), (curs M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
                 curs = currentPositions s
@@ -568,7 +578,7 @@ affinitiesToPics s@(State { loops, waveRenderer }) = map toPic loops ++ marks
 
 currentsToPics :: State -> [Pic AVal]
 currentsToPics s@(State { loops, waveRenderer }) = map toPic loops
-  where toPic loop = constPic $ CurP (CurT loop) (Id pos) (waveRenderer loop)
+  where toPic loop = constPic $ CurP (CurT loop) (Id pos) (waveRenderer loop (loopColor' loop))
           where pos = fromJust $ applyMaybes [(curs M.!?), (aps M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
                 curs = currentPositions s

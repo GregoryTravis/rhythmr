@@ -42,7 +42,7 @@ import qualified History as H
 import Hypercube
 import Loop
 import Looper
-import Memoize (memoizeIO, emptyMemoDir, memoizePure)
+import Memoize (memoizeIO, emptyMemoDir, memoizePure2)
 import qualified Numberer as N
 import Project
 import Rc
@@ -105,7 +105,7 @@ stateRepToState projectDir soundLoader looper (StateRepT { repLoops, repLikes, r
   State { projectDir, soundLoader, looper, loops = repLoops, likes = repLikes, dislikes = repDislikes, currentGroup = repCurrentGroup,
           stack = [], editorLog = ["Welcome to Rhythmr"], currentSong = Nothing, affinityCycle = 0,
           rand = initRand, strategy = Nothing, collections = repCollections, useFiz = False, waveRenderer }
-  where waveRenderer = unsafePerformIO $ memoizePure (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
+  where waveRenderer = unsafePerformIO $ memoizePure2 (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
 
 saver :: Saver (History State) CompressedStateRep
 saver = historyToCompressedStateRep . fmap stateToStateRepL . lengthShower . H.crop maxUndo
@@ -168,7 +168,7 @@ initState projectDir soundLoader looper collections =
                     currentGroup = [], editorLog = ["Welcome to Rhythmr"], stack = [],
                     collections,
                     currentSong = Nothing, affinityCycle = 0, rand = initRand, strategy = Nothing, useFiz = False, waveRenderer }
-  where waveRenderer = unsafePerformIO $ memoizePure (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
+  where waveRenderer = unsafePerformIO $ memoizePure2 (loopToWaveformUnsafe projectDir baseBitmapWidth baseBitmapHeight)
 
 -- setState s = return (Just s, DoNothing)
 -- retCommand c = return (Nothing, c)

@@ -25,29 +25,38 @@ import Zounds
 
 type Col = L.ByteString
 
-fg :: Col
-fg = L.pack [40, 40, 200, 200]
+-- fg :: Col
+-- fg = L.pack [40, 40, 200, 200]
 bg :: Col
 bg = L.pack [128, 0, 128, 64]
 
 -- I am deeply ashamed; but all the files are already there and don't move or
 -- change, so it should work.
-loopToWaveformUnsafe :: FilePath -> Int -> Int -> Loop -> Picture
-loopToWaveformUnsafe projectDir w h loop = unsafePerformIO $ loopToWaveform projectDir w h loop 
+loopToWaveformUnsafe :: FilePath -> Int -> Int -> Loop -> Color -> Picture
+loopToWaveformUnsafe projectDir w h loop color = unsafePerformIO $ loopToWaveform projectDir w h loop color
 
-loopToWaveform :: FilePath -> Int -> Int -> Loop -> IO Picture
-loopToWaveform projectDir w h (Loop filename) = do
+loopToWaveform :: FilePath -> Int -> Int -> Loop -> Color -> IO Picture
+loopToWaveform projectDir w h (Loop filename) color = do
   let path = projectDir ++ "/loops/" ++ filename
   msp path
   z <- readZound path
-  return $ zoundToWaveform w h (normalize z)
+  return $ zoundToWaveform w h (normalize z) color
 
-zoundToWaveform :: Int -> Int -> Zound -> Picture
-zoundToWaveform w h z = bitmapOfByteString w h (BitmapFormat TopToBottom PxRGBA) bs True
-  where bs = L.toStrict $ generatePixels w h z
+zoundToWaveform :: Int -> Int -> Zound -> Color -> Picture
+zoundToWaveform w h z color = bitmapOfByteString w h (BitmapFormat TopToBottom PxRGBA) bs True
+  where bs = L.toStrict $ generatePixels w h z colorBS
+        colorBS = colorToBS color
 
-generatePixels :: Int -> Int -> Zound -> L.ByteString
-generatePixels w h z = toLazyByteString $ mconcat rows
+colorToBS :: Color -> L.ByteString
+colorToBS color =
+  let (r, g, b, a) = rgbaOfColor color
+      rgbaW8 = map toW8 [r, g, b, a]
+   in L.pack rgbaW8
+  where toW8 :: Float -> Word8
+        toW8 x = fromIntegral $ floor (x * 255)
+
+generatePixels :: Int -> Int -> Zound -> L.ByteString -> L.ByteString
+generatePixels w h z fg = toLazyByteString $ mconcat rows
   where rows :: [Builder]
         rows = map (generateRow fg bg w) waveWidths
         rmses :: [Float]

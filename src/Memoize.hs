@@ -4,6 +4,7 @@ module Memoize
 , returnsString
 , memoizeIO
 , memoizePure
+, memoizePure2
 , emptyMemoDir ) where
 
 import Data.IORef
@@ -71,6 +72,11 @@ memoizePure f = do
                                                 writeIORef ioref $ MS.insert a b cache
                                                 return b
   return memoizedF
+
+memoizePure2 :: (Ord a, Ord b) => (a -> b -> c) -> IO (a -> b -> c)
+memoizePure2 f = do
+  mf <- memoizePure (\(a, b) -> f a b)
+  return $ \a b -> mf (a, b)
 
 -- memoizePure3 :: (Ord a, Ord b, Ord c) => (a -> b -> c -> d) -> IO (a -> b -> c -> d)
 -- memoizePure3 f = do
