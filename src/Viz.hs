@@ -340,7 +340,7 @@ mixColors' colors =
 
 renderLabels :: [Picture]
 renderLabels = [ at (-375) (430) "Loops"
-               , at 230 (430) "Affinities"
+               , at 340 (430) "Affinities"
                , at (-80) (-20) "Current stack" ]
   where at x y s = Translate x y $ Scale 0.20 0.20 $ fgColor $ Text s
 
