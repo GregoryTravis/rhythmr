@@ -228,7 +228,7 @@ overlapBy k xs ys = length (intersect xs ys) >= k
 -- walks become empty.
 thresholdedWalks :: (NFData a, Show a, Ord a) => [[a]] -> [(Int, [[a]])]
 thresholdedWalks xses = nonEmpty
-  where walks = map walk [0..]
+  where walks = map walk [1..]
         walk k = (k, tv "allLongestPathComponents" $ allLongestPathComponents (mg k))
         mg k = tv "buildMetaGraph" $ buildMetaGraph xses k
         nonEmpty = tv "nonEmpty" $ takeWhile (\x -> tv "x" $ ((\(_, walk) -> not (null walk)) x)) walks

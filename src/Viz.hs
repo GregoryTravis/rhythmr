@@ -326,7 +326,7 @@ mixColors' colors =
 renderLabels :: [Picture]
 renderLabels = [ at (-375) (430) "Loops"
                , at 230 (430) "Affinities"
-               , at (-60) (-20) "Current stack" ]
+               , at (-80) (-20) "Current stack" ]
   where at x y s = Translate x y $ Scale 0.20 0.20 $ fgColor $ Text s
 
 renderStrategy (State { strategy = Nothing }) = Blank
@@ -620,7 +620,7 @@ renderCurrentSong progress (State { currentGrid = Just loopses, waveRenderer }) 
       totalWidth = case toScreen (length loopses) 0 of V2 x y -> x
       scrollPosition = progress * totalWidth
       scrollTranslation (V2 x y) = V2 (x - scrollPosition) y
-      positionTranslation (V2 x y) = V2 (x + (segmentWidth / 2)) (y - (fromIntegral windowHeight / 4) - 50)
+      positionTranslation (V2 x y) = V2 (x + (segmentWidth / 2)) (y - (fromIntegral windowHeight / 4) - 85)
    in concat $ stackToPicses loopses
 
 _renderCurrentSong :: Float -> State -> [Pic AVal]
