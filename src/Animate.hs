@@ -7,9 +7,6 @@ module Animate
 , aValSize
 ) where
 
-import qualified Data.Map.Strict as M
-import qualified Debug.Trace as TR
-
 import Util
 
 data AVal a = Const a | Blend Float Float (AVal a) (AVal a) (Interpolator a)
@@ -46,7 +43,7 @@ readAVal a t = readAVal' a t
 
 readAVal' :: Show a => AVal a -> Float -> a
 readAVal' (Const a) _ = a
-readAVal' (Blend s e old new interp) t = a -- | s <= t && t < e = a
+readAVal' (Blend s e old new interp) t = a --  | s <= t && t < e = a
   where oa = readAVal' old t
         na = readAVal' new t
         a = applyInterpolator interp t s e oa na

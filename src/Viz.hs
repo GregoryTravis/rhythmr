@@ -4,6 +4,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TupleSections #-}
 
 module Viz
   ( stateToViz
@@ -276,6 +277,8 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       --(hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
       labels = renderLabels
+  -- msp "FRAME"
+  -- mapM_ (msp . ("pic",)) pics
   --writeIORef (currentHypercubeMat s) mat'
   progress <- getProgress (looper s)
   -- (tx, cursor) <- sequenceCursor s
@@ -567,16 +570,19 @@ renderPic (LoopPlaceP (LoopPlaceT loop) (Id (V2 x y)) color) = Translate x y $ r
 renderPic (MarkP (MarkT i) (Id (V2 x y))) = Translate x y $ markRect
 renderPic (CurP (CurT loop) (Id (V2 x y)) picture) = Translate x y $ bitmapToLoopRect picture
 
+-- current order loop place mark cur -- how?? Because pairUp reorders them
 stateToPics :: Float -> State -> State -> [Pic AVal]
-stateToPics t oldS s = loopPlacePics s ++ affinitiesToPics s ++ currentsToPics s -- ++ renderCurrentSong t s
+stateToPics t oldS s =
+  let (marks, loops) = affinitiesToPics s -- only did this while debugging ordering
+   in loops ++ loopPlacePics s ++ currentsToPics s ++ marks -- ++ renderCurrentSong t s
 
 loopPlacePics :: State -> [Pic AVal]
 loopPlacePics s@(State { loops }) = map toPic loops
   where toPic loop = constPic $ LoopPlaceP (LoopPlaceT loop) (Id pos) (alphaLoopColor loop)
           where pos = (gridPosition loop s)
 
-affinitiesToPics :: State -> [Pic AVal]
-affinitiesToPics s@(State { loops, waveRenderer }) = map toPic loops ++ marks
+affinitiesToPics :: State -> ([Pic AVal], [Pic AVal])
+affinitiesToPics s@(State { loops, waveRenderer }) = (marks, map toPic loops)
   where toPic loop = constPic $ LoopP (LoopT loop) (Id pos) (waveRenderer loop (loopColor' loop))
           where pos = fromJust $ applyMaybes [(aps M.!?), (curs M.!?), const (Just (gridPosition loop s))] loop
                 aps = affinityPositions s
