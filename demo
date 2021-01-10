@@ -13,5 +13,5 @@ case $n in
     exit 1
 esac
 
-cp farm-performance-histories/$proj/history $proj/history
+cp audio-programmer-histories/$proj/history $proj/history
 g demo $proj

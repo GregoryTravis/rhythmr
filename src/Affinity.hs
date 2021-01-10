@@ -37,7 +37,7 @@ import Constants
 import FX
 import Gui
 import Graph
-import History (History)
+import History (History, toBeginning)
 import qualified History as H
 import Hypercube
 import Loop
@@ -93,9 +93,11 @@ emptyStateRep = StateRepT { repLoops = [], repLikes = [], repDislikes = [], repC
 initRand :: StdGen
 initRand = mkStdGen 0
 
-makeLoader :: String -> (String -> IO Zound) -> Looper -> Loader (History State) CompressedStateRep
-makeLoader projectDir soundLoader looper =
-  lengthShower . fmap (stateRepToState projectDir soundLoader looper) . compressedStateRepToHistory
+makeLoader :: Bool -> String -> (String -> IO Zound) -> Looper -> Loader (History State) CompressedStateRep
+makeLoader demoMode projectDir soundLoader looper =
+  lengthShower . rewindMaybe . fmap (stateRepToState projectDir soundLoader looper) . compressedStateRepToHistory
+  where rewindMaybe :: History State -> History State
+        rewindMaybe = if demoMode then toBeginning else id
 
 lengthShower :: History a -> History a
 lengthShower h = eesp ("history length", length (H.toList h)) h
@@ -765,7 +767,7 @@ affinityMain demoMode projectDir seed collections = do
   let kh = if demoMode then demoKeyboardHandler else keyboardHandler
   withLooper $ \looper -> do
                     soundLoader <- memoizeIO readZoundFadeEnds
-                    let loader = makeLoader projectDir soundLoader looper
+                    let loader = (makeLoader demoMode) projectDir soundLoader looper
                     s <- initState projectDir soundLoader looper collections
                     projectFile <- getProjectFile projectDir
                     guiMain s (Just projectFile) initViz saver loader stateToViz updateFiz renderViz kh respondToStateChange cleanupMemoMaybe
