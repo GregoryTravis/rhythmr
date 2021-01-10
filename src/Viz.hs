@@ -165,6 +165,18 @@ data Pic c = LoopP Tag (c (V2 Float)) Picture -- These move between pool, curren
            | MarkP Tag (c (V2 Float)) -- the black rectangle around the current ones
            | CurP Tag (c (V2 Float)) Picture -- These are just like LoopP, but we need two because sometimes loops are in both affinities and current
 
+-- Sort Pics in draw order (back to front)
+-- I know there must be a way to make an Ord from an Enum but I can't find it
+picCompare :: Pic a -> Int
+picCompare (SeqP tag pos width picture) = 0
+picCompare (LoopPlaceP tag pos color) = 1
+picCompare (LoopP tag pos picture) = 2
+picCompare (CurP tag pos picture) = 3
+picCompare (MarkP tag pos) = 4
+
+sortPics :: [Pic a] -> [Pic a]
+sortPics = L.sortOn picCompare
+
 -- Some potential for inconsistency here, Pic and its Tag could differ
 data Tag = LoopT Loop | SeqT Loop Int Float | LoopPlaceT Loop | MarkT Int | CurT Loop
   deriving (Eq, Show, Ord)
@@ -273,7 +285,7 @@ renderViz :: Float -> State -> Viz -> IO Picture
 renderViz t s (Viz pics fiz) | disableViz = return Blank
                              | otherwise = do
   --mat <- readIORef (currentHypercubeMat s)
-  let anims = map renderPic (map (mapPic (aValToId t)) pics)
+  let anims = map renderPic (map (mapPic (aValToId t)) (sortPics pics))
       --(hc, mat') = renderHypercube s mat t
       strategy = renderStrategy s
       labels = renderLabels
@@ -494,8 +506,9 @@ markMargin = 10
 markThickness = 3
 markDim = rectDim + (V2 markMargin markMargin)
 
+markColor = makeColorI 0xce 0xee 0x11 0xff
 markRect :: Picture
-markRect = Color white $ thickBorder markThickness (V2 0 0) markDim
+markRect = Color markColor $ thickBorder markThickness (V2 0 0) markDim
 -- markRect = Color black $ rectangleWire w h
 --   where V2 w h = rectDim + 2 * m
 --         V2 tx ty = (-m)
