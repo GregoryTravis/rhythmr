@@ -268,6 +268,7 @@ keyboardHandler s (Char 'A', m) | shiftM m && hasLikes s = hiChew s >>= setSong 
 keyboardHandler s (SpecialKey KeyEsc, m) | noM m = do
   projectFile <- getProjectFile (projectDir s)
   retCommand $ SaveAndQuit projectFile
+keyboardHandler s (Char 't', m) | noM m = setState (newRand s)
 --keyboardHandler s 'p' = do
 --  let s' = nextFromStack $ pushCurrentGroup s
 --  --msp ("eh", currentGroup s, stack s)

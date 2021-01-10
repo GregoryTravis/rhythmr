@@ -20,6 +20,7 @@ module State
   , loadLoopZounds
   , hasLikes
   , bestLoops
+  , newRand
   ) where
 
 import Data.Containers.ListUtils (nubOrd)
@@ -292,6 +293,11 @@ bestLoops (State {..}) =
       sorted = sortOn snd frequencied
       justLoops = map fst sorted
    in justLoops
+
+-- Get a new rand by splitting and taking the second one
+newRand :: State -> State
+newRand s = s { rand = rand' }
+  where rand' = snd (split (rand s))
 
 -- Affinities 2.0
 --
