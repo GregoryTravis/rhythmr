@@ -33,7 +33,8 @@ foreign import ccall "term_audio" term_audio :: IO ()
 -- granularity = 64
 granularity = 64 * 64
 
-initVolume = 1 -- demo mode: 4.9382716e-2
+--initVolume = 1 -- demo mode: 4.9382716e-2
+initVolume = 0.44444448 -- audio programmer demo 6 
 
 -- Looper sv iv lv vv restartV
 --   sv: the samples

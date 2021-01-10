@@ -306,7 +306,7 @@ keyboardHandler _ _ = do
   return DoNothing
 
 setVolume' :: Char -> State -> IO (GuiCommand State)
-setVolume' c s = do --msp ("volume", c, volume, fromEnum c - 48)
+setVolume' c s = do msp ("volume", c, volume, fromEnum c - 48)
                     setVolume volume (looper s)
                     return DoNothing
   where volume = fromIntegral (fromEnum c - 48) * (1.0 / 9.0)
