@@ -195,6 +195,7 @@ demoModeKeys =
   , (Char '\DC2', shiftCtrlM)
   , (SpecialKey KeyEsc, noM)
   , (Char 'S', shiftM)
+  , (Char 'G', shiftM)
   , (Char 'c', noM)
   , (Char 'A', noM)
   , (Char 'a', noM)
@@ -558,7 +559,7 @@ metagraphSong s = do
   msp ("mgs", (map graphInfo mgs))
   --msp (length (likes s))
   let g = mkStdGen 348584
-      mg = fesp (("mg",) . graphInfo) $ mgs !! 1
+      mg = fesp (("mg",) . graphInfo) $ mgs !! 0
       k = 1.0
       cycler = Util.rotate (affinityCycle s)
       walk comp = eeesp ("walk", comp) $ randomWalk g (connectedTo mg) (head (cycler comp)) (floor (fromIntegral (length comp) * k))
@@ -566,8 +567,8 @@ metagraphSong s = do
       seq = concat walks
       pairwiseOverlaps = zipWith pairwiseOverlap seq (tail seq)
       pairwiseOverlap x y = length $ intersect x y
-      walkTransform = id
-      --walkTransform = dupPairs
+      --walkTransform = id
+      walkTransform = dupPairs
   --msp seq
   msp $ "overlaps " ++ (show pairwiseOverlaps)
   --msp $ likes s
