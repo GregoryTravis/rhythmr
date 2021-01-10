@@ -531,7 +531,7 @@ vRectBorder width color = Color color $ thickBorder rectThickness (V2 0 0) (V2 w
 -- because the bitmaps are generated rotated.
 -- TODO: transpose this, rather than rotating; otherwise it's upside-down or backwards or something.
 bitmapToRect :: Float -> Float -> Picture -> Picture
-bitmapToRect w h = Scale sx sy . Rotate 90
+bitmapToRect w h = Scale sx sy . Rotate 270
   where sx = w / fromIntegral baseBitmapWidth
         sy = h / fromIntegral baseBitmapHeight
 
