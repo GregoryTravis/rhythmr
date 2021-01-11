@@ -69,9 +69,9 @@ loadPng path = fromJustE ("loadPng " ++ path) $ unsafePerformIO $ do
   J.loadJuicyPNG fullPath
 
 logo :: Picture
-logo = loadPng "i/64.png"
+logo = loadPng "i/64_i.png"
 logoName :: Picture
-logoName = loadPng "i/logo-name.png"
+logoName = loadPng "i/logo-name_i.png"
 
 gridSizeFor :: Int -> Int
 gridSizeFor n = ceiling $ sqrt $ fromIntegral n
@@ -303,7 +303,7 @@ renderViz t s (Viz pics fiz) | disableViz = return Blank
       h = (-((fromIntegral $ windowHeight `div` 2) - margin)) + (-4)
       margin = 32 + 16
       logo' = Translate w h logo
-      logoName' = Translate (w - 98) h $ Scale 0.3 0.3 logoName
+      logoName' = Translate (w - 104) h $ Scale 0.3 0.3 logoName
   --fps
   return $ Pictures $ seqPics ++ ph ++ [logo', logoName'] ++ animsMaybe ++ [strategy] ++ labels ++ fizMaybe
 

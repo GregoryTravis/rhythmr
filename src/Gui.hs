@@ -74,7 +74,8 @@ guiMain defaultState filenameMaybe initViz' saver loader stateToViz updateViz re
    in playIO displayMode bgColor 20 initWorld worldToPicture eventHandler stepIteration
   where displayMode = InWindow "Rhythmr" (windowWidth, windowHeight) (windowMargin, windowMargin)
         --bgColor = makeColorI 0x2f 0x31 0x36 0xff
-        bgColor = makeColorI 0x1f 0x21 0x26 0xff
+        --bgColor = makeColorI 0x1f 0x21 0x26 0xff
+        bgColor = makeColorI 0x00 0x00 0x00 0xff
         --bgColor = white
 
 loadOrDefault :: (Binary t, Read t) => Loader (History s) t -> s -> Maybe FilePath -> IO (History s)
