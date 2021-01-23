@@ -17,7 +17,8 @@ Installation
    1. Select Open
    1. Say yes when it asks you if you really want to open it
    1. (Next time you can open Rhythmr normally)
-1. Double click the app or one of the projects
+1. Double click one of the projects
+1. (Running the app directly doesn't work right on all versions of OSX, but it might work for you.)
 
 ## Installing Rhythmr on something else
 
