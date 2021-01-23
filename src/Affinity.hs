@@ -26,7 +26,7 @@ import Graphics.Gloss.Interface.IO.Game (SpecialKey(..), Key(..), Modifiers(..),
 import Linear
 import Linear.Matrix (identity)
 import System.Environment (getEnv)
-import System.Directory (listDirectory, getCurrentDirectory)
+import System.Directory (listDirectory, getCurrentDirectory, createDirectoryIfMissing)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Random
 
@@ -256,6 +256,14 @@ keyboardHandler s (Char 'W', m) | shiftM m = do
   -- writeCurrentSongSeparateTracks' s
   -- writeClick
   setState s
+-- Write likes to likes-[timestamp]/*
+keyboardHandler s (Char '\ETB', m) | ctrlM m = do
+  writeLikes s
+  setState s
+-- Write likes to likes-[timestamp]/* but chop off last quarter note so they're 3/4
+keyboardHandler s (Char '\ENQ', m) | ctrlM m = do
+  writeLikesThreeFour s
+  setState s
 keyboardHandler s (Char 'S', m) | shiftM m && hasLikes s = cycleLikesSong s >>= setSong s
 keyboardHandler s (Char 'T', m) | shiftM m && hasLikes s = tallSong s >>= setSong s
 keyboardHandler s (Char 'H', m) | shiftM m && hasLikes s = thresholdSong s >>= setSong s
@@ -406,6 +414,33 @@ writeClick = do
   let z = renderGrid (take desiredLengthLoops (repeat [clik])) bpm
   mix <- render z
   writeZound (dir ++ "/click.wav") mix
+
+writeLikes :: State -> IO ()
+writeLikes s@(State { likes }) = do
+  zs <- mapM (loadLoopZound s) (nub $ concat likes)
+  zs' <- mapM stretchToMeasure zs
+  writeTimestampedZoundSet "likes" zs'
+
+writeLikesThreeFour :: State -> IO ()
+writeLikesThreeFour s@(State { likes }) = do
+  zs <- mapM (loadLoopZound s) (nub $ concat likes)
+  zs' <- mapM render $ map toThreeFour zs
+  zs'' <- mapM stretchToMeasure zs'
+  writeTimestampedZoundSet "likes" zs''
+
+writeTimestampedZoundSet :: String -> [Zound] -> IO ()
+writeTimestampedZoundSet s zs = do
+  MkSystemTime { systemSeconds } <- getSystemTime
+  writeZoundSet (s ++ "-" ++ (show systemSeconds)) zs
+
+writeZoundSet :: String -> [Zound] -> IO ()
+writeZoundSet dir zs = do
+  createDirectoryIfMissing True dir
+  mapM_ w (zip zs [0..])
+  where w :: (Zound, Int) -> IO ()
+        w (z, i) = do
+          let filename = dir ++ "/" ++ (show i) ++ ".wav"
+          writeZound filename z
 
 --writeCurrentSongSeparateTracks :: State -> IO ()
 --writeCurrentSongSeparateTracks s@(State { currentSong = Just (score, loops) }) = do

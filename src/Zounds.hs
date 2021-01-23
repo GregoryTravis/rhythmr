@@ -11,6 +11,7 @@ module Zounds
 , Bounds(..)
 , Source(..)
 , getBounds
+, toThreeFour
 --, getSamples
 , getAllBounds
 , getAllSegments
@@ -19,6 +20,7 @@ module Zounds
 , durationSeconds
 , render
 , renderGrid
+, stretchToMeasure
 , strictRender
 , readZound
 , readZoundZeroCrossings
@@ -129,6 +131,12 @@ boundingBox bs = foldr1 boundsUnion bs
 
 boundsLength :: Bounds -> Frame
 boundsLength (Bounds s e) = e - s
+
+-- Chop off last quarter note
+toThreeFour :: Zound -> Zound
+toThreeFour z = Bounded (Bounds 0 e') z
+  where Bounds 0 e = getBounds z
+        e' = (e * 3) `div` 4
 
 -- Represents where the sound came from, eg a filename.
 data Source = Source [String]
@@ -482,6 +490,14 @@ renderGrid zses bpm =
       moveToMeasure zs n = map (Translate (n * numFrames)) zs
       mix = Mix (concat zses')
    in mix
+
+-- Resample to full measure length
+stretchToMeasure :: Zound -> IO Zound
+stretchToMeasure z = do
+  let numFrames = toLoopLengthFrames bpm
+      z' = toLength z
+      toLength z = Scale numFrames z
+  render z'
 
 toZero :: Zound -> Zound
 toZero z =
