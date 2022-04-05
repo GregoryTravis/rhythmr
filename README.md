@@ -13,9 +13,9 @@ Presented at:
 * Haskell exchange 2020
 * Audio Programmer Meetup January 2021
 
-<img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/master/images/icfp-2020.png">
-<img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/master/images/haskell-exchange.png">
-<img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/master/images/audio-programmer.png">
+<img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/main/images/icfp-2020.png" width="160">
+<img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/main/images/haskell-exchange.png">
+<img src="https://raw.githubusercontent.com/GregoryTravis/rhythmr/main/images/audio-programmer.png">
 
 [Installation](doc/Installation.md)
 
