@@ -288,8 +288,9 @@ keyboardHandler s (Char '\DC1', m) | shiftCtrlM m = retCommand QuitWithoutSaving
 -- keyboardHandler s (Char 'c', m) | noM m = cycleLikesSong s' >>= setSong s'
 keyboardHandler s (Char 'c', m) | noM m = setState s'
    where s' = s { affinityCycle = affinityCycle s + 1 }
-keyboardHandler s (Char '\FF', m) | ctrlM m = do exportBestLoops s
-                                                 return DoNothing
+-- keyboardHandler s (Char '\FF', m) | ctrlM m = do exportBestLoops s
+keyboardHandler s (Char 'B', m) | shiftM m = do exportBestLoops s
+                                                return DoNothing
 keyboardHandler s (Char c, m) | noM m && c >= '0' && c <= '9' = setVolume' c s
 keyboardHandler s (Char c, _) | otherwise = do
   msp $ ("?? " ++ (show c))

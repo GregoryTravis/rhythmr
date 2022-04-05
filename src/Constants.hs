@@ -1,7 +1,7 @@
 module Constants where
 
 bpm :: Int
-bpm = 100
+bpm = 96
 
 meter :: Int
 meter = 4

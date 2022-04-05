@@ -192,7 +192,7 @@ incrementallyDifferentGroup s
 
 randomGroup :: State -> ([Loop], State)
 randomGroup s = flip runRand s $ do
-  count <- liftRand $ randomR (4::Int, 8)
+  count <- liftRand $ randomR (2::Int, 3)
   seed <- liftRand $ randomR (20::Int, 20000)
   let group = take count (shuffleList seed (loops s))
   return (eesp ("randomGroup", length group, group) group)
@@ -203,7 +203,7 @@ randomGroup s = flip runRand s $ do
 --   1/4 from pool
 incrementallyDifferentGroup2 :: State -> ([Loop], State)
 incrementallyDifferentGroup2 s = flip runRand s $ do
-  count <- liftRand $ randomR (4, 8)
+  count <- liftRand $ randomR (2, 3)
   let numFromMostRecent = count `div` 2
       numFromLiked = (count - numFromMostRecent) `div` 2
       numRandom = count - numFromMostRecent - numFromLiked
@@ -222,7 +222,7 @@ incrementallyDifferentGroup2 s = flip runRand s $ do
 --   1/2 from pool
 randomGroup2 :: State -> ([Loop], State)
 randomGroup2 s = flip runRand s $ do
-  count <- liftRand $ randomR (4, 8)
+  count <- liftRand $ randomR (2, 3)
   let numFromLiked = count `div` 2
       numRandom = count - numFromLiked
       -- If we have no likes, then just use the pool
