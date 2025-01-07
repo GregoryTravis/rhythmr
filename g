@@ -22,8 +22,8 @@
 #p swingin.rhythmr/loops/swingin-bass-blossom/loop-download-6ac4d5295ae338b1e943ccf88d67537c-18386e8930f70cdc57af9c000ca46d27.wav
 #ls -lt swingin.rhythmr/loops/swingin-bass-blossom/
 
-# profargs='--library-profiling --executable-profiling --profile'
-# (stack build --force-dirty $profargs --ghc-options="-fprof-auto -O0" rhythmr && stack exec rhythmr $profargs -- "$@" +RTS -pa -xc -RTS) 2>&1 | tee out
+#profargs='--library-profiling --executable-profiling --profile'
+#(stack build --force-dirty $profargs --ghc-options="-fprof-auto -O0" rhythmr && stack exec rhythmr $profargs -- "$@" +RTS -pa -xc -RTS) 2>&1 | tee out
 
 stty sane
 
